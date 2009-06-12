@@ -1,0 +1,53 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "BTMAKETORRENTGUI" 1 "Sep 3 2004"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+btmaketorrentgui \- program to generate torrent info files for bittorrent
+.SH SYNOPSIS
+.B btmaketorrentgui 
+.SH DESCRIPTION
+This manual page documents briefly the \fBbtmaketorrentgui\fP
+command.
+This manual page was written for the Debian distribution
+because the original program does not have a manual page.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
+.\" respectively.
+\fBbtmaketorrentgui\fP is a GUI interface to btmakemetafile, it generates 
+the torrent info files which are distributed to bittorrent clients 
+(usually via the WWW) in order to inform them where the designated tracker 
+for the torrent is located, and to allow them to verify the file's contents.
+.PP
+\fBbtmaketorrentgui\fP does not require arguments like btmakemetafiles does,
+everything is done in the GUI interface. The first box in the GUI is the
+file that the torrent info file will be generated for, the second is the
+"announce" address of a tracker (ex. http://my.tracker:6969/announce). The
+third box is for a list of announces, separated by commas or whitespace and on
+several lines, this is not required. Additionally, you can set a piece size
+or an optional comment.
+.SH SEE ALSO
+.BR bittorrent-downloader (1),
+.BR btrename (1),
+.BR btreannounce (1),
+.BR bttrack (1).
+.br
+.SH AUTHOR
+This manual page was written by Micah Anderson <micah@riseup.net> and was
+based on the manual page for btmakemetafile written for the bittorrent package
+by Michael Janssen <jamuraa@debian.org> for the Debian GNU/Linux system 
+(but may be used by others).

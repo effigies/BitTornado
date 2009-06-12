@@ -1,0 +1,152 @@
+# example file for tracker allowed_ips feature
+193.53.22.0/24 # AS12527         SERVIBANCA Autonomous System
+81.84.0.0/16 # AS12542         TVCABO Autonomous System
+212.113.160.0/19 # AS12542         TVCABO Autonomous System
+213.22.0.0/16 # AS12542         TVCABO Autonomous System
+193.194.155.0/24 # AS12603         SHOPPING DIRECT Autonomous System
+193.236.127.0/24 # AS12833         Sistema de Mail para Todos do MCT
+213.63.0.0/17 # AS12926         Jazztel Portugal Autonomous System
+213.63.128.0/17 # AS12926         Jazztel Portugal Autonomous System
+213.63.140.0/24 # AS12926         Jazztel Portugal Autonomous System
+213.141.0.0/19 # AS12926         Jazztel Portugal Autonomous System
+213.141.0.0/21 # AS12926         Jazztel Portugal Autonomous System
+213.141.8.0/22 # AS12926         Jazztel Portugal Autonomous System
+213.141.16.0/22 # AS12926         Jazztel Portugal Autonomous System
+213.141.20.0/23 # AS12926         Jazztel Portugal Autonomous System
+213.141.25.0/24 # AS12926         Jazztel Portugal Autonomous System
+213.141.26.0/24 # AS12926         Jazztel Portugal Autonomous System
+213.129.128.0/19 # AS13011         netway - comunicacao de dados
+194.153.132.0/24 # AS13200         BPI
+213.190.192.0/19 # AS15457         CABOTVM.PT Autonomous System
+62.48.128.0/17 # AS15525        PT Prime Autonomous System
+195.35.66.0/24 # AS15525        PT Prime Autonomous System
+193.41.114.0/23 # AS15931         YASP Autonomous System
+193.126.0.0/16 # AS1897         KPNQwest Portugal Backbone AS
+193.192.1.0/24 # AS1897         KPNQwest Portugal Backbone AS
+193.192.2.0/24 # AS1897         KPNQwest Portugal Backbone AS
+193.192.3.0/24 # AS1897         KPNQwest Portugal Backbone AS
+139.83.0.0/16 # AS1930         RCCN-NET
+158.162.0.0/17 # AS1930         RCCN-NET
+192.92.144.0/24 # AS1930         RCCN-NET
+193.136.0.0/15 # AS1930         RCCN-NET
+193.236.0.0/21 # AS1930         RCCN-NET
+194.117.0.0/20 # AS1930         RCCN-NET
+194.117.16.0/21 # AS1930         RCCN-NET
+194.117.40.0/22 # AS1930         RCCN-NET
+194.210.0.0/16 # AS1930         RCCN-NET
+193.192.4.0/22 # AS25060         INE - Instituto Nacional de Estatistica Portugal
+193.192.8.0/22 # AS25060         INE - Instituto Nacional de Estatistica Portugal
+192.67.76.0/24 # AS3251         Centro de Calculo da Faculdade de Ciencias de Lisboa
+194.130.254.0/23 # AS5533         VIA NET.WORKS Portugal -  Tecnologias de Informacao
+195.22.0.0/19 # AS5533         VIA NET.WORKS Portugal -  Tecnologias de Informacao
+195.22.16.0/21 # AS5533         VIA NET.WORKS Portugal -  Tecnologias de Informacao
+195.138.0.0/19 # AS6773         SIBS - Sociedade Interbancaria de Servicos
+212.54.128.0/19 # AS8824         ITNET-Network
+194.145.59.0/24 # AS8826         Siemens Autonomous System
+194.145.60.0/24 # AS8826         Siemens Autonomous System
+194.145.61.0/24 # AS8826         Siemens Autonomous System
+194.145.62.0/24 # AS8826         Siemens Autonomous System
+212.48.64.0/19 # AS8994         HLC Telecomunicacoes e Multimedia AS
+194.145.121.0/24 # AS9118         ESDI Autonomous System
+195.245.128.0/18 # AS9186         ONITELECOM Autonomous System
+195.245.128.0/19 # AS9186         ONITELECOM Autonomous System
+195.245.160.0/19 # AS9186         ONITELECOM Autonomous System
+213.58.0.0/16 # AS9186         ONITELECOM Autonomous System
+213.58.0.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.8.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.16.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.24.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.32.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.40.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.48.0/20 # AS9186         ONITELECOM Autonomous System
+213.58.48.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.64.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.80.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.80.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.84.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.88.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.88.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.92.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.96.0/19 # AS9186         ONITELECOM Autonomous System
+213.58.96.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.100.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.104.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.108.0/22 # AS9186         ONITELECOM Autonomous System
+213.58.112.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.120.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.128.0/17 # AS9186         ONITELECOM Autonomous System
+213.58.128.0/18 # AS9186         ONITELECOM Autonomous System
+213.58.128.0/21 # AS9186         ONITELECOM Autonomous System
+213.58.136.128/25 # AS9186         ONITELECOM Autonomous System
+213.58.192.0/18 # AS9186         ONITELECOM Autonomous System
+213.58.192.0/21 # AS9186         ONITELECOM Autonomous System
+192.188.10.0/24 # AS2860         Novis Telecom
+192.199.16.0/20 # AS2860         Novis Telecom
+193.236.120.0/24 # AS2860         Novis Telecom
+193.236.121.0/24 # AS2860         Novis Telecom
+193.236.122.0/24 # AS2860         Novis Telecom
+193.236.123.0/24 # AS2860         Novis Telecom
+194.79.64.0/19 # AS2860         Novis Telecom
+194.79.64.0/21 # AS2860         Novis Telecom
+194.79.72.0/21 # AS2860         Novis Telecom
+194.79.80.0/21 # AS2860         Novis Telecom
+194.79.88.0/21 # AS2860         Novis Telecom
+194.117.36.0/22 # AS2860         Novis Telecom
+195.23.0.0/16 # AS2860         Novis Telecom
+195.23.0.0/17 # AS2860         Novis Telecom
+195.23.0.0/18 # AS2860         Novis Telecom
+195.23.64.0/18 # AS2860         Novis Telecom
+195.23.128.0/17 # AS2860         Novis Telecom
+195.23.128.0/18 # AS2860         Novis Telecom
+195.23.192.0/18 # AS2860         Novis Telecom
+213.205.64.0/19 # AS2860         Novis Telecom
+81.20.240.0/20 # AS3243         Telepac - Comunicacoes Interactivas
+81.193.0.0/16 # AS3243         Telepac - Comunicacoes Interactivas
+158.162.128.0/18 # AS3243         Telepac - Comunicacoes Interactivas
+158.162.192.0/18 # AS3243         Telepac - Comunicacoes Interactivas
+192.92.150.0/24 # AS3243         Telepac - Comunicacoes Interactivas
+194.65.0.0/16 # AS3243         Telepac - Comunicacoes Interactivas
+212.55.128.0/18 # AS3243         Telepac - Comunicacoes Interactivas
+213.13.0.0/16 # AS3243         Telepac - Comunicacoes Interactivas
+195.8.0.0/19 # AS8657         CPRM Autonomous System
+212.18.160.0/19 # AS12353         Vodafone Telecel
+213.30.0.0/17 # AS12353         Vodafone Telecel
+62.229.64.0/19 # AS6853         GLOBAL-ONE-PORTUGAL
+194.235.128.0/21 # AS6853         GLOBAL-ONE-PORTUGAL
+194.235.136.0/22 # AS6853         GLOBAL-ONE-PORTUGAL
+195.61.64.0/19 # AS6853         GLOBAL-ONE-PORTUGAL
+194.38.128.0/19 # AS5626         COMNEXO
+194.38.128.0/20 # AS5626         COMNEXO
+194.38.144.0/20 # AS5626         COMNEXO
+213.146.192.0/19 # AS5626         COMNEXO
+213.146.192.0/22 # AS5626         COMNEXO
+213.146.200.0/22 # AS5626         COMNEXO
+213.146.204.0/22 # AS5626         COMNEXO
+213.146.208.0/22 # AS5626         COMNEXO
+212.13.32.0/19 # AS12305         NORTENET- Sistemas de Comunicacao SA.
+213.228.128.0/18 # AS13156         Cabovisao
+213.228.128.0/19 # AS13156         Cabovisao
+217.129.0.0/16 # AS13156         Cabovisao
+195.234.134.0/24 # AS25253         CAIXANET - Telematica e Telecomunicacoes
+62.169.64.0/19 # AS24698         Optimus Telecomunicacoes
+193.111.42.0/24 # AS25005         Economical Group - Finibanco
+195.245.234.0/24 # AS28672         Banco Portugues de Negocios
+193.126.192.0/24 # AS13134         Instituto de Informatica e Estatistica da Solidariedade
+195.245.197.0/24 # AS13134         Instituto de Informatica e Estatistica da Solidariedade
+195.35.96.0/24 # AS15647         BanifServ - Empresa de Servicos
+80.90.192.0/19 # AS21167         Autonomous System for Oni Way
+146.193.0.0/16 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+192.12.232.0/24 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+192.35.246.0/24 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+192.135.129.0/24 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+192.136.49.0/24 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+194.117.24.0/21 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+194.117.32.0/22 # AS5516         INESC - Instituto de Engenharia de Sistemas e Computadores
+193.219.96.0/21 # AS6806         IP Global
+212.16.128.0/19 # AS8765         Teleweb
+212.251.128.0/17 # AS8765         Teleweb
+212.113.128.0/19 # AS9190         MaxitelCom
+217.70.64.0/21 # AS9190         MaxitelCom
+81.92.192.0/20 # AS25137         NFSi - Solucoes Internet Lda.
+80.79.0.0/20 # AS20957         Guiao
+217.23.0.0/20 # AS15749         Cofina.com Autonomous System

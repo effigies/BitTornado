@@ -1,0 +1,51 @@
+Frequently Asked Questions about BitTorrent
+
+Q:  I use Mozilla/Opera, how can I use BT?
+
+A:  You need to edit the mimetype associations so that the "application/x-bittorrent"
+    mime type is launched by c:\progra~1\bittorrent\btdownloadprefetched.exe
+
+
+Q:  Does BitTorrent support resuming?
+
+A:  Yes, just save your download to the same location as the existing partial download.
+    BT will resume where it left off after checking the partial download.
+
+
+Q:  How do I know the download isn't corrupted?
+
+A:  BitTorrent does cryptographic hashing (SHA1) of all data.  When you see "Download
+    Succeeded" you can be sure that BT has already verified the integrity of the data.
+    The integrity and authenticity of a BT download is as good as the original request
+    to the tracker.
+
+
+Q:  I'm behind a firewall/NAT, can I use BT?
+
+A:  Yes, but you will get better performance if other peers can connect to you.  By
+    default, BitTorrent listens on port 6881, trying incrementially higher ports if
+    it is unable to bind, giving up after 6889 (the port range is configurable.)
+    It's up to you to figure out how to poke a hole in your firewall/NAT.
+
+
+Q:  I published a file but whenever I try to download it hangs saying "connecting to
+    peers" and/or the download just never starts.
+
+A:  You need to leave a downloader running which already has the whole file.  The
+    publishing step merely registers the download information with the tracker.
+    Make sure other peers can connect to this downloader (not behind firewall or
+    NAT!)
+
+
+Q:  When is the Java implementation going to be ready?
+
+A:  Soon after the check clears.
+
+
+
+Q:  How do I limit the amount of bandwidth consumed by BT?
+
+A:  BT allows you to control how many simultaneous connections can  actively
+    download simultaneously using --max_uploads in the btdownloadheadless.py
+    script.  Other than that you'll have to limit bandwidth some other way, perhaps
+    at the OS or router level.

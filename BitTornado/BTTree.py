@@ -191,13 +191,22 @@ class Info:
         
         info = {'pieces': ''.join(self.pieces + excess),
                 'piece length': self.piece_length,
-                'files': self.fs,
                 'name': self.name}
         
+        # If there is only one file and it has the same name path as the
+        # torrent name, then encode directly, not as a files dictionary
+        if len(self.fs) == 1 and self.name = self.fs[0]['path']:
+            info['length'] = self.size
+        else:
+            info['files'] = self.fs
+
         check_info(info)
         
         data = {'info': info, 'announce': tracker, 'creation date': long(time())}
 
+        #
+        # Optional data dictionary contents
+        #
         if params.has_key('comment') and params['comment']:
             data['comment'] = params['comment']
             
@@ -214,6 +223,7 @@ class Info:
         elif params.has_key('httpseeds') and params['httpseeds']:
             data['httpseeds'] = params['httpseeds'].split('|')
         
+        # Write file
         h = open(target, 'wb')
         h.write(bencode(data))
         h.close()

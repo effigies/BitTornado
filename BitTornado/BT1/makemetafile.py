@@ -12,12 +12,7 @@ from btformats import check_info
 from threading import Event
 from time import time
 from traceback import print_exc
-try:
-    from sys import getfilesystemencoding
-    ENCODING = getfilesystemencoding()
-except:
-    from sys import getdefaultencoding
-    ENCODING = getdefaultencoding()
+from BTTree import Info, BTTree, uniconvertl, uniconvert
 
 defaults = [
     ('announce_list', '',
@@ -40,115 +35,40 @@ default_piece_len_exp = 18
 ignore = ['core', 'CVS']
 
 def print_announcelist_details():
-    print ('    announce_list = optional list of redundant/backup tracker URLs, in the format:')
-    print ('           url[,url...][|url[,url...]...]')
-    print ('                where URLs separated by commas are all tried first')
-    print ('                before the next group of URLs separated by the pipe is checked.')
-    print ("                If none is given, it is assumed you don't want one in the metafile.")
-    print ('                If announce_list is given, clients which support it')
-    print ('                will ignore the <announce> value.')
-    print ('           Examples:')
-    print ('                http://tracker1.com|http://tracker2.com|http://tracker3.com')
-    print ('                     (tries trackers 1-3 in order)')
-    print ('                http://tracker1.com,http://tracker2.com,http://tracker3.com')
-    print ('                     (tries trackers 1-3 in a randomly selected order)')
-    print ('                http://tracker1.com|http://backup1.com,http://backup2.com')
-    print ('                     (tries tracker 1 first, then tries between the 2 backups randomly)')
-    print ('')
-    print ('    httpseeds = optional list of http-seed URLs, in the format:')
-    print ('            url[|url...]')
+    print """    announce_list = optional list of redundant/backup tracker URLs, in the format:
+           url[,url...][|url[,url...]...]
+                where URLs separated by commas are all tried first
+                before the next group of URLs separated by the pipe is checked.
+                If none is given, it is assumed you don't want one in the metafile.
+                If announce_list is given, clients which support it
+                will ignore the <announce> value.
+           Examples:
+                http://tracker1.com|http://tracker2.com|http://tracker3.com
+                     (tries trackers 1-3 in order)
+                http://tracker1.com,http://tracker2.com,http://tracker3.com
+                     (tries trackers 1-3 in a randomly selected order)
+                http://tracker1.com|http://backup1.com,http://backup2.com
+                     (tries tracker 1 first, then tries between the 2 backups randomly)
+
+    httpseeds = optional list of http-seed URLs, in the format:
+            url[|url...]"""
     
-def make_meta_file(file, url, params = {}, flag = Event(),
+def make_meta_file(loc, url, params = {}, flag = Event(),
                    progress = lambda x: None, progress_percent = 1):
-    if params.has_key('piece_size_pow2'):
-        piece_len_exp = params['piece_size_pow2']
-    else:
-        piece_len_exp = default_piece_len_exp
-    if params.has_key('target') and params['target'] != '':
-        f = params['target']
-    else:
-        a, b = split(file)
+    path = loc.split('/')[-1:]
+    tree = BTTree(loc, path)
+
+    # Extract target from parameters
+    if 'target' not in params or params['target'] == '':
+        a, b = split(loc)
         if b == '':
-            f = a + '.torrent'
+            target = a + '.torrent'
         else:
-            f = join(a, b + '.torrent')
-            
-    if piece_len_exp == 0:  # automatic
-        size = calcsize(file)
-        if   size > 8L*1024*1024*1024:   # > 8 gig =
-            piece_len_exp = 21          #   2 meg pieces
-        elif size > 2*1024*1024*1024:   # > 2 gig =
-            piece_len_exp = 20          #   1 meg pieces
-        elif size > 512*1024*1024:      # > 512M =
-            piece_len_exp = 19          #   512K pieces
-        elif size > 64*1024*1024:       # > 64M =
-            piece_len_exp = 18          #   256K pieces
-        elif size > 16*1024*1024:       # > 16M =
-            piece_len_exp = 17          #   128K pieces
-        elif size > 4*1024*1024:        # > 4M =
-            piece_len_exp = 16          #   64K pieces
-        else:                           # < 4M =
-            piece_len_exp = 15          #   32K pieces
-    piece_length = 2 ** piece_len_exp
+            target = join(a, b + '.torrent')
+        params['target'] = target
 
-    encoding = None
-    if params.has_key('filesystem_encoding'):
-        encoding = params['filesystem_encoding']
-    if not encoding:
-        encoding = ENCODING
-    if not encoding:
-        encoding = 'ascii'
-    
-    info = makeinfo(file, piece_length, encoding, flag, progress, progress_percent)
-    if flag.isSet():
-        return
-    check_info(info)
-    h = open(f, 'wb')
-    data = {'info': info, 'announce': strip(url), 'creation date': long(time())}
-    
-    if params.has_key('comment') and params['comment']:
-        data['comment'] = params['comment']
-        
-    if params.has_key('real_announce_list'):    # shortcut for progs calling in from outside
-        data['announce-list'] = params['real_announce_list']
-    elif params.has_key('announce_list') and params['announce_list']:
-        l = []
-        for tier in params['announce_list'].split('|'):
-            l.append(tier.split(','))
-        data['announce-list'] = l
-        
-    if params.has_key('real_httpseeds'):    # shortcut for progs calling in from outside
-        data['httpseeds'] = params['real_httpseeds']
-    elif params.has_key('httpseeds') and params['httpseeds']:
-        data['httpseeds'] = params['httpseeds'].split('|')
-        
-    h.write(bencode(data))
-    h.close()
-
-def calcsize(file):
-    if not isdir(file):
-        return getsize(file)
-    total = 0L
-    for s in subfiles(abspath(file)):
-        total += getsize(s[1])
-    return total
-
-
-def uniconvertl(l, e):
-    r = []
-    try:
-        for s in l:
-            r.append(uniconvert(s, e))
-    except UnicodeError:
-        raise UnicodeError('bad filename: '+join(l))
-    return r
-
-def uniconvert(s, e):
-    try:
-        s = unicode(s,e)
-    except UnicodeError:
-        raise UnicodeError('bad filename: '+s)
-    return s.encode('utf-8')
+    info = tree.makeInfo(**params)
+    info.write(tracker = url, **params)
 
 def makeinfo(file, piece_length, encoding, flag, progress, progress_percent=1):
     file = abspath(file)
@@ -213,6 +133,14 @@ def makeinfo(file, piece_length, encoding, flag, progress, progress_percent=1):
         return {'pieces': ''.join(pieces), 
             'piece length': piece_length, 'length': size, 
             'name': uniconvert(split(file)[1], encoding) }
+
+def calcsize(file):
+    if not isdir(file):
+        return getsize(file)
+    total = 0L
+    for s in subfiles(abspath(file)):
+        total += getsize(s[1])
+    return total
 
 def subfiles(d):
     r = []

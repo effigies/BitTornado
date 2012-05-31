@@ -195,18 +195,17 @@ class Info:
         
         # If there is only one file and it has the same name path as the
         # torrent name, then encode directly, not as a files dictionary
-        if len(self.fs) == 1 and self.name = self.fs[0]['path']:
+        if len(self.fs) == 1 and self.name == self.fs[0]['path']:
             info['length'] = self.size
         else:
             info['files'] = self.fs
 
         check_info(info)
         
-        data = {'info': info, 'announce': tracker, 'creation date': long(time())}
+        #data = {'info': info, 'announce': tracker, 'creation date': long(time())}
+        data = {'info': info, 'announce': tracker, 'creation date': long(0)}
 
-        #
         # Optional data dictionary contents
-        #
         if params.has_key('comment') and params['comment']:
             data['comment'] = params['comment']
             
@@ -274,7 +273,7 @@ class BTTree:
             raise Exception("Entry is neither file nor directory: %s"
                             % loc)
 
-    def makeInfo(self, tracker, target, **params):
+    def makeInfo(self, **params):
         """Generate an Info data structure from a BTTree
         
         Parameters
@@ -282,10 +281,8 @@ class BTTree:
             str         target  - target directory
         """
         info = Info(    self.path[0],
-                        os.path.join(target, *self.path) + '.torrent',
-                        tracker,
                         self.size,
-                        params.get('piece_size_pow2'))
+                        **params)
 
         self.updateInfo(info)
 

@@ -315,8 +315,8 @@ class BTTree:
             for sub in self.subs:
                 sub.updateInfo(info)
     
-    def makeDirInfos(self, tracker, target, **params):
-        return [sub.makeInfo(tracker,target,**params) for sub in self.subs]
+    def makeDirInfos(self, **params):
+        return [sub.makeInfo(**params) for sub in self.subs]
 
     def buildMetaTree(self, tracker, target, infos = [], **params):
         """Construct a directory structure such that, for every path in

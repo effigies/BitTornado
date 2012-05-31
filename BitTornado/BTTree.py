@@ -72,8 +72,10 @@ class Info:
                 **params):
         """
         Parameters
-            str source  - source file name (last path element)
-            int size    - total size of files to be described
+            str  source           - source file name (last path element)
+            int  size             - total size of files to be described
+            f()  progress         - callback function to report progress
+            bool progress_percent - flag for reporting percentage or change
         """
         self.encoding = ENCODING
         if 'encoding' in params:
@@ -149,8 +151,6 @@ class Info:
                         be hashed
         """
         toHash = len(data)
-        #self.totalhashed += toHash
-
         remainder = self.piece_length - self.done
 
         while toHash > 0:
@@ -160,16 +160,19 @@ class Info:
                 self.done += toHash
                 self.totalhashed += toHash
 
+                # Update progress
                 if self.progress_percent:
                     self.progress(self.totalhashed / self.size)
                 else:
                     self.progress(toHash)
+
                 break
             else:
                 # Complete a block
                 self.sh.update(data[:remainder])
                 self.pieces.append(self.sh.digest())
 
+                # Update progress
                 self.totalhashed += remainder
                 if self.progress_percent:
                     self.progress(self.totalhashed / self.size)
@@ -213,14 +216,13 @@ class Info:
         
         # If there is only one file and it has the same name path as the
         # torrent name, then encode directly, not as a files dictionary
-        if len(self.fs) == 1 and self.name == self.fs[0]['path'][0]:
+        if len(self.fs) == 1 and self.fs[0]['path'] == []:
             info['length'] = self.size
         else:
             info['files'] = self.fs
 
         check_info(info)
         
-        #data = {'info': info, 'announce': tracker, 'creation date': long(time())}
         data = {'info': info, 'announce': tracker, 'creation date': long(0)}
 
         # Optional data dictionary contents
@@ -292,16 +294,14 @@ class BTTree:
                             % loc)
 
     def makeInfo(self, **params):
-        """Generate an Info data structure from a BTTree
-        
-        Parameters
-            str         tracker - URL of tracker
-            str         target  - target directory
-        """
+        """Generate an Info data structure from a BTTree"""
+
+        # 
         if self.path == []:
             name = os.path.split(self.loc)[-1]
         else:
             name = self.path[0]
+
         info = Info(    name,
                         self.size,
                         **params)
@@ -322,7 +322,7 @@ class BTTree:
             info.add_file_info(self.size, self.path)
             
             while pos < self.size:
-                a = min(info.piece_length, self.size - pos)
+                a = min(info.piece_length - info.done, self.size - pos)
                 buf = h.read(a)
                 pos += a
                 info.add_data(buf)
@@ -333,9 +333,6 @@ class BTTree:
             for sub in self.subs:
                 sub.updateInfo(info)
     
-    def makeDirInfos(self, **params):
-        return [sub.makeInfo(**params) for sub in self.subs]
-
     def buildMetaTree(self, tracker, target, infos = [], **params):
         """Construct a directory structure such that, for every path in
         the source structure defined by the object, there is a .torrent

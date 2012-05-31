@@ -66,7 +66,10 @@ class Info:
         long    totalhashed     - portion of total data hashed
     """
     
-    def __init__(self, source, size, **params):
+    def __init__(self, source, size,
+                progress = lambda x: None,
+                progress_percent = True,
+                **params):
         """
         Parameters
             str source  - source file name (last path element)
@@ -78,6 +81,9 @@ class Info:
 
         self.name = uniconvert(source,self.encoding)
         self.size = size
+
+        self.progress = progress
+        self.progress_percent = progress_percent
 
         # BitTorrent/BitTornado have traditionally allowed this parameter
         piece_len_exp = params.get('piece_size_pow2')
@@ -143,7 +149,7 @@ class Info:
                         be hashed
         """
         toHash = len(data)
-        self.totalhashed += toHash
+        #self.totalhashed += toHash
 
         remainder = self.piece_length - self.done
 
@@ -152,11 +158,23 @@ class Info:
                 # If we cannot complete a piece, update hash and leave
                 self.sh.update(data)
                 self.done += toHash
+                self.totalhashed += toHash
+
+                if self.progress_percent:
+                    self.progress(self.totalhashed / self.size)
+                else:
+                    self.progress(toHash)
                 break
             else:
                 # Complete a block
                 self.sh.update(data[:remainder])
                 self.pieces.append(self.sh.digest())
+
+                self.totalhashed += remainder
+                if self.progress_percent:
+                    self.progress(self.totalhashed / self.size)
+                else:
+                    self.progress(remainder)
 
                 # Reset hash
                 self.done = 0

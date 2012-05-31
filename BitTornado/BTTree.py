@@ -195,7 +195,7 @@ class Info:
         
         # If there is only one file and it has the same name path as the
         # torrent name, then encode directly, not as a files dictionary
-        if len(self.fs) == 1 and self.name == self.fs[0]['path']:
+        if len(self.fs) == 1 and self.name == self.fs[0]['path'][0]:
             info['length'] = self.size
         else:
             info['files'] = self.fs

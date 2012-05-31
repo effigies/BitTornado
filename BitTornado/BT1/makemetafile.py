@@ -55,8 +55,7 @@ def print_announcelist_details():
     
 def make_meta_file(loc, url, params = {}, flag = Event(),
                    progress = lambda x: None, progress_percent = 1):
-    path = loc.split('/')[-1:]
-    tree = BTTree(loc, path)
+    tree = BTTree(loc, [])
 
     # Extract target from parameters
     if 'target' not in params or params['target'] == '':

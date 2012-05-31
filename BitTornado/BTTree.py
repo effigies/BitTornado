@@ -280,7 +280,11 @@ class BTTree:
             str         tracker - URL of tracker
             str         target  - target directory
         """
-        info = Info(    self.path[0],
+        if self.path == []:
+            name = os.path.split(self.loc)[-1]
+        else:
+            name = self.path[0]
+        info = Info(    name,
                         self.size,
                         **params)
 

@@ -1,5 +1,6 @@
 # Written by Bram Cohen
 # multitracker extensions by John Hoffman
+# refactoring by Chris Johnson
 # see LICENSE.txt for license information
 
 import os
@@ -57,9 +58,14 @@ def make_meta_file(loc, url, params = {}, flag = Event(),
             target = os.path.join(a, b + '.torrent')
         params['target'] = target
 
-    info = tree.makeInfo(progress = progress,
+    info = tree.makeInfo(   flag = flag,
+                            progress = progress,
                             progress_percent = progress_percent,
                             **params)
+
+    if flag.isSet():
+        return
+
     info.write(tracker = url, **params)
 
 def completedir(dir, url, params = {}, flag = Event(),

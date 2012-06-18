@@ -274,7 +274,8 @@ class SingleDownload:
                 if self.downloader.storage.am_I_complete():
                     self.downloader.add_disconnected_seed(self.connection.get_readable_id())
                     self.connection.close()
-            elif self.downloader.endgamemode:
+                    return
+            if self.downloader.endgamemode:
                 self.fix_download_endgame()
             elif ( not self.downloader.paused
                    and not self.downloader.picker.is_blocked(index)

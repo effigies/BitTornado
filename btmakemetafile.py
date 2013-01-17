@@ -13,29 +13,34 @@ if PSYCO.psyco:
     except:
         pass
 
-from sys import argv, version, exit
-from os.path import split
-assert version >= '2', "Install Python 2.0 or greater"
-from BitTornado.BT1.makemetafile import make_meta_file, defaults, print_announcelist_details
+import sys
+import os
+assert sys.version >= '2', "Install Python 2.0 or greater"
+from BitTornado.BT1.makemetafile import make_meta_file, defaults, announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions
 
 
 def prog(amount):
     print '%.1f%% complete\r' % (amount * 100),
 
-if len(argv) < 3:
-    a,b = split(argv[0])
-    print 'Usage: ' + b + ' <trackerurl> <file> [file...] [params...]'
-    print
-    print formatDefinitions(defaults, 80)
-    print_announcelist_details()
-    print ('')
-    exit(2)
+def main(argv):
+    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    usage = "Usage: %s <trackerurl> <file> [file...] [params...]" % program
 
-try:
-    config, args = parseargs(argv[1:], defaults, 2, None)
-    for file in args[1:]:
-        make_meta_file(file, args[0], config, progress = prog)
-except ValueError, e:
-    print 'error: ' + str(e)
-    print 'run with no args for parameter explanations'
+    if len(argv) < 3:
+        print "%s\n\n%s%s" % (usage,
+                            formatDefinitions(defaults, 80),
+                            announcelist_details)
+        return 2
+
+    try:
+        config, args = parseargs(argv[1:], defaults, 2, None)
+        for file in args[1:]:
+            make_meta_file(file, args[0], config, progress = prog)
+    except ValueError, e:
+        print 'error: ' + str(e)
+        print 'run with no args for parameter explanations'
+
+    return 0
+
+sys.exit(main(sys.argv))

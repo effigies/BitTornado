@@ -6,7 +6,7 @@
 import os
 from threading import Event
 from traceback import print_exc
-from BTTree import Info, BTTree
+from BitTornado.BTTree import Info, BTTree
 
 defaults = [
     ('announce_list', '',
@@ -26,24 +26,23 @@ defaults = [
 
 ignore = ['core', 'CVS']
 
-def print_announcelist_details():
-    print """    announce_list = optional list of redundant/backup tracker URLs, in the format:
-           url[,url...][|url[,url...]...]
-                where URLs separated by commas are all tried first
-                before the next group of URLs separated by the pipe is checked.
-                If none is given, it is assumed you don't want one in the metafile.
-                If announce_list is given, clients which support it
-                will ignore the <announce> value.
-           Examples:
-                http://tracker1.com|http://tracker2.com|http://tracker3.com
-                     (tries trackers 1-3 in order)
-                http://tracker1.com,http://tracker2.com,http://tracker3.com
-                     (tries trackers 1-3 in a randomly selected order)
-                http://tracker1.com|http://backup1.com,http://backup2.com
-                     (tries tracker 1 first, then tries between the 2 backups randomly)
+announcelist_details = """announce_list = optional list of redundant/backup tracker URLs, in the format:
+    url[,url...][|url[,url...]...]
+         where URLs separated by commas are all tried first
+         before the next group of URLs separated by the pipe is checked.
+         If none is given, it is assumed you don't want one in the metafile.
+         If announce_list is given, clients which support it
+         will ignore the <announce> value.
+    Examples:
+         http://tracker1.com|http://tracker2.com|http://tracker3.com
+              (tries trackers 1-3 in order)
+         http://tracker1.com,http://tracker2.com,http://tracker3.com
+              (tries trackers 1-3 in a randomly selected order)
+         http://tracker1.com|http://backup1.com,http://backup2.com
+              (tries tracker 1 first, then tries between the 2 backups randomly)
 
-    httpseeds = optional list of http-seed URLs, in the format:
-            url[|url...]"""
+httpseeds = optional list of http-seed URLs, in the format:
+        url[|url...]"""
     
 def make_meta_file(loc, url, params = {}, flag = Event(),
                    progress = lambda x: None, progress_percent = True):

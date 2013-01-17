@@ -8,20 +8,8 @@ from sys import argv,exit
 from os.path import split
 from BitTornado.bencode import bencode, bdecode
 
-
-def give_announce_list(l):
-    list = []
-    for tier in l:
-        for tracker in tier:
-            list+=[tracker,',']
-        del list[-1]
-        list+=['|']
-    del list[-1]
-    liststring = ''
-    for i in list:
-        liststring+=i
-    return liststring
-
+def format_announce_list(l):
+    return '|'.join(','.join(tier) for tier in l)
 
 if len(argv) < 3:
     a,b = split(argv[0])
@@ -35,7 +23,7 @@ h.close()
 
 print 'new announce: ' + source_metainfo['announce']
 if source_metainfo.has_key('announce-list'):
-    print 'new announce-list: ' + give_announce_list(source_metainfo['announce-list'])
+    print 'new announce-list: ' + format_announce_list(source_metainfo['announce-list'])
 
 
 for f in argv[2:]:
@@ -45,7 +33,7 @@ for f in argv[2:]:
     print 'old announce for %s: %s' % (f, metainfo['announce'])
     metainfo['announce'] = source_metainfo['announce']
     if metainfo.has_key('announce-list'):
-        print 'old announce-list for %s: %s' % (f, give_announce_list(metainfo['announce-list']))
+        print 'old announce-list for %s: %s' % (f, format_announce_list(metainfo['announce-list']))
     if source_metainfo.has_key('announce-list'):
         metainfo['announce-list'] = source_metainfo['announce-list']
     elif metainfo.has_key('announce-list'):

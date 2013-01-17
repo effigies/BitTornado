@@ -298,22 +298,38 @@ class BTTree:
             raise Exception("Entry is neither file nor directory: %s"
                             % loc)
 
-    def makeInfo(self, **params):
-        """Generate an Info data structure from a BTTree"""
-
-        # 
+    def initInfo(self, **params):
         if self.path == []:
             name = os.path.split(self.loc)[-1]
         else:
             name = self.path[0]
 
-        info = Info(    name,
-                        self.size,
-                        **params)
+        return Info(name, self.size, **params)
+
+    def makeInfo(self, **params):
+        """Generate an Info data structure from a BTTree"""
+
+        info = self.initInfo(**params)
 
         self.updateInfo(info)
 
         return info
+
+    def addFileToInfos(self, infos):
+        h = open(self.loc,'rb')
+        pos = 0L
+        piece_length = 0
+        for i in infos:
+            piece_length = max(piece_length, i.piece_length)
+            i.add_file_info(self.size, self.path)
+        
+        while pos < self.size:
+            a = min(piece_length, self.size - pos)
+            buf = h.read(a)
+            pos += a
+            [i.add_data(buf) for i in infos]
+        
+        h.close()
 
     def updateInfo(self, info):
         """Add a sub-BTTree to an Info structure
@@ -322,17 +338,7 @@ class BTTree:
             Info	info   - Info structure to update
         """
         if self.subs == []:
-            h = open(self.loc,'rb')
-            pos = 0L
-            info.add_file_info(self.size, self.path)
-            
-            while pos < self.size:
-                a = min(info.piece_length - info.done, self.size - pos)
-                buf = h.read(a)
-                pos += a
-                info.add_data(buf)
-            
-            h.close()
+            self.addFileToInfos((info,))
         
         else:
             for sub in self.subs:
@@ -352,28 +358,14 @@ class BTTree:
             str         target  - target directory
             Info[]	infos   - List of Info's to add current file to
         """
-        info = Info(    self.path[0],
-                        self.size,
-                        params.get('piece_size_pow2'))
+        info = self.initInfo(**params)
         
         # Since append updates the object, while + creates a new one
         infos += [info]
         
         # Add the file pointed to by this BTTree to all infos
         if self.subs == []:
-            h = open(self.loc,'rb')
-            pos = 0L
-            for i in infos:
-                piece_length = max(piece_length, i.piece_length)
-                i.add_file_info(self.size, self.path)
-            
-            while pos < self.size:
-                a = min(piece_length, self.size - pos)
-                buf = h.read(a)
-                pos += a
-                [i.add_data(buf) for i in infos]
-            
-            h.close()
+            self.updateFileInfos(infos)
         
         # Recurse in this directory
         else:

@@ -1,33 +1,87 @@
 #!/usr/bin/env python
-
-# Written by Henry 'Pi' James
+#
+# Replace the suggested filename for the target of a .torrent file
+#
+# 2012 Chris Johnson
+# 
+# Original written by Henry 'Pi' James
 # see LICENSE.txt for license information
 
-from sys import *
-from os.path import *
-from sha import *
-from BitTornado.bencode import *
+import sys
+import os
+import getopt
+from BitTornado.bencode import bencode, bdecode
 
-NAME, EXT = splitext(basename(argv[0]))
-VERSION = '20021119'
+VERSION = '20120601'
 
-print '%s %s - change the suggested filename in a .torrent file' % (NAME, VERSION)
-print
+def rename(fname, newname, verbose = False):
+    metainfo_file = open(fname, 'rb')
+    metainfo = bdecode(metainfo_file.read())
+    metainfo_file.close()
 
-if len(argv) != 3:
-  print '%s file.torrent new.filename.ext' % argv[0]
-  print
-  exit(2) # common exit code for syntax error
+    if verbose:
+        print "%s: %s -> %s" % (fname, metainfo['info']['name'], newname)
 
-metainfo_file = open(argv[1], 'rb')
-metainfo = bdecode(metainfo_file.read())
-metainfo_file.close()
-print 'old filename: %s' % metainfo['info']['name']
-metainfo['info']['name'] = argv[2]
-print 'new filename: %s' % metainfo['info']['name']
-metainfo_file = open(argv[1], 'wb')
-metainfo_file.write(bencode(metainfo))
-metainfo_file.close
-print
-print 'done.'
-print
+    metainfo['info']['name'] = newname
+
+    metainfo_file = open(fname, 'wb')
+    metainfo_file.write(bencode(metainfo))
+    metainfo_file.close
+
+def main(argv):
+    prog, ext = os.path.splitext(os.path.basename(argv[0]))
+    help = """Usage: %s [-v] TORRENT NAME
+       %s [-m] TORRENT [...]
+
+Change the suggested filename in a .torrent file
+
+    --help      display this help and exit
+    --match     set suggested filename to match .torrent file name
+    --verbose   print old and new file name
+    --version   print program version
+    """ % (prog,prog)
+
+    try:
+        opts, args = getopt.getopt(argv[1:], "hmvV",
+                        ["help","match","verbose","version"])
+    except getopt.error, msg:
+        print msg
+        return 0
+
+    verbose     = False
+    match       = False
+
+    for opt, arg in opts:
+        if opt in ('-h','--help'):
+            print help
+            return 0
+        elif opt in ('-m','--match'):
+            match = True
+        elif opt in ('-v','--verbose'):
+            verbose = True
+        elif opt in ('-V','--version'):
+            print "%s %s" % (prog,VERSION)
+            return 0
+
+    if match:
+        if len(args) == 0:
+            print help
+            return 2
+        for fname in args:
+            newname, torrent = os.path.splitext(fname)
+            if torrent == '.torrent':
+                rename(fname, newname, verbose)
+            else:
+                print "%s does not appear to be a .torrent file" % fname
+    else:
+        if len(args) != 2:
+            print help
+            return 2 # common exit code for syntax error
+
+        fname, newname = args
+
+        rename(fname, newname, verbose)
+
+    return 0
+
+sys.exit(main(sys.argv))

@@ -28,7 +28,7 @@ def uniconvertl(srclist, encoding):
         str     - Current string encoding
     
     Return
-    	str[]   - Converted strings
+        str[]   - Converted strings
     """
     r = []
     try:
@@ -46,7 +46,7 @@ def uniconvert(src, encoding):
         str     - Current string encoding
     
     Return
-    	str     - Converted string
+        str     - Converted string
     """
     try:
         return unicode(src, encoding).encode('utf-8')
@@ -112,7 +112,7 @@ class Info:
         """
         if   size > 8L*1024*1024*1024:  # > 8 gig =
             piece_len_exp = 21          #   2 meg pieces
-        elif size > 2*1024*1024*1024:	# > 2 gig =
+        elif size > 2*1024*1024*1024:   # > 2 gig =
             piece_len_exp = 20          #   1 meg pieces
         elif size > 512*1024*1024:      # > 512M =
             piece_len_exp = 19          #   512K pieces
@@ -293,7 +293,7 @@ class BTTree:
                     print problem
             
             # For bittorrent's purposes, size(dir) = size(subs)
-            self.size = sum([sub.size for sub in self.subs])
+            self.size = sum(sub.size for sub in self.subs)
         else:
             raise Exception("Entry is neither file nor directory: %s"
                             % loc)
@@ -335,7 +335,7 @@ class BTTree:
         """Add a sub-BTTree to an Info structure
 
         Parameters
-            Info	info   - Info structure to update
+            Info    info   - Info structure to update
         """
         if self.subs == []:
             self.addFileToInfos((info,))
@@ -354,9 +354,9 @@ class BTTree:
         memory.
         
         Parameters
-            str         tracker - URL of tracker
-            str         target  - target directory
-            Info[]	infos   - List of Info's to add current file to
+            str     tracker - URL of tracker
+            str     target  - target directory
+            Info[]  infos   - List of Info's to add current file to
         """
         info = self.initInfo(**params)
         
@@ -370,7 +370,7 @@ class BTTree:
         # Recurse in this directory
         else:
             for sub in self.subs:
-                sub.buildMetaTree(tracker, target, infos)
+                sub.buildMetaTree(tracker, target, infos, **params)
         
         # Verify we can make our target .torrent file
         target_dir = os.path.split(info.target)[0]

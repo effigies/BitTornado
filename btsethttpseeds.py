@@ -4,38 +4,61 @@
 # multitracker extensions by John Hoffman
 # see LICENSE.txt for license information
 
-from sys import argv,exit
-from os.path import split
+import sys
+import os
+import getopt
 from BitTornado.bencode import bencode, bdecode
 
-if len(argv) < 3:
-    a,b = split(argv[0])
-    print ('Usage: ' + b + ' <http-seeds> file1.torrent [file2.torrent...]')
-    print ('')
-    print ('  Where:')
-    print ('    http-seeds = list of seed URLs, in the format:')
-    print ('           url[|url...] or 0')
-    print ('                if the list is a zero, any http seeds will be stripped.')
-    print ('')
-    exit(2) # common exit code for syntax error
+def main(argv):
+    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    usage = """Usage: %s <http-seeds> file1.torrent [file2.torrent...]
 
-seeds = argv[1]
-if seeds == '0':
-    seedlist = None
-else:
-    seedlist = seeds.split('|')
+  Where:
+    http-seeds = list of seed URLs, in the format:
+        url[|url...] or 0
+            if the list is a zero, any http seeds will be stripped.
+""" % program
 
-for f in argv[2:]:
-    h = open(f, 'rb')
-    metainfo = bdecode(h.read())
-    h.close()
-    if metainfo.has_key('httpseeds'):
-        print 'old http-seed list for %s: %s' % (f, '|'.join(metainfo['httpseeds']))
-        if not seedlist:
-            del metainfo['httpseeds']
-    if seedlist:
-        metainfo['httpseeds'] = seedlist
+    try:
+        opts, args = getopt.getopt(argv[1:], "hv",
+                        ("help","verbose"))
+    except getopt.error, msg:
+        print msg
+        return 1
 
-    h = open(f, 'wb')
-    h.write(bencode(metainfo))
-    h.close()
+    if len(args) < 2:
+        print usage
+        return 2
+    
+    http_seeds = None
+    if args[0] != '0':
+        http_seeds = args[0].split('|')
+
+    verbose         = False
+
+    for opt, arg in opts:
+        if opt in ('-h','--help'):
+            print usage
+            return 0
+        elif opt in ('-v','--verbose'):
+            verbose = True
+
+    for fname in args[1:]:
+        with open(fname, 'rb') as metainfo_file:
+            metainfo = bdecode(metainfo_file.read())
+
+        if 'httpseeds' in metainfo:
+            if verbose:
+                print 'old http-seed list for %s: %s' % (fname,
+                        '|'.join(metainfo['httpseeds']))
+            if http_seeds is None:
+                del metainfo['httpseeds']
+        
+        if http_seeds is not None:
+            metainfo['httpseeds'] = http_seeds
+        
+        with open(fname, 'wb') as metainfo_file:
+            metainfo_file.write(bencode(metainfo))
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

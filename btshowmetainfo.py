@@ -54,25 +54,10 @@ for metainfo_name in argv[1:]:
           % (name,file_length, piece_number, piece_length, last_piece_length)
     print 'announce url..: %s' % metainfo['announce']
     if metainfo.has_key('announce-list'):
-        list = []
-        for tier in metainfo['announce-list']:
-            for tracker in tier:
-                list+=[tracker,',']
-            del list[-1]
-            list+=['|']
-        del list[-1]
-        liststring = ''
-        for i in list:
-            liststring+=i
-        print 'announce-list.: %s' % liststring
+        announce_list = '|'.join(','.join(tier)
+                                for tier in metainfo['announce-list'])
+        print 'announce-list.: %s' % announce_list
     if metainfo.has_key('httpseeds'):
-        list = []
-        for seed in metainfo['httpseeds']:
-            list += [seed,'|']
-        del list[-1]
-        liststring = ''
-        for i in list:
-            liststring+=i
-        print 'http seeds....: %s' % liststring
+        print 'http seeds....: %s' % '|'.join(metainfo['httpseeds'])
     if metainfo.has_key('comment'):
         print 'comment.......: %s' % metainfo['comment']

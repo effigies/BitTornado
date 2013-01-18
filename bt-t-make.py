@@ -587,16 +587,8 @@ class AdvancedDownloadInfo:
             h.close()
             self.annCtl.SetValue(metainfo['announce'])
             if metainfo.has_key('announce-list'):
-                list = []
-                for tier in metainfo['announce-list']:
-                    for tracker in tier:
-                        list += [tracker, ', ']
-                    del list[-1]
-                    list += ['\n']
-                liststring = ''
-                for i in list:
-                    liststring += i
-                self.annListCtl.SetValue(liststring+'\n\n')
+                self.annListCtl.SetValue('\n'.join(', '.join(tier)
+                    for tier in metainfo['announce-list']) + '\n' * 3)
             else:
                 self.annListCtl.SetValue('')
             if external:
@@ -606,16 +598,8 @@ class AdvancedDownloadInfo:
             return
 
     def getannouncelist(self):
-        list = []
-        for t in self.annListCtl.GetValue().split('\n'):
-            tier = []
-            t = t.replace(',',' ')
-            for tr in t.split(' '):
-                if tr != '':
-                    tier += [tr]
-            if len(tier)>0:
-                list.append(tier)
-        return list
+        annList = filter(bool,self.annListCtl.GetValue().split('\n'))
+        return [filter(bool,tier.replace(',',' ').split()) for tier in annList]
     
     def complete(self, x):
         if not self.dirCtl.GetValue():

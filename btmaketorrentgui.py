@@ -13,14 +13,11 @@ if PSYCO.psyco:
     except:
         pass
 
-from sys import argv, version
-
+import sys
+import os
 from BitTornado.BT1.makemetafile import make_meta_file, completedir
 from threading import Event, Thread
 from BitTornado.bencode import bdecode
-import sys
-from os import getcwd
-from os.path import join, isdir
 try:
     from wxPython.wx import *
 except:
@@ -158,32 +155,16 @@ class DownloadInfo:
                 h.close()
                 self.annCtl.SetValue(metainfo['announce'])
                 if metainfo.has_key('announce-list'):
-                    list = []
-                    for tier in metainfo['announce-list']:
-                        for tracker in tier:
-                            list += [tracker, ', ']
-                        del list[-1]
-                        list += ['\n']
-                    liststring = ''
-                    for i in list:
-                        liststring += i
-                    self.annListCtl.SetValue(liststring+'\n\n')
+                    self.annListCtl.SetValue('\n'.join(', '.join(tier)
+                        for tier in metainfo['announce-list']) + '\n' * 3)
                 else:
                     self.annListCtl.SetValue('')
             except:
                 return
 
     def getannouncelist(self):
-        list = []
-        for t in self.annListCtl.GetValue().split('\n'):
-            tier = []
-            t = t.replace(',',' ')
-            for tr in t.split(' '):
-                if tr != '':
-                    tier += [tr]
-            if len(tier)>0:
-                list.append(tier)
-        return list
+        annList = filter(bool,self.annListCtl.GetValue().split('\n'))
+        return [filter(bool,tier.replace(',',' ').split()) for tier in annList]
     
     def complete(self, x):
         if self.dirCtl.GetValue() == '':
@@ -215,7 +196,7 @@ class CompleteDir:
         self.flag = Event()
         self.separatetorrents = False
 
-        if isdir(d):
+        if os.path.isdir(d):
             self.choicemade = Event()
             frame = wxFrame(None, -1, 'BitTorrent make torrent', size = (1,1))
             self.frame = frame
@@ -328,7 +309,7 @@ class CompleteDir:
         self.invokeLater(self.onfile, [f])
 
     def onfile(self, f):
-        self.currentLabel.SetLabel('building ' + join(self.d, f) + '.torrent')
+        self.currentLabel.SetLabel('building ' + os.path.join(self.d, f) + '.torrent')
 
     def onInvoke(self, event):
         if not self.flag.isSet():

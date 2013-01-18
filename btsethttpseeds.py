@@ -30,14 +30,7 @@ for f in argv[2:]:
     metainfo = bdecode(h.read())
     h.close()
     if metainfo.has_key('httpseeds'):
-        list = []
-        for url in metainfo['httpseeds']:
-            list += [url,'|']
-        del list[-1]
-        liststring = ''
-        for i in list:
-            liststring += i
-        print 'old http-seed list for %s: %s' % (f, liststring)
+        print 'old http-seed list for %s: %s' % (f, '|'.join(metainfo['httpseeds']))
         if not seedlist:
             del metainfo['httpseeds']
     if seedlist:

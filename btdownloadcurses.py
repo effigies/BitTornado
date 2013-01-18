@@ -14,19 +14,18 @@ if PSYCO.psyco:
     except:
         pass
 
+import sys
+import os
+import sha
+import time
+import signal
+import random
+import socket
+import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
-from random import seed
-from socket import error as socketerror
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
-from threading import Event
-from os.path import abspath
-from signal import signal, SIGWINCH
-from sha import sha
-from sys import argv, exit
-import sys
-from time import time, strftime
 from BitTornado.clock import clock
 from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
@@ -35,7 +34,6 @@ try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-    from signal import signal, SIGWINCH 
 except:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
@@ -89,8 +87,8 @@ class CursesDisplayer:
         self.errlist = errlist
         self.doneflag = doneflag
         
-        signal(SIGWINCH, self.winch_handler)
-        self.changeflag = Event()
+        signal.signal(signal.SIGWINCH, self.winch_handler)
+        self.changeflag = threading.Event()
 
         self.done = 0
         self.file = ''
@@ -169,13 +167,13 @@ class CursesDisplayer:
         self.display()
 
     def error(self, errormsg):
-        newerrmsg = strftime('[%H:%M:%S] ') + errormsg
+        newerrmsg = time.strftime('[%H:%M:%S] ') + errormsg
         self.errors.append(newerrmsg)
         self.errlist.append(newerrmsg)
         self.display()
 
-    def display(self, dpflag = Event(), fractionDone = None, timeEst = None,
-            downRate = None, upRate = None, activity = None,
+    def display(self, dpflag = threading.Event(), fractionDone = None,
+            timeEst = None, downRate = None, upRate = None, activity = None,
             statistics = None, spew = None, **kws):
 
         inchar = self.fieldwin.getch()
@@ -300,11 +298,11 @@ class CursesDisplayer:
         self.fileSize = fmtsize(size)
         if saveas == '':
             saveas = default
-        self.downloadTo = abspath(saveas)
+        self.downloadTo = os.path.abspath(saveas)
         return saveas
 
 def run(scrwin, errlist, params):
-    doneflag = Event()
+    doneflag = threading.Event()
     d = CursesDisplayer(scrwin, errlist, doneflag)
     try:
         while 1:
@@ -328,7 +326,7 @@ def run(scrwin, errlist, params):
             configdir.deleteOldCacheData(config['expire_cache_data'])
 
             myid = createPeerID()
-            seed(myid)
+            random.seed(myid)
 
             rawserver = RawServer(doneflag, config['timeout_check_interval'],
                                   config['timeout'], ipv6_enable = config['ipv6_enabled'],
@@ -341,7 +339,7 @@ def run(scrwin, errlist, params):
                                     config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
                                     upnp = upnp_type, randomizer = config['random_port'])
                     break
-                except socketerror, e:
+                except socket.error, e:
                     if upnp_type and e == UPnP_ERROR:
                         d.error('WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0
@@ -354,7 +352,7 @@ def run(scrwin, errlist, params):
             if not response:
                 break
 
-            infohash = sha(bencode(response['info'])).digest()
+            infohash = sha.sha(bencode(response['info'])).digest()
             
             dow = BT1Download(d.display, d.finished, d.error, d.error, doneflag,
                             config, response, infohash, myid, rawserver, listen_port,
@@ -390,16 +388,16 @@ def run(scrwin, errlist, params):
 
 
 if __name__ == '__main__':
-    if argv[1:] == ['--version']:
+    if sys.argv[1:] == ['--version']:
         print version
-        exit(0)
-    if len(argv) <= 1:
+        sys.exit(0)
+    if len(sys.argv) <= 1:
         print "Usage: btdownloadcurses.py <global options>\n"
         print get_usage(defaults)
-        exit(1)
+        sys.exit(1)
 
     errlist = []
-    curses_wrapper(run, errlist, argv[1:])
+    curses_wrapper(run, errlist, sys.argv[1:])
 
     if errlist:
        print "These errors occurred during execution:"

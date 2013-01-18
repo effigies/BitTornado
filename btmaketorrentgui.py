@@ -15,8 +15,8 @@ if PSYCO.psyco:
 
 import sys
 import os
+import threading
 from BitTornado.BT1.makemetafile import make_meta_file, completedir
-from threading import Event, Thread
 from BitTornado.bencode import bdecode
 try:
     from wxPython.wx import *
@@ -193,11 +193,11 @@ class CompleteDir:
         self.d = d
         self.a = a
         self.params = params
-        self.flag = Event()
+        self.flag = threading.Event()
         self.separatetorrents = False
 
         if os.path.isdir(d):
-            self.choicemade = Event()
+            self.choicemade = threading.Event()
             frame = wxFrame(None, -1, 'BitTorrent make torrent', size = (1,1))
             self.frame = frame
             panel = wxPanel(frame, -1)
@@ -276,7 +276,7 @@ class CompleteDir:
         EVT_CLOSE(frame, self.done)
         EVT_INVOKE(frame, self.onInvoke)
         frame.Show(True)
-        Thread(target = self.complete).start()
+        threading.Thread(target = self.complete).start()
 
     def complete(self):
         try:

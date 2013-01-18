@@ -12,18 +12,17 @@ if PSYCO.psyco:
     except:
         pass
     
+import sys
+import os
+import sha
+import time
+import random
+import socket
+import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
-from random import seed
-from socket import error as socketerror
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
-from threading import Event
-from os.path import abspath
-from sys import argv, stdout
-import sys
-from sha import sha
-from time import strftime
 from BitTornado.clock import clock
 from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
@@ -85,8 +84,8 @@ class HeadlessDisplayer:
         self.errors.append(errormsg)
         self.display()
 
-    def display(self, dpflag = Event(), fractionDone = None, timeEst = None, 
-            downRate = None, upRate = None, activity = None,
+    def display(self, dpflag = threading.Event(), fractionDone = None,
+            timeEst = None, downRate = None, upRate = None, activity = None,
             statistics = None,  **kws):
         if self.last_update_time + 0.1 > clock() and fractionDone not in (0.0, 1.0) and activity is not None:
             return
@@ -123,14 +122,14 @@ class HeadlessDisplayer:
         print 'share rating:  ', self.shareRating
         print 'seed status:   ', self.seedStatus
         print 'peer status:   ', self.peerStatus
-        stdout.flush()
+        sys.stdout.flush()
         dpflag.set()        
 
     def chooseFile(self, default, size, saveas, dir):
         self.file = '%s (%.1f MB)' % (default, float(size) / (1 << 20))
         if saveas != '':
             default = saveas
-        self.downloadTo = abspath(default)
+        self.downloadTo = os.path.abspath(default)
         return default
 
     def newpath(self, path):
@@ -167,9 +166,9 @@ def run(params):
         configdir.deleteOldCacheData(config['expire_cache_data'])
 
         myid = createPeerID()
-        seed(myid)
+        random.seed(myid)
         
-        doneflag = Event()
+        doneflag = threading.Event()
         def disp_exception(text):
             print text
         rawserver = RawServer(doneflag, config['timeout_check_interval'],
@@ -182,7 +181,7 @@ def run(params):
                                 config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
                                 upnp = upnp_type, randomizer = config['random_port'])
                 break
-            except socketerror, e:
+            except socket.error, e:
                 if upnp_type and e == UPnP_ERROR:
                     print 'WARNING: COULD NOT FORWARD VIA UPnP'
                     upnp_type = 0
@@ -195,7 +194,7 @@ def run(params):
         if not response:
             break
 
-        infohash = sha(bencode(response['info'])).digest()
+        infohash = sha.sha(bencode(response['info'])).digest()
 
         dow = BT1Download(h.display, h.finished, h.error, disp_exception, doneflag,
                         config, response, infohash, myid, rawserver, listen_port,
@@ -226,19 +225,19 @@ def run(params):
         h.failed()
 
 if __name__ == '__main__':
-    if argv[1:] == ['--version']:
+    if sys.argv[1:] == ['--version']:
         print version
         sys.exit(0)
 
     if PROFILER:
         import profile, pstats
         p = profile.Profile()
-        p.runcall(run, argv[1:])
-        log = open('profile_data.'+strftime('%y%m%d%H%M%S')+'.txt','a')
+        p.runcall(run, sys.argv[1:])
+        log = open('profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
         normalstdout = sys.stdout
         sys.stdout = log
 #        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
         pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
         sys.stdout = normalstdout
     else:
-        run(argv[1:])
+        run(sys.argv[1:])

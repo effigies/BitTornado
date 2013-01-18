@@ -14,13 +14,14 @@ if PSYCO.psyco:
     except:
         pass
 
+import sys
+import os
+import time
+import signal
+import threading
 from BitTornado.launchmanycore import LaunchMany
 from BitTornado.download_bt1 import defaults, get_usage
 from BitTornado.parseargs import parseargs
-from threading import Event
-from sys import argv, exit
-from time import time, localtime, strftime
-import sys, os
 from BitTornado import version, report_email
 from BitTornado.ConfigDir import ConfigDir
 
@@ -28,7 +29,6 @@ try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-    from signal import signal, SIGWINCH 
 except:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
@@ -94,8 +94,8 @@ class CursesDisplayer:
         self.scroll_time = 0
         
         self.scrwin = scrwin
-        signal(SIGWINCH, self.winch_handler)
-        self.changeflag = Event()
+        signal.signal(signal.SIGWINCH, self.winch_handler)
+        self.changeflag = threading.Event()
         self._remake_window()
 
     def winch_handler(self, signum, stackframe):
@@ -174,8 +174,8 @@ class CursesDisplayer:
         if 3*len(data) <= self.mainwinh:
             self.scroll_pos = 0
             self.scrolling = False
-        elif self.scroll_time + DOWNLOAD_SCROLL_RATE < time():
-            self.scroll_time = time()
+        elif self.scroll_time + DOWNLOAD_SCROLL_RATE < time.time():
+            self.scroll_time = time.time()
             self.scroll_pos += 1
             self.scrolling = True
             if self.scroll_pos >= 3*len(data)+2:
@@ -195,7 +195,7 @@ class CursesDisplayer:
                     break
             ( name, status, progress, peers, seeds, seedsmsg, dist,
               uprate, dnrate, upamt, dnamt, size, t, msg ) = data[ii]
-            t = fmttime(t)
+            t = time.fmttime(t)
             if t:
                 status = t
             name = ljust(name,self.mainwinw-32)
@@ -254,7 +254,7 @@ class CursesDisplayer:
         return inchar in (ord('q'),ord('Q'))
 
     def message(self, s):
-        self.messages.append(strftime('%x %X - ',localtime(time()))+s)
+        self.messages.append(time.strftime('%x %X - ',time.localtime())+s)
         self._display_messages()
 
     def _display_messages(self):
@@ -277,9 +277,9 @@ def LaunchManyWrapper(scrwin, config):
 
 
 if __name__ == '__main__':
-    if argv[1:] == ['--version']:
+    if sys.argv[1:] == ['--version']:
         print version
-        exit(0)
+        sys.exit(0)
     defaults.extend( [
         ( 'parse_dir_interval', 60,
           "how often to rescan the torrent directory, in seconds" ),
@@ -297,12 +297,12 @@ if __name__ == '__main__':
         defaults.append(('save_options',0,
          "whether to save the current options as the new default configuration " +
          "(only for btlaunchmanycurses.py)"))
-        if len(argv) < 2:
+        if len(sys.argv) < 2:
             print "Usage: btlaunchmanycurses.py <directory> <global options>\n"
             print "<directory> - directory to look for .torrent files (semi-recursive)"
             print get_usage(defaults, 80, configdefaults)
-            exit(1)
-        config, args = parseargs(argv[1:], defaults, 1, 1, configdefaults)
+            sys.exit(1)
+        config, args = parseargs(sys.argv[1:], defaults, 1, 1, configdefaults)
         if config['save_options']:
             configdir.saveConfig(config)
         configdir.deleteOldCacheData(config['expire_cache_data'])
@@ -311,7 +311,7 @@ if __name__ == '__main__':
         config['torrent_dir'] = args[0]
     except ValueError, e:
         print 'error: ' + str(e) + '\nrun with no args for parameter explanations'
-        exit(1)
+        sys.exit(1)
 
     curses_wrapper(LaunchManyWrapper, config)
     if Exceptions:

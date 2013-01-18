@@ -12,12 +12,11 @@ if PSYCO.psyco:
     except:
         pass
 
+import sys
+import os
 from BitTornado.launchmanycore import LaunchMany
 from BitTornado.download_bt1 import defaults, get_usage
 from BitTornado.parseargs import parseargs
-from threading import Event
-from sys import argv, exit
-import sys, os
 from BitTornado import version, report_email
 from BitTornado.ConfigDir import ConfigDir
 
@@ -68,9 +67,9 @@ class HeadlessDisplayer:
 
 
 if __name__ == '__main__':
-    if argv[1:] == ['--version']:
+    if sys.argv[1:] == ['--version']:
         print version
-        exit(0)
+        sys.exit(0)
     defaults.extend( [
         ( 'parse_dir_interval', 60,
           "how often to rescan the torrent directory, in seconds" ),
@@ -88,12 +87,12 @@ if __name__ == '__main__':
         defaults.append(('save_options',0,
          "whether to save the current options as the new default configuration " +
          "(only for btlaunchmany.py)"))
-        if len(argv) < 2:
+        if len(sys.argv) < 2:
             print "Usage: btlaunchmany.py <directory> <global options>\n"
             print "<directory> - directory to look for .torrent files (semi-recursive)"
             print get_usage(defaults, 80, configdefaults)
-            exit(1)
-        config, args = parseargs(argv[1:], defaults, 1, 1, configdefaults)
+            sys.exit(1)
+        config, args = parseargs(sys.argv[1:], defaults, 1, 1, configdefaults)
         if config['save_options']:
             configdir.saveConfig(config)
         configdir.deleteOldCacheData(config['expire_cache_data'])
@@ -102,7 +101,7 @@ if __name__ == '__main__':
         config['torrent_dir'] = args[0]
     except ValueError, e:
         print 'error: ' + str(e) + '\nrun with no args for parameter explanations'
-        exit(1)
+        sys.exit(1)
 
     LaunchMany(config, HeadlessDisplayer())
     if Exceptions:

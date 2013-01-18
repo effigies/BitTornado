@@ -13,34 +13,33 @@ if PSYCO.psyco:
     except:
         pass
 
-from sys import argv, version, exit
-assert version >= '2', "Install Python 2.0 or greater"
+import sys
+import os
+import re
+import sha
+import random
+import socket
+import traceback
+from webbrowser import open_new
+from threading import Event, Thread
+from time import strftime, localtime, sleep
+from StringIO import StringIO
+from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
+from BitTornado.RawServer import RawServer, UPnP_ERROR
+from BitTornado.ConnChoice import *
+from BitTornado.ConfigReader import configReader
+from BitTornado.bencode import bencode, bdecode
+from BitTornado.natpunch import UPnP_test
+from BitTornado.clock import clock
+from BitTornado import version, createPeerID, report_email
+
+assert sys.version >= '2', "Install Python 2.0 or greater"
 
 try:
     from wxPython.wx import *
 except:
     print 'wxPython is either not installed or has not been installed properly.'
-    exit(1)
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
-from BitTornado.RawServer import RawServer, UPnP_ERROR
-from random import seed
-from socket import error as socketerror
-from BitTornado.ConnChoice import *
-from BitTornado.ConfigReader import configReader
-from BitTornado.bencode import bencode, bdecode
-from BitTornado.natpunch import UPnP_test
-from threading import Event, Thread
-from os.path import *
-from os import getcwd
-from time import strftime, time, localtime, sleep
-from BitTornado.clock import clock
-from webbrowser import open_new
-from traceback import print_exc
-from StringIO import StringIO
-from sha import sha
-import re
-import sys, os
-from BitTornado import version, createPeerID, report_email
+    sys.exit(1)
 
 try:
     True
@@ -1990,12 +1989,12 @@ class DownloadInfoFrame:
                 start_dir = self.configfileargs['gui_default_savedir']
             else:
                 start_dir = self.configfileargs['last_saved']
-            if not isdir(start_dir):    # if it's not set properly
+            if not os.path.isdir(start_dir):    # if it's not set properly
                 start_dir = '/'    # yes, this hack does work in Windows
             if dir:
                 start_dir1 = start_dir
-                if isdir(join(start_dir,default)):
-                    start_dir = join(start_dir,default)
+                if os.path.isdir(os.path.join(start_dir,default)):
+                    start_dir = os.path.join(start_dir,default)
                 dl = wxDirDialog(self.frame,
                         'Choose a directory to save to, pick a partial download to resume',
                         defaultPath = start_dir, style = wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON)
@@ -2014,14 +2013,14 @@ class DownloadInfoFrame:
             if d == start_dir:
                 d = start_dir1
             bucket[0] = d
-            d1,d2 = split(d)
+            d1,d2 = os.path.split(d)
             if d2 == default:
                 d = d1
             self.configfile.WriteLastSaved(d)
 
         else:
             bucket[0] = saveas
-            default = basename(saveas)
+            default = os.path.basename(saveas)
 
         self.onChooseFileDone(default, size)
         f.set()
@@ -2031,7 +2030,7 @@ class DownloadInfoFrame:
 
     def onChooseFileDone(self, name, size):
         self.torrentsize = size
-        lname = basename(name)
+        lname = os.path.basename(name)
         self.filename = lname
         self.fileNameText.SetLabel('%s' % (lname))
         self.fileSizeText.SetLabel('(%.2f MiB)' % (float(size) / (1 << 20)))
@@ -2126,7 +2125,7 @@ class DownloadInfoFrame:
 
     def exception(self):
         data = StringIO()
-        print_exc(file = data)
+        traceback.print_exc(file = data)
         print data.getvalue()   # report exception here too
         self.on_errorwindow(data.getvalue())
 
@@ -2252,7 +2251,7 @@ def _next(params, d, doneflag, configfile):
                 break
 
             myid = createPeerID()
-            seed(myid)
+            random.seed(myid)
             
             rawserver = RawServer(doneflag, config['timeout_check_interval'],
                                   config['timeout'], ipv6_enable = config['ipv6_enabled'],
@@ -2265,7 +2264,7 @@ def _next(params, d, doneflag, configfile):
                                     config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
                                     upnp = upnp_type, randomizer = config['random_port'])
                     break
-                except socketerror, e:
+                except socket.error, e:
                     if upnp_type and e == UPnP_ERROR:
                         d.error('WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0
@@ -2279,7 +2278,7 @@ def _next(params, d, doneflag, configfile):
             if not response:
                 break
 
-            infohash = sha(bencode(response['info'])).digest()
+            infohash = sha.sha(bencode(response['info'])).digest()
             
             torrentdata = configfile.getTorrentData(infohash)
             if torrentdata:
@@ -2352,7 +2351,7 @@ def _next(params, d, doneflag, configfile):
     except:
         err = True
         data = StringIO()
-        print_exc(file = data)
+        traceback.print_exc(file = data)
         print data.getvalue()   # report exception here too
         d.errorwindow(data.getvalue())
     try:
@@ -2367,7 +2366,7 @@ def _next(params, d, doneflag, configfile):
 
 
 if __name__ == '__main__':
-    if argv[1:] == ['--version']:
+    if sys.argv[1:] == ['--version']:
         print version
-        exit(0)
-    run(argv[1:])
+        sys.exit(0)
+    run(sys.argv[1:])

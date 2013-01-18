@@ -12,13 +12,11 @@ if PSYCO.psyco:
     except:
         pass
 
-from sys import argv, version
-assert version >= '2', "Install Python 2.0 or greater"
-from BitTornado.BT1.makemetafile import completedir
-from threading import Event, Thread
 import sys
-from os import getcwd
-from os.path import join
+import os
+import threading
+from BitTornado.BT1.makemetafile import completedir
+assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
     from wxPython.wx import *
 except:
@@ -111,7 +109,7 @@ class CompleteDir:
         self.d = d
         self.a = a
         self.pl = pl
-        self.flag = Event()
+        self.flag = threading.Event()
         frame = wxFrame(None, -1, 'BitTorrent make directory', size = wxSize(550, 250))
         self.frame = frame
 
@@ -139,7 +137,7 @@ class CompleteDir:
         EVT_CLOSE(frame, self.done)
         EVT_INVOKE(frame, self.onInvoke)
         frame.Show(True)
-        Thread(target = self.complete).start()
+        threading.Thread(target = self.complete).start()
 
     def complete(self):
         params = {'piece_size_pow2': self.pl}
@@ -167,7 +165,7 @@ class CompleteDir:
         self.invokeLater(self.onfile, [f])
 
     def onfile(self, f):
-        self.currentLabel.SetLabel('building ' + join(self.d, f) + '.torrent')
+        self.currentLabel.SetLabel('building ' + os.path.join(self.d, f) + '.torrent')
 
     def onInvoke(self, event):
         if not self.flag.isSet():

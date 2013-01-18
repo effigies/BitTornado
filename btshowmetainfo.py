@@ -4,30 +4,30 @@
 # modified for multitracker display by John Hoffman
 # see LICENSE.txt for license information
 
-from sys import *
-from os.path import *
-from sha import *
-from BitTornado.bencode import *
+import sys
+import os
+import sha
+from BitTornado.bencode import bencode, bdecode
 
-NAME, EXT = splitext(basename(argv[0]))
+NAME, EXT = os.path.splitext(os.path.basename(sys.argv[0]))
 VERSION = '20030621'
 
 print '%s %s - decode BitTorrent metainfo files' % (NAME, VERSION)
 print
 
-if len(argv) == 1:
-    print '%s file1.torrent file2.torrent file3.torrent ...' % argv[0]
+if len(sys.argv) == 1:
+    print '%s file1.torrent file2.torrent file3.torrent ...' % sys.argv[0]
     print
-    exit(2) # common exit code for syntax error
+    sys.exit(2) # common exit code for syntax error
 
-for metainfo_name in argv[1:]:
+for metainfo_name in sys.argv[1:]:
     metainfo_file = open(metainfo_name, 'rb')
     metainfo = bdecode(metainfo_file.read())
 #    print metainfo
     info = metainfo['info']
-    info_hash = sha(bencode(info))
+    info_hash = sha.sha(bencode(info))
 
-    print 'metainfo file.: %s' % basename(metainfo_name)
+    print 'metainfo file.: %s' % os.path.basename(metainfo_name)
     print 'info hash.....: %s' % info_hash.hexdigest()
     piece_length = info['piece length']
     if info.has_key('length'):

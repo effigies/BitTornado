@@ -13,15 +13,15 @@ if PSYCO.psyco:
     except:
         pass
 
-from sys import argv, platform, version
-assert version >= '2', "Install Python 2.0 or greater"
+import sys
+import os
+import shutil
+import threading
+import traceback
 from BitTornado.BT1.makemetafile import make_meta_file
-from threading import Event, Thread, Lock
 from BitTornado.bencode import bencode,bdecode
-import sys, os, shutil
-from os import getcwd, listdir
-from os.path import join, isdir
-from traceback import print_exc
+
+assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
     from wxPython.wx import *
 except:
@@ -36,7 +36,7 @@ except:
 
 basepath=os.path.abspath(os.path.dirname(sys.argv[0]))
 
-if platform == 'win32':
+if sys.platform == 'win32':
     DROP_HERE = '(drop here)'
 else:
     DROP_HERE = ''
@@ -61,9 +61,9 @@ class BasicDownloadInfo:
         self.config = config
         self.calls = calls
         
-        self.uiflag = Event()
-        self.cancelflag = Event()
-        self.switchlock = Lock()
+        self.uiflag = threading.Event()
+        self.cancelflag = threading.Event()
+        self.switchlock = threading.Lock()
         self.working = False
         self.queue = []
         wxInitAllImageHandlers()
@@ -138,7 +138,7 @@ class BasicDownloadInfo:
         self.refresh_thostlist()
         self._set_thost()
 
-        if platform == 'win32':
+        if sys.platform == 'win32':
             self.dropTargetPtr.DragAcceptFiles(True)
             EVT_DROP_FILES(self.dropTargetPtr, self.selectdrop)
  
@@ -212,7 +212,7 @@ class BasicDownloadInfo:
         if self.working:
             self.working = False
             self.cancelflag.set()
-            self.cancelflag = Event()
+            self.cancelflag = threading.Event()
             self.queue = []
             self.statustext.SetLabel('CANCELED')
             self.calls['dropTargetError']()
@@ -227,7 +227,7 @@ class BasicDownloadInfo:
     def refresh_thostlist(self):
         l = []
         d = 0
-        for f in listdir(join(basepath,'thosts')):
+        for f in os.listdir(os.path.join(basepath,'thosts')):
             if f[-6:].lower() == '.thost':
                 l.append(f)
                 if f == self.thostselection:
@@ -257,7 +257,7 @@ class BasicDownloadInfo:
                 self.thostselection = self.thostlist[n-1]
 
     def _set_thost(self):
-        self._announcecopy(join(join(basepath,'thosts'),self.thostselection))
+        self._announcecopy(os.path.join(basepath,'thosts',self.thostselection))
         self.calls['setCurrentTHost'](self.thostselection)
 
     def onInvoke(self, event):
@@ -314,9 +314,9 @@ class AdvancedDownloadInfo:
         self.config = config
         self.calls = calls
         
-        self.uiflag = Event()
-        self.cancelflag = Event()
-        self.switchlock = Lock()
+        self.uiflag = threading.Event()
+        self.cancelflag = threading.Event()
+        self.switchlock = threading.Lock()
         self.working = False
         self.queue = []
         wxInitAllImageHandlers()
@@ -487,7 +487,7 @@ class AdvancedDownloadInfo:
         self.refresh_thostlist()
         self._set_thost()
 
-        if platform == 'win32':
+        if sys.platform == 'win32':
             self.dropTargetPtr.DragAcceptFiles(True)
             EVT_DROP_FILES(self.dropTargetPtr, self.selectdrop)
             self.groupSizer1Box.DragAcceptFiles(True)
@@ -661,15 +661,15 @@ class AdvancedDownloadInfo:
         if self.working:
             self.working = False
             self.cancelflag.set()
-            self.cancelflag = Event()
+            self.cancelflag = threading.Event()
             self.queue = []
             self.statustext.SetLabel('CANCELED')
             self.calls['dropTargetError']()
         self.switchlock.release()
 
     def selectDropTarget(self, x):
-        dl = wxFileDialog (self.frame, 'Choose image to use', join(basepath,'targets'),
-                        join(join(basepath,'targets'), self.config['target']),
+        dl = wxFileDialog (self.frame, 'Choose image to use', os.path.join(basepath,'targets'),
+                        os.path.join(basepath,'targets', self.config['target']),
                         'Supported images (*.bmp,*.gif)|*.*', wxOPEN|wxHIDE_READONLY)
         if dl.ShowModal() == wxID_OK:
             try:
@@ -687,7 +687,7 @@ class AdvancedDownloadInfo:
     def refresh_thostlist(self):
         l = []
         d = 0
-        for f in listdir(join(basepath,'thosts')):
+        for f in os.listdir(os.path.join(basepath,'thosts')):
             if f[-6:].lower() == '.thost':
                 l.append(f)
                 if f == self.thostselection:
@@ -734,7 +734,7 @@ class AdvancedDownloadInfo:
                 self._set_thost()
 
     def _set_thost(self):
-        self._announcecopy(join(join(basepath,'thosts'),self.thostselection))
+        self._announcecopy(os.path.join(basepath,'thosts',self.thostselection))
         self.calls['setCurrentTHost'](self.thostselection)
 
     def set_default_thost(self, x):
@@ -786,7 +786,7 @@ class AdvancedDownloadInfo:
         else:
             d = '.thost'
         dl = wxFileDialog (self.frame, 'Save tracker data as',
-                           join(basepath,'thosts'), d, '*.thost',
+                           os.path.join(basepath,'thosts'), d, '*.thost',
                            wxSAVE|wxOVERWRITE_PROMPT)
         if dl.ShowModal() != wxID_OK:
             return
@@ -809,7 +809,7 @@ class AdvancedDownloadInfo:
             dlg.Destroy()
             return
         dlg.Destroy()
-        os.remove(join(join(basepath,'thosts'),self.thostselection))
+        os.remove(os.path.join(basepath,'thosts',self.thostselection))
         self.thostselection = None
         self.refresh_thostlist()
 
@@ -871,7 +871,7 @@ class MakeMetafile:
         self.call = external
 #        self.uiflag = external.uiflag
         self.uiflag = external.cancelflag
-        Thread(target = self.complete).start()
+        threading.Thread(target = self.complete).start()
 
     def complete(self):
         try:
@@ -882,7 +882,7 @@ class MakeMetafile:
         except (OSError, IOError), e:
             self.failed(e)
         except Exception, e:
-            print_exc()
+            traceback.print_exc()
             self.failed(e)
 
     def failed(self, e):
@@ -994,16 +994,16 @@ class T_make:
 
     def _dropTargetRead(self, new):
         a,b = os.path.split(new)
-        if a and a != join(basepath,'targets'):
-            if a != join(basepath,'targets'):
+        if a and a != os.path.join(basepath,'targets'):
+            if a != os.path.join(basepath,'targets'):
                 b1,b2 = os.path.splitext(b)
                 z = 0
-                while os.path.isfile(join(join(basepath,'targets'),b)):
+                while os.path.isfile(os.path.join(basepath,'targets',b)):
                     z += 1
                     b = b1+'('+str(z)+')'+b2
-                shutil.copyfile(newname,join(join(basepath,'targets'),b))
+                shutil.copyfile(newname,os.path.join(basepath,'targets',b))
             new = b
-        name = join(join(basepath,'targets'),new)
+        name = os.path.join(basepath,'targets',new)
         garbage, e = os.path.splitext(new.lower())
         if e == '.gif':
             bmp = wxBitmap(name, wxBITMAP_TYPE_GIF)

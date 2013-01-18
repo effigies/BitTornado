@@ -7,40 +7,14 @@
 import sys
 import os
 import getopt
-from BitTornado.bencode import bencode, bdecode
 from BitTornado.BT1.makemetafile import announcelist_details
+from BitTornado.reannounce import reannounce
 
 announce_details = """
   Where:
     announce = tracker URL
         Example: http://www.tracker.com:6699/announce
 """
-
-def reannounce(fname, announce, announce_list = None, verbose = False):
-    metainfo_file = open(fname, 'rb')
-    metainfo = bdecode(metainfo_file.read())
-    metainfo_file.close()
-
-    if verbose:
-        print 'old announce for %s: %s' % (fname, metainfo['announce'])
-    
-    metainfo['announce'] = announce
-    
-    if metainfo.has_key('announce-list'):
-        if verbose:
-            print 'old announce-list for %s: %s' % (fname,
-                '|'.join(','.join(tier) for tier in metainfo['announce-list']))
-        if announce_list is not None:
-            metainfo['announce-list'] = announce_list
-        else:
-            try:
-                del metainfo['announce-list']
-            except:
-                pass
-            
-    metainfo_file = open(fname, 'wb')
-    metainfo_file.write(bencode(metainfo))
-    metainfo_file.close()
 
 def main(argv):
     program, ext = os.path.splitext(os.path.basename(argv[0]))

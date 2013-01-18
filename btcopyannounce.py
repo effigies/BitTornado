@@ -4,44 +4,53 @@
 # multitracker extensions by John Hoffman
 # see LICENSE.txt for license information
 
-from sys import argv,exit
-from os.path import split
-from BitTornado.bencode import bencode, bdecode
+import sys
+import os
+import getopt
+from BitTornado.bencode import bdecode
+from BitTornado.reannounce import reannounce
 
-def format_announce_list(l):
-    return '|'.join(','.join(tier) for tier in l)
+def main(argv):
+    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    usage = "Usage: %s <source.torrent> <file1.torrent> " \
+            "[file2.torrent...]" % program
+    desc = 'copies announce information from source to all specified torrents'
 
-if len(argv) < 3:
-    a,b = split(argv[0])
-    print 'Usage: ' + b + ' <source.torrent> <file1.torrent> [file2.torrent...]'
-    print 'copies announce information from source to all specified torrents'
-    exit(2) # common exit code for syntax error
+    try:
+        opts, args = getopt.getopt(argv[1:], "hv",
+                        ("help", "verbose"))
+    except getopt.error, msg:
+        print msg
+        return 1
 
-h = open(argv[1], 'rb')
-source_metainfo = bdecode(h.read())
-h.close()
+    if len(args) < 2:
+        print "%s\n%s\n" % usage, desc
+        return 2
 
-print 'new announce: ' + source_metainfo['announce']
-if source_metainfo.has_key('announce-list'):
-    print 'new announce-list: ' + format_announce_list(source_metainfo['announce-list'])
+    with open(args[0],'rb') as metainfo_file:
+        source_metainfo = bdecode(metainfo_file.read())
+    
+    verbose = False
+
+    for opt, arg in opts:
+        if opt in ('-h','--help'):
+            print "%s\n%s\n" % usage, desc
+            return 0
+        elif opt in ('-v','--verbose'):
+            verbose = True
+
+    announce = source_metainfo['announce']
+    announce_list = source_metainfo.get('announce-list')
+
+    if verbose:
+        print 'new announce: ' + announce
+        if announce_list:
+            print 'new announce-list: ' +
+                '|'.join(','.join(tier) for tier in announce_list)
 
 
-for f in argv[2:]:
-    h = open(f, 'rb')
-    metainfo = bdecode(h.read())
-    h.close()
-    print 'old announce for %s: %s' % (f, metainfo['announce'])
-    metainfo['announce'] = source_metainfo['announce']
-    if metainfo.has_key('announce-list'):
-        print 'old announce-list for %s: %s' % (f, format_announce_list(metainfo['announce-list']))
-    if source_metainfo.has_key('announce-list'):
-        metainfo['announce-list'] = source_metainfo['announce-list']
-    elif metainfo.has_key('announce-list'):
-        try:
-            del metainfo['announce-list']
-        except:
-            pass
-        
-    h = open(f, 'wb')
-    h.write(bencode(metainfo))
-    h.close()
+    for fname in args[1:]:
+        reannounce(fname, announce, announce_list, verbose)
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

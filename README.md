@@ -1,3 +1,23 @@
+BitTornado
+==========
+
+BitTornado is a fork of the original Python BitTorrent distribution, made by
+John Hoffman to add some experimental features, most (if not all) of which are
+now standard in other clients and trackers. The last release was made in 2006,
+so it cannot be considered an active project, but it has the advantage of being
+an accessible Python library, as well as having some simple tools for editing
+.torrent files.
+
+I am not maintaining this project in a particularly active sense, but I have
+made a few changes for my own use in other projects that I've reincorporated
+into this library, and I have done a little cleaning of code. Obviously feel
+free to fork, but please also consider making pull requests. I can't say I'll
+respond quickly, but I would like to incorporate all the improvements and
+cleanups others make.
+
+Original README.txt
+===================
+
 BitTorrent is a tool for distributing files. It's extremely 
 easy to use - downloads are started by clicking on hyperlinks.
 Whenever more than one person is downloading at once 
@@ -9,7 +29,7 @@ upload capacity.
 
 Windows web browser support is added by running an installer. 
 A prebuilt one is available, but instructions for building it 
-yourself are in BUILD.windows.txt
+yourself are in `BUILD.windows.txt`
 
 Instructions for Unix installation are in INSTALL.unix.txt
 
@@ -26,9 +46,9 @@ is very small, so you only need one for all your files.
 
 To run a tracker, execute the command bttrack.py Here is an example -
 
-./bttrack.py --port 6969 --dfile dstate
+    ./bttrack.py --port 6969 --dfile dstate
 
---dfile is where persistent information is kept on the tracker across 
+`--dfile` is where persistent information is kept on the tracker across 
 invocations. It makes everything start working again immediately if 
 you restart the tracker. A new one will be created if it doesn't exist 
 already.
@@ -39,35 +59,35 @@ ip number or dns name of it.
 The tracker outputs web logs to standard out. You can get information 
 about the files it's currently serving by getting its index page. 
 
-2) create a metainfo file using btmakemetafile.py
+2) create a metainfo file using `btmakemetafile.py`
 
 To generate a metainfo file, run the publish btmakemetafile and give 
 it the file you want metainfo for and the url of the tracker
 
-./btmakemetafile.py http://my.tracker:6969/announce myfile.ext
+    ./btmakemetafile.py http://my.tracker:6969/announce myfile.ext
 
-This will generate a file called myfile.ext.torrent
+This will generate a file called `myfile.ext.torrent`
 
 Make sure to include the port number in the tracker url if it isn't 80.
 
 This command may take a while to scan over the whole file hashing it.
 
-The /announce path is special and hard-coded into the tracker. 
+The `/announce` path is special and hard-coded into the tracker. 
 Make sure to give the domain or ip your tracker is on instead of 
 my.tracker.
 
 You can use either a dns name or an IP address in the tracker url.
 
-3) associate .torrent with application/x-bittorrent on your web server
+3) associate `.torrent` with `application/x-bittorrent` on your web server
 
 The way you do this is dependent on the particular web server you're using.
 
 You must have a web server which can serve ordinary static files and is 
 addressable from the internet at large.
 
-4) put the newly made .torrent file on your web server
+4) put the newly made `.torrent` file on your web server
 
-Note that the file name you choose on the server must end in .torrent, so 
+Note that the file name you choose on the server must end in `.torrent`, so 
 it gets associated with the right mimetype.
 
 5) put up a static page which links to the location you uploaded to in step 4
@@ -79,12 +99,12 @@ The file you uploaded in step 4 is linked to using an ordinary url.
 You have to run a downloader which already has the complete file, 
 so new downloaders have a place to get it from. Here's an example -
 
-./btdownloadheadless.py --url http://my.server/myfile.torrent --saveas myfile.ext
+    ./btdownloadheadless.py --url http://my.server/myfile.torrent --saveas myfile.ext
 
 Make sure the saveas argument points to the already complete file.
 
 If you're running the complete downloader on the same machine or LAN as 
-the tracker, give a --ip parameter to the complete downloader. The --ip 
+the tracker, give a `--ip` parameter to the complete downloader. The `--ip` 
 parameter can be either an IP address or DNS name.
 
 BitTorrent defaults to port 6881. If it can't use 6881, (probably because 

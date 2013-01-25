@@ -1,6 +1,8 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import sys
+import time
 import socket
 from errno import EWOULDBLOCK, ECONNREFUSED, EHOSTUNREACH
 try:
@@ -9,18 +11,11 @@ try:
 except ImportError:
     from selectpoll import poll, error, POLLIN, POLLOUT, POLLERR, POLLHUP
     timemult = 1
-from time import sleep
 from clock import clock
-import sys
 from random import shuffle, randrange
 from natpunch import UPnP_open_port, UPnP_close_port
 # from BT1.StreamCheck import StreamCheck
 # import inspect
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 all = POLLIN | POLLOUT
 
@@ -280,7 +275,7 @@ class SocketHandler:
 
 
     def _sleep(self):
-        sleep(1)
+        time.sleep(1)
         
     def handle_events(self, events):
         for sock, event in events:

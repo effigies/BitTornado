@@ -21,19 +21,11 @@ from natpunch import UPnP_test
 from random import seed
 from socket import error as socketerror
 from threading import Event
-from sys import argv, exit
 import sys, os
 from clock import clock
 from __init__ import createPeerID, mapbase64, version
 from cStringIO import StringIO
 from traceback import print_exc
-
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 
 def fmttime(n):
     try:

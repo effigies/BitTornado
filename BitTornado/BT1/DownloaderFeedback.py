@@ -5,12 +5,6 @@ from cStringIO import StringIO
 from urllib import quote
 from threading import Event
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 INIT_STATE = (('R','R+'),('L','L+'))
 
 class DownloaderFeedback:

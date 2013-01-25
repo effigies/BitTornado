@@ -1,22 +1,15 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import sys
+import threading
 from bisect import insort
 from SocketHandler import SocketHandler, UPnP_ERROR
 import socket
 from cStringIO import StringIO
 from traceback import print_exc
 from select import error
-from threading import Thread, Event
-from time import sleep
 from clock import clock
-import sys
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 
 def autodetect_ipv6():
     try:
@@ -45,7 +38,7 @@ READSIZE = 32768
 class RawServer:
     def __init__(self, doneflag, timeout_check_interval, timeout, noisy = True,
                  ipv6_enable = True, failfunc = lambda x: None, errorfunc = None,
-                 sockethandler = None, excflag = Event()):
+                 sockethandler = None, excflag = threading.Event()):
         self.timeout_check_interval = timeout_check_interval
         self.timeout = timeout
         self.servers = {}
@@ -58,7 +51,7 @@ class RawServer:
         self.exccount = 0
         self.funcs = []
         self.externally_added = []
-        self.finished = Event()
+        self.finished = threading.Event()
         self.tasks_to_kill = []
         self.excflag = excflag
         

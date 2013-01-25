@@ -3,11 +3,6 @@
 
 from random import randrange, shuffle
 from BitTornado.clock import clock
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 class PiecePicker:
     def __init__(self, numpieces,

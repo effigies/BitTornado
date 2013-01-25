@@ -1,13 +1,8 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-from random import randrange, shuffle
+import random
 from BitTornado.clock import clock
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 class Choker:
     def __init__(self, config, schedule, picker, done = lambda: False):
@@ -33,7 +28,7 @@ class Choker:
             to_close = []
             count = self.config['min_uploads']-self.last_preferred
             if count > 0:   # optimization
-                shuffle(cons)
+                random.shuffle(cons)
             for c in cons:
                 i = self.picker.next_have(self.connections[c], count > 0)
                 if i is None:
@@ -99,7 +94,7 @@ class Choker:
 
     def connection_made(self, connection, p = None):
         if p is None:
-            p = randrange(-2, len(self.connections) + 1)
+            p = random.randrange(-2, len(self.connections) + 1)
         self.connections.insert(max(p, 0), connection)
         self._rechoke()
 

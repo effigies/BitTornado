@@ -1,19 +1,6 @@
 # Written by Bram Cohen, Uoti Urpala, and John Hoffman
 # see LICENSE.txt for license information
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-    bool = lambda x: not not x
-
-try:
-    sum([1])
-    negsum = lambda a: len(a)-sum(a)
-except:
-    negsum = lambda a: reduce(lambda x,y: x+(not y), a, 0)
-    
 def _int_to_booleans(x):
     r = []
     for i in range(8):
@@ -52,7 +39,7 @@ class Bitfield:
                     raise ValueError
                 del r[-extra:]
             self.array = r
-            self.numfalse = negsum(r)
+            self.numfalse = len(r) - sum(r)
         else:
             self.array = [False] * length
             self.numfalse = length

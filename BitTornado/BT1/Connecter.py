@@ -5,12 +5,6 @@ from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
 from binascii import b2a_hex
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 DEBUG1 = False
 DEBUG2 = False
 

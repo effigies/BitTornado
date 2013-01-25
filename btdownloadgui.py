@@ -17,12 +17,12 @@ import sys
 import os
 import re
 import sha
+import time
 import random
 import socket
+import threading
 import traceback
 from webbrowser import open_new
-from threading import Event, Thread
-from time import strftime, localtime, sleep
 from StringIO import StringIO
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
@@ -33,19 +33,11 @@ from BitTornado.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import version, createPeerID, report_email
 
-assert sys.version >= '2', "Install Python 2.0 or greater"
-
 try:
     from wxPython.wx import *
 except:
     print 'wxPython is either not installed or has not been installed properly.'
     sys.exit(1)
-
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 PROFILER = False
 WXPROFILER = False
@@ -129,7 +121,7 @@ class DownloadInfoFrame:
             self.flag = flag
             self.configfile = configfile
             self.configfileargs = configfile.config
-            self.uiflag = Event()
+            self.uiflag = threading.Event()
             self.fin = False
             self.aboutBox = None
             self.detailBox = None
@@ -786,19 +778,19 @@ class DownloadInfoFrame:
             panel.SetAutoLayout(True)
 
             def donatelink(self):
-                Thread(target = open_new('https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=bram@bitconjurer.org&item_name=BitTorrent&amount=5.00&submit=donate')).start()
+                threading.Thread(target = open_new('https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=bram@bitconjurer.org&item_name=BitTorrent&amount=5.00&submit=donate')).start()
             EVT_LEFT_DOWN(linkDonate, donatelink)
             def aboutlink(self):
-                Thread(target = open_new('http://bitconjurer.org/BitTorrent/')).start()
+                threading.Thread(target = open_new('http://bitconjurer.org/BitTorrent/')).start()
             EVT_LEFT_DOWN(babble2, aboutlink)
             def shadlink(self):
-                Thread(target = open_new('http://www.bittornado.com/')).start()
+                threading.Thread(target = open_new('http://www.bittornado.com/')).start()
             EVT_LEFT_DOWN(babble3, shadlink)
             def explink(self):
-                Thread(target = open_new('http://ei.kefro.st/projects/btclient/')).start()
+                threading.Thread(target = open_new('http://ei.kefro.st/projects/btclient/')).start()
             EVT_LEFT_DOWN(babble4, explink)
             def licenselink(self):
-                Thread(target = open_new('http://ei.kefro.st/projects/btclient/LICENSE.TXT')).start()
+                threading.Thread(target = open_new('http://ei.kefro.st/projects/btclient/LICENSE.TXT')).start()
             EVT_LEFT_DOWN(babble6, licenselink)
             EVT_LEFT_DOWN(credits, self.credits)
 
@@ -1002,7 +994,7 @@ class DownloadInfoFrame:
                 detailSizer.Add(StaticText('creation date :'))
                 try:
                     detailSizer.Add(StaticText(
-                        strftime('%x %X',localtime(metainfo['creation date']))))
+                        time.strftime('%x %X',time.localtime(metainfo['creation date']))))
                 except:
                     try:
                         detailSizer.Add(StaticText(metainfo['creation date']))
@@ -1091,7 +1083,7 @@ class DownloadInfoFrame:
 
             def trackerurl(self, turl = turl):
                 try:
-                    Thread(target = open_new(turl)).start()
+                    threading.Thread(target = open_new(turl)).start()
                 except:
                     pass
             EVT_LEFT_DOWN(trackerUrl, trackerurl)
@@ -1561,7 +1553,7 @@ class DownloadInfoFrame:
             self.exception()
 
 
-    def updateStatus(self, dpflag = Event(), fractionDone = None,
+    def updateStatus(self, dpflag = threading.Event(), fractionDone = None,
             timeEst = None, downRate = None, upRate = None,
             activity = None, statistics = None, spew = None, sizeDone = None,
             **kws):
@@ -1972,12 +1964,12 @@ class DownloadInfoFrame:
             self.errorText.SetLabel(errormsg)
             self.lastError = clock()
         else:
-            self.errorText.SetLabel(strftime('ERROR (%x %X) -\n') + errormsg)
+            self.errorText.SetLabel(time.strftime('ERROR (%x %X) -\n') + errormsg)
             self.lastError = clock()
 
 
     def chooseFile(self, default, size, saveas, dir):
-        f = Event()
+        f = threading.Event()
         bucket = [None]
         self.invokeLater(self.onChooseFile, [default, bucket, f, size, dir, saveas])
         f.wait()
@@ -2166,7 +2158,7 @@ class DownloadInfoFrame:
             sizer.Add(linkMail)
 
             def maillink(self):
-                Thread(target = open_new("mailto:" + report_email
+                threading.Thread(target = open_new("mailto:" + report_email
                                          + "?subject=autobugreport")).start()
             EVT_LEFT_DOWN(linkMail, maillink)
 
@@ -2188,7 +2180,7 @@ class btWxApp(wxApp):
         wxApp.__init__(self, x)
 
     def OnInit(self):
-        doneflag = Event()
+        doneflag = threading.Event()
         self.configfile = configReader()
         d = DownloadInfoFrame(doneflag, self.configfile)
         self.SetTopWindow(d.frame)
@@ -2200,7 +2192,7 @@ class btWxApp(wxApp):
             if b.ShowModal() == wxID_OK:
                 self.params.append (b.GetPath())
 
-        thread = Thread(target = next, args = [self.params, d, doneflag, self.configfile])
+        thread = threading.Thread(target = next, args = [self.params, d, doneflag, self.configfile])
         thread.setDaemon(False)
         thread.start()
         return 1
@@ -2210,7 +2202,7 @@ def run(params):
         import profile, pstats
         p = profile.Profile()
         p.runcall(_run, params)
-        log = open('profile_data_wx.'+strftime('%y%m%d%H%M%S')+'.txt','a')
+        log = open('profile_data_wx.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
         normalstdout = sys.stdout
         sys.stdout = log
 #        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
@@ -2228,7 +2220,7 @@ def next(params, d, doneflag, configfile):
         import profile, pstats
         p = profile.Profile()
         p.runcall(_next, params, d, doneflag, configfile)
-        log = open('profile_data.'+strftime('%y%m%d%H%M%S')+'.txt','a')
+        log = open('profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
         normalstdout = sys.stdout
         sys.stdout = log
 #        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
@@ -2361,7 +2353,7 @@ def _next(params, d, doneflag, configfile):
     if not d.fin:
         d.failed()
     if err:
-        sleep(3600*24*30)   # this will make the app stick in the task manager,
+        time.sleep(3600*24*30)   # this will make the app stick in the task manager,
                             # but so be it
 
 

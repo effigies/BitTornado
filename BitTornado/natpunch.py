@@ -8,11 +8,6 @@ from traceback import print_exc
 from subnetparse import IP_List
 from clock import clock
 from __init__ import createPeerID
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 DEBUG = False
 

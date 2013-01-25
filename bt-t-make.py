@@ -21,18 +21,11 @@ import traceback
 from BitTornado.BT1.makemetafile import make_meta_file
 from BitTornado.bencode import bencode,bdecode
 
-assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
     from wxPython.wx import *
 except:
     print 'wxPython is either not installed or has not been installed properly.'
     sys.exit(1)
-
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 basepath=os.path.abspath(os.path.dirname(sys.argv[0]))
 

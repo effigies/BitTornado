@@ -7,11 +7,6 @@ from socket import error as socketerror
 from urllib import quote
 from traceback import print_exc
 import Connecter
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 DEBUG = False
 

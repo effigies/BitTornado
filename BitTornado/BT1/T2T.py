@@ -1,18 +1,13 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import sys
+import random
+import threading
 from Rerequester import Rerequester
 from urllib import quote
-from threading import Event
-from random import randrange
 from string import lower
-import sys
 import __init__
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 DEBUG = True
 
@@ -47,10 +42,12 @@ class T2TConnection:
         self.rerequester = Rerequester( 0, myid, hash, [[tracker]], cfg,
             rawserver.add_task, rawserver.add_task, self.errorfunc, excfunc,
             self.addtolist, R_0, R_1, R_0, R_0, R_0, R_0,
-            Event() )
+            threading.Event() )
 
         if self.isactive():
-            rawserver.add_task(self.refresh, randrange(int(self.interval/10), self.interval))
+            rawserver.add_task(self.refresh,
+                                random.randrange(int(self.interval/10),
+                                self.interval))
                                         # stagger announces
 
     def isactive(self):

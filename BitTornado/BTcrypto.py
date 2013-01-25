@@ -12,12 +12,6 @@ except:
 from sha import sha
 
 try:
-    True
-except:
-    True = 1
-    False = 0
-    
-try:
     from Crypto.Cipher import ARC4
     CRYPTO_OK = True
 except:
@@ -99,5 +93,3 @@ class Crypto:
 
     def padding(self):
         return urandom(randrange(PAD_MAX-16)+16)
-     
-        

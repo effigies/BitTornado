@@ -24,12 +24,6 @@ except:
     print 'wxPython is either not installed or has not been installed properly.'
     sys.exit(1)
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 wxEVT_INVOKE = wxNewEventType()
 
 def EVT_INVOKE(win, func):

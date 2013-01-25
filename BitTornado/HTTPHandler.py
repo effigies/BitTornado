@@ -6,11 +6,6 @@ from sys import stdout
 import time
 from clock import clock
 from gzip import GzipFile
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 DEBUG = False
 
@@ -157,7 +152,7 @@ class HTTPHandler:
 
     def log(self, ip, ident, username, header,
             responsecode, length, referrer, useragent):
-        year, month, day, hour, minute, second, a, b, c = time.localtime(time.time())
+        year, month, day, hour, minute, second, a, b, c = time.localtime()
         print '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' % (
             ip, ident, username, day, months[month], year, hour,
             minute, second, header, responsecode, length, referrer, useragent)

@@ -33,12 +33,6 @@ try:
 except ImportError:
     BooleanType = None
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 DEBUG = False
 
 def ini_write(f, d, comment=''):

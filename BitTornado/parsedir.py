@@ -2,15 +2,8 @@
 # see LICENSE.txt for license information
 from bencode import bencode, bdecode
 from BT1.btformats import check_info
-from os.path import exists, isfile
-from sha import sha
-import sys, os
-
-try:
-    True
-except:
-    True = 1
-    False = 0
+import sha
+import os
 
 NOISY = False
 
@@ -90,7 +83,7 @@ def parsedir(directory, parsed, files, blocked,
             ff = open(p, 'rb')
             d = bdecode(ff.read())
             check_info(d['info'])
-            h = sha(bencode(d['info'])).digest()
+            h = sha.sha(bencode(d['info'])).digest()
             new_file[1] = h
             if new_parsed.has_key(h):
                 errfunc('**warning** '+

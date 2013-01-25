@@ -20,12 +20,6 @@ except ImportError:
     def getpid():
         return 1
     
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 mapbase64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 keys = {}
 basekeydata = str(getpid()) + repr(time()) + 'tracker'

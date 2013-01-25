@@ -40,13 +40,6 @@ except:
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
 
-assert sys.version >= '2', "Install Python 2.0 or greater"
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 Exceptions = []
 
 

@@ -1,9 +1,16 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import sys
+import os
+import re
+import time
+import signal
+import random
+import threading
 from BitTornado.parseargs import parseargs, formatDefinitions
 from BitTornado.RawServer import RawServer, autodetect_ipv6, autodetect_socket_style
-from BitTornado.HTTPHandler import HTTPHandler, months, weekdays
+from BitTornado.HTTPHandler import HTTPHandler, months
 from BitTornado.parsedir import parsedir
 from NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.BTcrypto import CRYPTO_OK
@@ -11,33 +18,17 @@ from T2T import T2TList
 from BitTornado.subnetparse import IP_List, ipv6_to_ipv4, to_ipv4, is_valid_ip, is_ipv4
 from BitTornado.iprangeparse import IP_List as IP_Range_List
 from BitTornado.torrentlistparse import parsetorrentlist
-from threading import Event, Thread
 from BitTornado.bencode import bencode, bdecode, Bencached
 from BitTornado.zurllib import urlopen, quote, unquote
 from Filter import Filter
 from urlparse import urlparse
-from os import rename, getpid
-from os.path import exists, isfile
 from cStringIO import StringIO
 from traceback import print_exc
-from time import time, gmtime, strftime, localtime
 from BitTornado.clock import clock
-from random import shuffle, seed, randrange
-from sha import sha
 from types import StringType, IntType, LongType, ListType, DictType
 from binascii import b2a_hex, a2b_hex, a2b_base64
-from string import lower
-import sys, os
-import signal
-import re
 import BitTornado.__init__
 from BitTornado.__init__ import version, createPeerID
-try:
-    True
-except:
-    True = 1
-    False = 0
-    bool = lambda x: not not x
 
 defaults = [
     ('port', 80, "Port to listen on."),
@@ -157,8 +148,8 @@ local_IPs.set_intranet_addresses()
 
 def isotime(secs = None):
     if secs == None:
-        secs = time()
-    return strftime('%Y-%m-%d %H:%M UTC', gmtime(secs))
+        secs = time.time()
+    return time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(secs))
 
 http_via_filter = re.compile(' for ([0-9.]+)\Z')
 
@@ -242,7 +233,7 @@ class Tracker:
             print ('**warning** crypto library not installed,' +
                    ' cannot completely verify encrypted peers')
 
-        if exists(self.dfile):
+        if os.path.exists(self.dfile):
             try:
                 h = open(self.dfile, 'rb')
                 ds = h.read()
@@ -295,7 +286,7 @@ class Tracker:
                 self.times[x][y] = 0
 
         self.trackerid = createPeerID('-T-')
-        seed(self.trackerid)
+        random.seed(self.trackerid)
                 
         self.reannounce_interval = config['reannounce_interval']
         self.save_dfile_interval = config['save_dfile_interval']
@@ -401,7 +392,7 @@ class Tracker:
         url = self.aggregate_forward+'?'+query
         if self.aggregate_password is not None:
             url += '&password='+self.aggregate_password
-        rq = Thread(target = self._aggregate_senddata, args = [url])
+        rq = threading.Thread(target = self._aggregate_senddata, args = [url])
         rq.setDaemon(False)
         rq.start()
 
@@ -754,7 +745,7 @@ class Tracker:
                 bc = self.becache.setdefault(infohash,self.cache_default)
                 cache = [ clock(), bc[0][0].values() + bc[0][1].values() ]
                 self.cached_t[infohash] = cache
-                shuffle(cache[1])
+                random.shuffle(cache[1])
                 cache = cache[1]
 
             data['peers'] = cache[-rsize:]
@@ -796,8 +787,8 @@ class Tracker:
             cache = [ self.cachetime,
                       bc[return_type][0].values()+vv[return_type],
                       bc[return_type][1].values() ]
-            shuffle(cache[1])
-            shuffle(cache[2])
+            random.shuffle(cache[1])
+            random.shuffle(cache[2])
             self.cached[infohash][return_type] = cache
             for rr in xrange(len(self.cached[infohash])):
                 if rr != return_type:
@@ -973,7 +964,7 @@ class Tracker:
 
 
     def natchecklog(self, peerid, ip, port, result):
-        year, month, day, hour, minute, second, a, b, c = localtime(time())
+        year, month, day, hour, minute, second, a, b, c = time.localtime()
         print '%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i 0 - -' % (
             ip, quote(peerid), day, months[month], year, hour, minute, second,
             ip, port, result)
@@ -1113,7 +1104,7 @@ def track(args):
         print 'error: ' + str(e)
         print 'run with no arguments for parameter explanations'
         return
-    r = RawServer(Event(), config['timeout_check_interval'],
+    r = RawServer(threading.Event(), config['timeout_check_interval'],
                   config['socket_timeout'], ipv6_enable = config['ipv6_enabled'])
     t = Tracker(config, r)
     r.bind(config['port'], config['bind'],

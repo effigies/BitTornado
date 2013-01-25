@@ -8,13 +8,6 @@ from urllib import quote
 from traceback import print_exc
 from BitTornado.BTcrypto import Crypto
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-    bool = lambda x: not not x
-
 DEBUG = False
 
 MAX_INCOMPLETE = 8

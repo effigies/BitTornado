@@ -1,14 +1,7 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
-from random import shuffle
-from traceback import print_exc
-try:
-    True
-except:
-    True = 1
-    False = 0
-
+import random
 
 class FileSelector:
     def __init__(self, files, piece_length, bufferdir,
@@ -50,7 +43,6 @@ class FileSelector:
                 assert v >= -1
                 assert v <= 2
         except:
-#           print_exc()            
             return False
         try:
             files_updated = False
@@ -98,7 +90,7 @@ class FileSelector:
             self.new_piece_priority = self._set_piece_priority(self.priority)
 
         if self.new_partials:
-            shuffle(self.new_partials)
+            random.shuffle(self.new_partials)
             for p in self.new_partials:
                 self.picker.requested(p)
         self.new_partials = None
@@ -167,7 +159,7 @@ class FileSelector:
         was_complete = self.storagewrapper.am_I_complete()
         new_piece_priority = self._get_piece_priority_list(new_priority)
         pieces = range(self.numpieces)
-        shuffle(pieces)
+        random.shuffle(pieces)
         new_blocked = []
         new_unblocked = []
         for piece in pieces:

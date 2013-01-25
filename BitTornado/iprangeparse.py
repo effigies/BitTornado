@@ -3,14 +3,6 @@
 
 from bisect import bisect, insort
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-    bool = lambda x: not not x
-
-
 def to_long_ipv4(ip):
     ip = ip.split('.')
     if len(ip) != 4:

@@ -1,21 +1,14 @@
 #written by John Hoffman
 
+import sys
+import socket
 from ConnChoice import *
 from wxPython.wx import *
-from types import IntType, FloatType, StringType
 from download_bt1 import defaults
 from ConfigDir import ConfigDir
-import sys,os
-import socket
 from parseargs import defaultargs
 from BTcrypto import CRYPTO_OK
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-    
 try:
     wxFULL_REPAINT_ON_RESIZE
 except:

@@ -20,13 +20,6 @@ from BitTornado.parseargs import parseargs
 from BitTornado import version, report_email
 from BitTornado.ConfigDir import ConfigDir
 
-assert sys.version >= '2', "Install Python 2.0 or greater"
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 def hours(n):
     if n == 0:
         return 'complete!'

@@ -4,11 +4,6 @@
 from cStringIO import StringIO
 #from RawServer import RawServer
 from BTcrypto import Crypto
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 from BT1.Encrypter import protocol_name
 

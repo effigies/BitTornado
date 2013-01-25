@@ -8,16 +8,6 @@ from CurrentRateMeasure import Measure
 from cStringIO import StringIO
 from math import sqrt
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-try:
-    sum([1])
-except:
-    sum = lambda a: reduce(lambda x,y: x+y, a, 0)
-
 DEBUG = False
 
 MAX_RATE_PERIOD = 20.0

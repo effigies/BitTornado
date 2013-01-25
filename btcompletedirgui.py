@@ -16,18 +16,11 @@ import sys
 import os
 import threading
 from BitTornado.BT1.makemetafile import completedir
-assert sys.version >= '2', "Install Python 2.0 or greater"
 try:
     from wxPython.wx import *
 except:
     print 'wxPython is either not installed or has not been installed properly.'
     sys.exit(1)
-
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 wxEVT_INVOKE = wxNewEventType()
 

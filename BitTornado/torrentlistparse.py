@@ -3,13 +3,6 @@
 
 from binascii import unhexlify
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
-
 # parses a list of torrent hashes, in the format of one hash per line in hex format
 
 def parsetorrentlist(filename, parsed):

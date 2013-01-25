@@ -42,7 +42,6 @@ def formatDefinitions(options, COLS, presets = {}):
         s.write('\n\n')
     return s.getvalue()
 
-
 def usage(str):
     raise ValueError(str)
 

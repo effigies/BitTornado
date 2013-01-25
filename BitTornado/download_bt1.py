@@ -1,6 +1,12 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import os
+import sha
+import time
+import random
+import socket
+import threading
 from zurllib import urlopen
 from urlparse import urlparse
 from BT1.btformats import check_message
@@ -24,21 +30,10 @@ from BT1.Statistics import Statistics
 from ConfigDir import ConfigDir
 from bencode import bencode, bdecode
 from natpunch import UPnP_test
-from sha import sha
-from os import path, makedirs, listdir
 from parseargs import parseargs, formatDefinitions, defaultargs
-from socket import error as socketerror
-from random import seed
-from threading import Thread, Event
 from clock import clock
 from BTcrypto import CRYPTO_OK
 from __init__ import createPeerID
-
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 defaults = [
     ('max_uploads', 7,
@@ -188,7 +183,7 @@ def download(params, filefunc, statusfunc, finfunc, errorfunc, doneflag, cols,
         return
     
     myid = createPeerID()
-    seed(myid)
+    random.seed(myid)
 
     rawserver = RawServer(doneflag, config['timeout_check_interval'],
                           config['timeout'], ipv6_enable = config['ipv6_enabled'],
@@ -199,7 +194,7 @@ def download(params, filefunc, statusfunc, finfunc, errorfunc, doneflag, cols,
         listen_port = rawserver.find_and_bind(config['minport'], config['maxport'],
                         config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
                         upnp = upnp_type, randomizer = config['random_port'])
-    except socketerror, e:
+    except socket.error, e:
         failed("Couldn't listen - " + str(e))
         return
 
@@ -207,7 +202,7 @@ def download(params, filefunc, statusfunc, finfunc, errorfunc, doneflag, cols,
     if not response:
         return
 
-    infohash = sha(bencode(response['info'])).digest()
+    infohash = sha.sha(bencode(response['info'])).digest()
 
     d = BT1Download(statusfunc, finfunc, errorfunc, exchandler, doneflag,
                     config, response, infohash, myid, rawserver, listen_port)
@@ -251,7 +246,7 @@ def parse_params(params, presets = {}):
     if args:
         if config['responsefile'] or config['url']:
             raise ValueError,'must have responsefile or url as arg or parameter, not both'
-        if path.isfile(args[0]):
+        if os.path.isfile(args[0]):
             config['responsefile'] = args[0]
         else:
             try:
@@ -338,17 +333,17 @@ class BT1Download:
                        for x in xrange(0, len(self.info['pieces']), 20)]
         self.len_pieces = len(self.pieces)
         self.argslistheader = argslistheader
-        self.unpauseflag = Event()
+        self.unpauseflag = threading.Event()
         self.unpauseflag.set()
         self.downloader = None
         self.storagewrapper = None
         self.fileselector = None
         self.super_seeding_active = False
-        self.filedatflag = Event()
-        self.spewflag = Event()
-        self.superseedflag = Event()
+        self.filedatflag = threading.Event()
+        self.spewflag = threading.Event()
+        self.superseedflag = threading.Event()
         self.whenpaused = None
-        self.finflag = Event()
+        self.finflag = threading.Event()
         self.rerequest = None
         self.tcp_ack_fudge = config['tcp_ack_fudge']
 
@@ -373,9 +368,9 @@ class BT1Download:
 
     def checkSaveLocation(self, loc):
         if self.info.has_key('length'):
-            return path.exists(loc)
+            return os.path.exists(loc)
         for x in self.info['files']:
-            if path.exists(path.join(loc, x['path'][0])):
+            if os.path.exists(os.path.join(loc, x['path'][0])):
                 return True
         return False
                 
@@ -384,9 +379,9 @@ class BT1Download:
         try:
             def make(f, forcedir = False):
                 if not forcedir:
-                    f = path.split(f)[0]
-                if f != '' and not path.exists(f):
-                    makedirs(f)
+                    f = os.path.split(f)[0]
+                if f != '' and not os.path.exists(f):
+                    os.makedirs(f)
 
             if self.info.has_key('length'):
                 file_length = self.info['length']
@@ -408,20 +403,20 @@ class BT1Download:
                 # if this path exists, and no files from the info dict exist, we assume it's a new download and 
                 # the user wants to create a new directory with the default name
                 existing = 0
-                if path.exists(file):
-                    if not path.isdir(file):
+                if os.path.exists(file):
+                    if not os.path.isdir(file):
                         self.errorfunc(file + 'is not a dir')
                         return None
-                    if len(listdir(file)) > 0:  # if it's not empty
+                    if len(os.listdir(file)) > 0:  # if it's not empty
                         for x in self.info['files']:
-                            if path.exists(path.join(file, x['path'][0])):
+                            if os.path.exists(os.path.join(file, x['path'][0])):
                                 existing = 1
                         if not existing:
-                            file = path.join(file, self.info['name'])
-                            if path.exists(file) and not path.isdir(file):
+                            file = os.path.join(file, self.info['name'])
+                            if os.path.exists(file) and not os.path.isdir(file):
                                 if file[-8:] == '.torrent':
                                     file = file[:-8]
-                                if path.exists(file) and not path.isdir(file):
+                                if os.path.exists(file) and not os.path.isdir(file):
                                     self.errorfunc("Can't create dir - " + self.info['name'])
                                     return None
                 make(file, True)
@@ -434,7 +429,7 @@ class BT1Download:
                 for x in self.info['files']:
                     n = file
                     for i in x['path']:
-                        n = path.join(n, i)
+                        n = os.path.join(n, i)
                     files.append((n, x['length']))
                     make(n)
         except OSError, e:

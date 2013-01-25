@@ -6,12 +6,6 @@ from socket import error as socketerror
 from traceback import print_exc
 from BitTornado.BTcrypto import Crypto, CRYPTO_OK
 
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 CHECK_PEER_ID_ENCRYPTED = True
 
 protocol_name = 'BitTorrent protocol'

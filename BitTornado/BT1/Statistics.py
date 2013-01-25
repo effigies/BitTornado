@@ -1,12 +1,7 @@
 # Written by Edward Keyes
 # see LICENSE.txt for license information
 
-from threading import Event
-try:
-    True
-except:
-    True = 1
-    False = 0
+import threading
 
 class Statistics_Response:
     pass    # empty class
@@ -35,7 +30,7 @@ class Statistics:
     def set_dirstats(self, files, piece_length):
         self.piecescomplete = 0
         self.placesopen = 0
-        self.filelistupdated = Event()
+        self.filelistupdated = threading.Event()
         self.filelistupdated.set()
         frange = xrange(len(files))
         self.filepieces = [[] for x in frange]

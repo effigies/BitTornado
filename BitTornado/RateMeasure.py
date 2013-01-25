@@ -2,11 +2,6 @@
 # see LICENSE.txt for license information
 
 from clock import clock
-try:
-    True
-except:
-    True = 1
-    False = 0
 
 FACTOR = 0.999
 

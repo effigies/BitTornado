@@ -1,15 +1,10 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import threading
 from array import array
-from threading import Lock
 # import inspect
-try:
-    True
-except:
-    True = 1
-    False = 0
-    
+
 DEBUG = False
 
 class SingleBuffer:
@@ -61,7 +56,7 @@ class SingleBuffer:
 class BufferPool:
     def __init__(self):
         self.pool = []
-        self.lock = Lock()
+        self.lock = threading.Lock()
         if DEBUG:
             self.count = 0
 

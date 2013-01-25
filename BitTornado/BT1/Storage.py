@@ -13,12 +13,6 @@ except ImportError:
     fsync = lambda x: None
 from bisect import bisect
     
-try:
-    True
-except:
-    True = 1
-    False = 0
-
 DEBUG = False
 
 MAXREADSIZE = 32768

@@ -8,13 +8,9 @@ def _int_to_booleans(x):
         x <<= 1
     return tuple(r)
 
-lookup_table = []
-reverse_lookup_table = {}
-for i in xrange(256):
-    x = _int_to_booleans(i)
-    lookup_table.append(x)
-    reverse_lookup_table[x] = chr(i)
+lookup_table = [_int_to_booleans(i) for i in xrange(256)]
 
+reverse_lookup_table = dict((e,chr(i)) for i,e in enumerate(lookup_table))
 
 class Bitfield:
     def __init__(self, length = None, bitstring = None, copyfrom = None):

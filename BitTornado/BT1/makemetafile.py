@@ -4,7 +4,7 @@
 # see LICENSE.txt for license information
 
 import os
-from threading import Event
+import threading
 from traceback import print_exc
 from BitTornado.BTTree import Info, BTTree
 
@@ -44,7 +44,7 @@ announcelist_details = """announce_list = optional list of redundant/backup trac
 httpseeds = optional list of http-seed URLs, in the format:
         url[|url...]"""
     
-def make_meta_file(loc, url, params = {}, flag = Event(),
+def make_meta_file(loc, url, params = {}, flag = threading.Event(),
                    progress = lambda x: None, progress_percent = True):
     tree = BTTree(loc, [])
 
@@ -62,12 +62,12 @@ def make_meta_file(loc, url, params = {}, flag = Event(),
                             progress_percent = progress_percent,
                             **params)
 
-    if flag.isSet():
+    if flag is not None and flag.isSet():
         return
 
     info.write(tracker = url, **params)
 
-def completedir(dir, url, params = {}, flag = Event(),
+def completedir(dir, url, params = {}, flag = threading.Event(),
                 vc = lambda x: None, fc = lambda x: None):
     files = os.listdir(dir)
     files.sort()

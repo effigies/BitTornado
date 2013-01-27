@@ -6,7 +6,7 @@
 
 import os
 import sha
-from threading import Event
+import threading
 from BitTornado.bencode import bencode
 from BitTornado.BT1.btformats import check_info
 from time import time
@@ -67,7 +67,7 @@ class Info:
         long    totalhashed     - portion of total data hashed
     """
     
-    def __init__(self, source, size, flag = Event(),
+    def __init__(self, source, size, flag = threading.Event(),
                 progress = lambda x: None,
                 progress_percent = True,
                 **params):
@@ -174,7 +174,7 @@ class Info:
                 self.sh.update(data[:remainder])
                 self.pieces.append(self.sh.digest())
 
-                if self.flag.isSet():
+                if self.flag is not None and self.flag.isSet():
                     break
 
                 # Update progress

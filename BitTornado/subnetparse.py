@@ -1,6 +1,7 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import socket
 from bisect import bisect, insort
 
 def _int_to_bitstring(x, bits=8):
@@ -12,13 +13,10 @@ hexbinmap['x'] = '0000'
 chrbinmap = [_int_to_bitstring(n) for n in xrange(256)]
 
 def to_bitfield_ipv4(ip):
-    ip = ip.split('.')
-    if len(ip) != 4:
+    try: 
+        return ''.join(chrbinmap[ord(i)] for i in socket.inet_aton(ip))
+    except socket.error:
         raise ValueError, "bad address"
-    b = []
-    for i in ip:
-        b.append(chrbinmap[int(i)])
-    return ''.join(b)
 
 def to_bitfield_ipv6(ip):
     b = ''

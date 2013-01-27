@@ -1,18 +1,12 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import socket
 from bisect import bisect, insort
 
 def to_long_ipv4(ip):
-    ip = ip.split('.')
-    if len(ip) != 4:
-        raise ValueError, "bad address"
-    b = 0L
-    for n in ip:
-        b *= 256
-        b += int(n)
-    return b
-
+    shiftbyte = lambda x, y: 256*x + y
+    return reduce(shiftbyte, map(ord, socket.inet_aton(ip)))
 
 def to_long_ipv6(ip):
     if ip == '':

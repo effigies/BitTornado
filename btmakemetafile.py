@@ -36,7 +36,7 @@ def main(argv):
     try:
         config, args = parseargs(argv[1:], defaults, 2, None)
         for file in args[1:]:
-            make_meta_file(file, args[0], config, progress = prog)
+            make_meta_file(file, args[0], config.copy(), progress = prog)
     except ValueError, e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'

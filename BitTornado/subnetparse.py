@@ -3,38 +3,13 @@
 
 from bisect import bisect, insort
 
-hexbinmap = {
-    '0': '0000',
-    '1': '0001',
-    '2': '0010',
-    '3': '0011',
-    '4': '0100',
-    '5': '0101',
-    '6': '0110',
-    '7': '0111',
-    '8': '1000',
-    '9': '1001',
-    'a': '1010',
-    'b': '1011',
-    'c': '1100',
-    'd': '1101',
-    'e': '1110',
-    'f': '1111',
-    'x': '0000',
-}
+def _int_to_bitstring(x, bits=8):
+    return ''.join(str((x >> i) & 0x1) for i in xrange(bits-1,-1,-1))
 
-chrbinmap = {}
-for n in xrange(256):
-    b = []
-    nn = n
-    for i in xrange(8):
-        if nn & 0x80:
-            b.append('1')
-        else:
-            b.append('0')
-        nn <<= 1
-    chrbinmap[n] = ''.join(b)
+hexbinmap = dict(('%x' % x, _int_to_bitstring(x, 4)) for x in xrange(16))
+hexbinmap['x'] = '0000'
 
+chrbinmap = [_int_to_bitstring(n) for n in xrange(256)]
 
 def to_bitfield_ipv4(ip):
     ip = ip.split('.')

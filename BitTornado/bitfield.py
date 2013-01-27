@@ -2,11 +2,7 @@
 # see LICENSE.txt for license information
 
 def _int_to_booleans(x):
-    r = []
-    for i in range(8):
-        r.append(bool(x & 0x80))
-        x <<= 1
-    return tuple(r)
+    return tuple(bool((x << i) & 0x80) for i in xrange(8))
 
 lookup_table = [_int_to_booleans(i) for i in xrange(256)]
 

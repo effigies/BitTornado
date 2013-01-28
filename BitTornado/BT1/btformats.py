@@ -22,9 +22,9 @@ def check_info(info):
         raise ValueError, 'bad metainfo - bad name'
     if not reg.match(name):
         raise ValueError, 'name %s disallowed for security reasons' % name
-    if info.has_key('files') == info.has_key('length'):
+    if ('files' in info) == ('length' in info):
         raise ValueError, 'single/multiple file mix'
-    if info.has_key('length'):
+    if 'length' in info:
         length = info.get('length')
         if type(length) not in ints or length < 0:
             raise ValueError, 'bad metainfo - bad length'
@@ -61,7 +61,7 @@ def check_message(message):
 def check_peers(message):
     if type(message) != DictType:
         raise ValueError
-    if message.has_key('failure reason'):
+    if 'failure reason' in message:
         if type(message['failure reason']) != StringType:
             raise ValueError
         return
@@ -75,7 +75,7 @@ def check_peers(message):
             port = p.get('port')
             if type(port) not in ints or p <= 0:
                 raise ValueError
-            if p.has_key('peer id'):
+            if 'peer id' in p:
                 id = p['peer id']
                 if type(id) != StringType or len(id) != 20:
                     raise ValueError

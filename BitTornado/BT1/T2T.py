@@ -139,7 +139,7 @@ class T2TList:
         # step 1:  Create a new list with all tracker/torrent combinations in allowed_dir        
         newlist = {}
         for hash, data in allowed_list.items():
-            if data.has_key('announce-list'):
+            if 'announce-list' in data:
                 for tier in data['announce-list']:
                     for tracker in tier:
                         self.disallowed.setdefault(tracker, False)
@@ -150,13 +150,13 @@ class T2TList:
         # if the new list has no place for it, then it's old, so deactivate it
         for tracker, hashdata in self.list.items():
             for hash, t2t in hashdata.items():
-                if not newlist.has_key(tracker) or not newlist[tracker].has_key(hash):
+                if tracker not in newlist or hash not in newlist[tracker]:
                     t2t.deactivate()                # this connection is no longer current
                     self.oldtorrents += [t2t]
                         # keep it referenced in case a thread comes along and tries to access.
                 else:
                     newlist[tracker][hash] = t2t
-            if not newlist.has_key(tracker):
+            if tracker not in newlist:
                 self.disallowed[tracker] = False    # reset when no torrents on it left
 
         self.list = newlist

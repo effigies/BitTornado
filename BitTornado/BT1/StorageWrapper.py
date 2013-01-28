@@ -28,7 +28,7 @@ class Olist:
     def __len__(self):
         return len(self.d)
     def includes(self, i):
-        return self.d.has_key(i)
+        return i in self.d
     def add(self, i):
         self.d[i] = 1
     def extend(self, l):
@@ -47,7 +47,7 @@ class Olist:
         del self.d[i]
         return i
     def remove(self, i):
-        if self.d.has_key(i):
+        if i in self.d:
             del self.d[i]
 
 class fakeflag:
@@ -199,17 +199,17 @@ class StorageWrapper:
         self.check_targets = {}
         got = {}
         for p,v in self.places.items():
-            assert not got.has_key(v)
+            assert v not in got
             got[v] = 1
         for i in xrange(len(self.hashes)):
-            if self.places.has_key(i):  # restored from pickled
+            if i in self.places:  # restored from pickled
                 self.check_targets[self.hashes[i]] = []
                 if self.places[i] == i:
                     continue
                 else:
-                    assert not got.has_key(i)
+                    assert i not in got
                     self.out_of_place += 1
-            if got.has_key(i):
+            if i in got:
                 continue
             if self._waspre(i):
                 if self.blocked[i]:
@@ -221,7 +221,7 @@ class StorageWrapper:
                 self.failed('told file complete on start-up, but data is missing')
                 return False
             self.holes.append(i)
-            if self.blocked[i] or self.check_targets.has_key(self.hashes[i]):
+            if self.blocked[i] or self.hashes[i] in self.check_targets:
                 self.check_targets[self.hashes[i]] = [] # in case of a hash collision, discard
             else:
                 self.check_targets[self.hashes[i]] = [i]
@@ -299,7 +299,7 @@ class StorageWrapper:
             return False
         self.tomove = float(self.out_of_place)
         for i in xrange(len(self.hashes)):
-            if not self.places.has_key(i):
+            if i not in self.places:
                 self.places[i] = i
             elif self.places[i] != i:
                 self.movelist.append(i)
@@ -358,12 +358,12 @@ class StorageWrapper:
                 if not self.blocked_movein:
                     self.blocked_holes.append(n)
                     continue
-                if not self.places.has_key(n):
+                if n not in self.places:
                     b = self.blocked_movein.pop(0)
                     oldpos = self._move_piece(b, n)
                     self.places[oldpos] = oldpos
                     return None
-            if self.places.has_key(n):
+            if n in self.places:
                 oldpos = self._move_piece(n, n)
                 self.places[oldpos] = oldpos
                 return None
@@ -473,7 +473,7 @@ class StorageWrapper:
 
     def is_unstarted(self, index):
         return ( not self.have[index] and not self.numactive[index]
-                 and not self.dirty.has_key(index) )
+                 and index not in self.dirty )
 
     def get_hash(self, index):
         return self.hashes[index]
@@ -487,7 +487,7 @@ class StorageWrapper:
             self._make_inactive(index)
         self.numactive[index] += 1
         self.stat_active[index] = 1
-        if not self.dirty.has_key(index):
+        if index not in self.dirty:
             self.stat_new[index] = 1
         rs = self.inactive_requests[index]
 #        r = min(rs)
@@ -514,7 +514,7 @@ class StorageWrapper:
             old = self.write_buf_list.pop(0)
             if not self._flush_buffer(old, True):
                 return False
-        if self.write_buf.has_key(piece):
+        if piece in self.write_buf:
             self.write_buf_list.remove(piece)
         else:
             self.write_buf[piece] = []
@@ -523,7 +523,7 @@ class StorageWrapper:
         return True
 
     def _flush_buffer(self, piece, popped = False):
-        if not self.write_buf.has_key(piece):
+        if piece not in self.write_buf:
             return True
         if not popped:
             self.write_buf_list.remove(piece)
@@ -561,7 +561,7 @@ class StorageWrapper:
             print 'moving '+str(index)+' from '+str(oldpos)+' to '+str(newpos)
         assert oldpos != index
         assert oldpos != newpos
-        assert index == newpos or not self.places.has_key(newpos)
+        assert index == newpos or newpos not in self.places
         old = self.read_raw(oldpos, 0, self._piecelen(index))
         if old is None:
             return -1
@@ -603,13 +603,13 @@ class StorageWrapper:
             if not self.blocked_movein:
                 self.blocked_holes.append(n)
                 return True    # repeat
-            if not self.places.has_key(n):
+            if n not in self.places:
                 b = self.blocked_movein.pop(0)
                 oldpos = self._move_piece(b, n)
                 if oldpos < 0:
                     return False
                 n = oldpos
-        if self.places.has_key(n):
+        if n in self.places:
             oldpos = self._move_piece(n, n)
             if oldpos < 0:
                 return False
@@ -643,7 +643,7 @@ class StorageWrapper:
     def piece_came_in(self, index, begin, piece, source = None):
         assert not self.have[index]
         
-        if not self.places.has_key(index):
+        if index not in self.places:
             while self._clear_space(index):
                 pass
             if DEBUG:
@@ -651,7 +651,7 @@ class StorageWrapper:
         if self.flag.isSet():
             return
 
-        if self.failed_pieces.has_key(index):
+        if index in self.failed_pieces:
             old = self.read_raw(self.places[index], begin, len(piece))
             if old is None:
                 return True
@@ -672,7 +672,7 @@ class StorageWrapper:
         assert self.numactive[index] >= 0
         if not self.numactive[index]:
             del self.stat_active[index]
-        if self.stat_new.has_key(index):
+        if index in self.stat_new:
             del self.stat_new[index]
 
         if self.inactive_requests[index] or self.numactive[index]:
@@ -718,7 +718,7 @@ class StorageWrapper:
             if d is not None:
                 d.good(index)
         del self.download_history[index]
-        if self.failed_pieces.has_key(index):
+        if index in self.failed_pieces:
             for d in self.failed_pieces[index].keys():
                 if d is not None:
                     d.failed(index)
@@ -736,7 +736,7 @@ class StorageWrapper:
         self.numactive[index] -= 1
         if not self.numactive[index]:
             del self.stat_active[index]
-            if self.stat_new.has_key(index):
+            if index in self.stat_new:
                 del self.stat_new[index]
 
 
@@ -799,7 +799,7 @@ class StorageWrapper:
             return
         sources = []
         for p,v in self.places.items():
-            if pieces_to_check.has_key(v):
+            if v in pieces_to_check:
                 sources.append(p)
         assert len(sources) == len(pieces_to_check)
         sources.sort()
@@ -895,7 +895,7 @@ class StorageWrapper:
         places = []
         partials = []
         for p in xrange(len(self.hashes)):
-            if self.blocked[p] or not self.places.has_key(p):
+            if self.blocked[p] or p not in self.places:
                 continue
             h = self.have[p]
             pieces[p] = h
@@ -956,19 +956,19 @@ class StorageWrapper:
             for index, place in _places:
                 if place not in valid_places:
                     continue
-                assert not got.has_key(index)
-                assert not got.has_key(place)
+                assert index not in got
+                assert place not in got
                 places[index] = place
                 got[index] = 1
                 got[place] = 1
 
             for index in xrange(len(self.hashes)):
                 if have[index]:
-                    if not places.has_key(index):
+                    if index not in places:
                         if index not in valid_places:
                             have[index] = False
                             continue
-                        assert not got.has_key(index)
+                        assert index not in got
                         places[index] = index
                         got[index] = 1
                     length = self._piecelen(index)
@@ -979,12 +979,12 @@ class StorageWrapper:
                     inactive_requests[index] = None
 
             for index, plist in _partials:
-                assert not dirty.has_key(index)
+                assert index not in dirty
                 assert not have[index]
-                if not places.has_key(index):
+                if index not in places:
                     if index not in valid_places:
                         continue
-                    assert not got.has_key(index)
+                    assert index not in got
                     places[index] = index
                     got[index] = 1
                 assert len(plist) % 2 == 0

@@ -238,7 +238,7 @@ class Rerequester:
         if ( (self.upratefunc() < 100 and self.downratefunc() < 100)
              or not self.amount_left() ):
             for f in ['rejected', 'bad_data', 'troublecode']:
-                if self.errorcodes.has_key(f):
+                if f in self.errorcodes:
                     r = self.errorcodes[f]
                     break
             else:
@@ -325,7 +325,7 @@ class Rerequester:
                     self.lock.unwait(l)
                 return
             
-            if r.has_key('failure reason'):
+            if 'failure reason' in r:
                 if self.lock.trip(l):
                     self.errorcodes['rejected'] = self.rejectedmessage + r['failure reason']
                     self.lock.unwait(l)
@@ -345,7 +345,7 @@ class Rerequester:
 
 
     def postrequest(self, r, callback):
-        if r.has_key('warning message'):
+        if 'warning message' in r:
                 self.errorfunc('warning from tracker - ' + r['warning message'])
         self.announce_interval = r.get('interval', self.announce_interval)
         self.interval = r.get('min interval', self.interval)

@@ -67,9 +67,8 @@ class FileSelector:
     Also see Storage.pickle and StorageWrapper.pickle for additional keys.
     '''
     def unpickle(self, d):
-        if d.has_key('priority'):
-            if not self.init_priority(d['priority']):
-                return
+        if 'priority' in d and not self.init_priority(d['priority']):
+            return
         pieces = self.storage.unpickle(d)
         if not pieces:  # don't bother, nothing restoreable
             return

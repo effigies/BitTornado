@@ -367,7 +367,7 @@ class BT1Download:
 
 
     def checkSaveLocation(self, loc):
-        if self.info.has_key('length'):
+        if 'length' in self.info:
             return os.path.exists(loc)
         for x in self.info['files']:
             if os.path.exists(os.path.join(loc, x['path'][0])):
@@ -383,7 +383,7 @@ class BT1Download:
                 if f != '' and not os.path.exists(f):
                     os.makedirs(f)
 
-            if self.info.has_key('length'):
+            if 'length' in self.info:
                 file_length = self.info['length']
                 file = filefunc(self.info['name'], file_length,
                                 self.config['saveas'], False)
@@ -635,7 +635,7 @@ class BT1Download:
             self.rawserver, self.finflag, self.errorfunc, self.downloader,
             self.config['max_rate_period'], self.infohash, self._received_http_data,
             self.connecter.got_piece)
-        if self.response.has_key('httpseeds') and not self.finflag.isSet():
+        if 'httpseeds' in self.response and not self.finflag.isSet():
             for u in self.response['httpseeds']:
                 self.httpdownloader.make_download(u)
 
@@ -672,7 +672,7 @@ class BT1Download:
             self.rerequest.hit()
 
     def startRerequester(self, seededfunc = None, force_rapid_update = False):
-        if self.response.has_key('announce-list'):
+        if 'announce-list' in self.response:
             trackerlist = self.response['announce-list']
         else:
             trackerlist = [[self.response['announce']]]
@@ -695,7 +695,7 @@ class BT1Download:
         self.statistics = Statistics(self.upmeasure, self.downmeasure,
                     self.connecter, self.httpdownloader, self.ratelimiter,
                     self.rerequest_lastfailed, self.filedatflag)
-        if self.info.has_key('files'):
+        if 'files' in self.info:
             self.statistics.set_dirstats(self.files, self.info['piece length'])
         if self.config['spew']:
             self.spewflag.set()

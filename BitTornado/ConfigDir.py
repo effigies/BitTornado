@@ -125,7 +125,7 @@ class ConfigDir:
     def setDefaults(self, defaults, ignore=[]):
         self.config = defaultargs(defaults)
         for k in ignore:
-            if self.config.has_key(k):
+            if k in self.config:
                 del self.config[k]
 
     def checkConfig(self):
@@ -138,7 +138,7 @@ class ConfigDir:
             return self.config
         l = self.config.keys()
         for k,v in r.items():
-            if self.config.has_key(k):
+            if k in self.config:
                 t = type(self.config[k])
                 try:
                     if t == StringType:
@@ -157,7 +157,7 @@ class ConfigDir:
     def saveConfig(self, new_config = None):
         if new_config:
             for k,v in new_config.items():
-                if self.config.has_key(k):
+                if k in self.config:
                     self.config[k] = v
         try:
             ini_write( self.configfile, self.config,
@@ -271,7 +271,7 @@ class ConfigDir:
     ###### TORRENT DATA HANDLING ######
 
     def getTorrentData(self, t):
-        if self.TorrentDataBuffer.has_key(t):
+        if t in self.TorrentDataBuffer:
             return self.TorrentDataBuffer[t]
         t = os.path.join(self.dir_datacache,tohex(t))
         if not os.path.exists(t):

@@ -49,7 +49,7 @@ class FakeOpen:
         return FakeHandle(filename, self)
 
     def exists(self, file):
-        return self.files.has_key(file)
+        return file in self.files
 
     def getsize(self, file):
         return len(self.files[file])

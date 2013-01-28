@@ -495,7 +495,7 @@ class Connection:
             self.connecter.connection_flushed(self)
 
     def connection_lost(self, connection):
-        if self.Encoder.connections.has_key(connection):
+        if connection in self.Encoder.connections:
             self.sever()
 
 
@@ -592,7 +592,7 @@ class Encoder:
     def check_ip(self, connection=None, ip=None):
         if not ip:
             ip = connection.get_ip(True)
-        if self.config['security'] and self.banned.has_key(ip):
+        if self.config['security'] and ip in self.banned:
             return False
         if self.external_bans.includes(ip):
             return False

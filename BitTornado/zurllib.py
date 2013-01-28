@@ -73,7 +73,7 @@ class urlopen:
             try:
                 data = self._read()
                 d = bdecode(data)
-                if d.has_key('failure reason'):
+                if 'failure reason' in d:
                     self.error_return = data
                     return
             except:

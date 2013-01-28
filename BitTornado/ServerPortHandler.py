@@ -151,7 +151,7 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         return 20, self.read_download_id
 
     def read_download_id(self, s):
-        if self.multihandler.singlerawservers.has_key(s):
+        if s in self.multihandler.singlerawservers:
             if self.multihandler.singlerawservers[s].protocol == self.protocol:
                 self.multihandler.singlerawservers[s]._external_connection_made(
                         self.connection, self.options, self.buffer)

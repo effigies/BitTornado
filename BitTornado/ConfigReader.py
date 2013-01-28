@@ -33,7 +33,7 @@ def ColorToHex(c):
 
 ratesettingslist = []
 for x in connChoices:
-    if not x.has_key('super-seed'):
+    if 'super-seed' not in x:
         ratesettingslist.append(x['name'])
 
 
@@ -132,7 +132,7 @@ class configReader:
             oldconfig.DeleteAll()
             return False
         while cont:     # import old config data
-            if self.config.has_key(s):
+            if s in self.config:
                 t = oldconfig.GetEntryType(s)
                 try:
                     if t == 1:

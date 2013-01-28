@@ -75,7 +75,7 @@ def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
                 usage('parameter passed in at end with no value')
             key, value = argv[pos][2:], argv[pos+1]
             pos += 2
-            if not longkeyed.has_key(key):
+            if key not in longkeyed:
                 usage('unknown key --' + key)
             longname, default, doc = longkeyed[key]
             try:

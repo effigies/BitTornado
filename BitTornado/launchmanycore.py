@@ -353,7 +353,7 @@ class LaunchMany:
             self.hashcheck_current = None
 
     def died(self, hash):
-        if self.torrent_cache.has_key(hash):
+        if hash in self.torrent_cache:
             self.Output.message('DIED: "'+self.torrent_cache[hash]['path']+'"')
         
     def was_stopped(self, hash):

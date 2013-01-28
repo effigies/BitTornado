@@ -153,7 +153,7 @@ class Storage:
             self.sync()
             return
         file = self.files[f][0]
-        if self.whandles.has_key(file):
+        if file in self.whandles:
             self._sync(file)
             
 
@@ -162,7 +162,7 @@ class Storage:
 
 
     def _open(self, file, mode):
-        if self.mtimes.has_key(file):
+        if file in self.mtimes:
             try:
               if self.handlebuffer is not None:
                 assert getsize(file) == self.tops[file]
@@ -187,7 +187,7 @@ class Storage:
     def _close(self, file):
         f = self.handles[file]
         del self.handles[file]
-        if self.whandles.has_key(file):
+        if file in self.whandles:
             del self.whandles[file]
             f.flush()
             self.unlock_file(file, f)
@@ -201,7 +201,7 @@ class Storage:
 
 
     def _close_file(self, file):
-        if not self.handles.has_key(file):
+        if file not in self.handles:
             return
         self._close(file)
         if self.handlebuffer:
@@ -209,8 +209,8 @@ class Storage:
         
 
     def _get_file_handle(self, file, for_write):
-        if self.handles.has_key(file):
-            if for_write and not self.whandles.has_key(file):
+        if file in self.handles:
+            if for_write and file not in self.whandles:
                 self._close(file)
                 try:
                     f = self._open(file, 'rb+')
@@ -281,7 +281,7 @@ class Storage:
                 print 'reading '+file+' from '+str(pos)+' to '+str(end)
             self.lock.acquire()
             h = self._get_file_handle(file, False)
-            if flush_first and self.whandles.has_key(file):
+            if flush_first and file in self.whandles:
                 h.flush()
                 fsync(h)
             h.seek(pos)
@@ -426,9 +426,9 @@ class Storage:
             h = open(file, 'wb+')
             h.flush()
             h.close()
-        if not self.tops.has_key(file):
+        if file not in self.tops:
             self.tops[file] = getsize(file)
-        if not self.mtimes.has_key(file):
+        if file not in self.mtimes:
             self.mtimes[file] = getmtime(file)
         self.working_ranges[f] = [r]
 
@@ -446,9 +446,9 @@ class Storage:
                 h = open(file, 'wb+')
                 h.flush()
                 h.close()
-            if not self.tops.has_key(file):
+            if file not in self.tops:
                 self.tops[file] = getsize(file)
-            if not self.mtimes.has_key(file):
+            if file not in self.mtimes:
                 self.mtimes[file] = getmtime(file)
         self.working_ranges[f] = r[0]
 
@@ -546,26 +546,26 @@ class Storage:
                 if self.disabled[i]:
                     for file, start, end in self._get_disabled_ranges(i)[2]:
                         f1 = basename(file)
-                        if ( not pfiles.has_key(f1)
+                        if ( f1 not in pfiles
                              or not test(pfiles[f1],getsize(file),getmtime(file)) ):
                             if DEBUG:
                                 print 'removing '+file
                             for p in xrange( int(start/self.piece_length),
                                              int((end-1)/self.piece_length)+1 ):
-                                if valid_pieces.has_key(p):
+                                if p in valid_pieces:
                                     del valid_pieces[p]
                     continue
                 file, size = self.files[i]
                 if not size:
                     continue
-                if ( not files.has_key(i)
+                if ( i not in files
                      or not test(files[i],getsize(file),getmtime(file)) ):
                     start, end, offset, file = self.file_ranges[i]
                     if DEBUG:
                         print 'removing '+file
                     for p in xrange( int(start/self.piece_length),
                                      int((end-1)/self.piece_length)+1 ):
-                        if valid_pieces.has_key(p):
+                        if p in valid_pieces:
                             del valid_pieces[p]
         except:
             if DEBUG:

@@ -121,7 +121,7 @@ def statefiletemplate(x):
         elif cname == 'allowed':
             if (type(cinfo) != DictType): # a list of info_hashes and included data
                 raise ValueError
-            if x.has_key('allowed_dir_files'):
+            if 'allowed_dir_files' in x:
                 adlist = [z[1] for z in x['allowed_dir_files'].values()]
                 for y in cinfo.keys():        # and each should have a corresponding key here
                     if not y in adlist:
@@ -133,9 +133,9 @@ def statefiletemplate(x):
             for y in cinfo.values():      # each entry should have a corresponding info_hash
                 if not y[1]:
                     continue
-                if not x['allowed'].has_key(y[1]):
+                if y[1] not in x['allowed']:
                     raise ValueError
-                if dirkeys.has_key(y[1]): # and each should have a unique info_hash
+                if y[1] in dirkeys: # and each should have a unique info_hash
                     raise ValueError
                 dirkeys[y[1]] = 1
             
@@ -239,7 +239,7 @@ class Tracker:
                 ds = h.read()
                 h.close()
                 tempstate = bdecode(ds)
-                if not tempstate.has_key('peers'):
+                if 'peers' not in tempstate:
                     tempstate = {'peers': tempstate}
                 statefiletemplate(tempstate)
                 self.state = tempstate
@@ -459,7 +459,7 @@ class Tracker:
                     d = len(l) - c
                     td = td + d
                     if self.config['allowed_dir'] and self.show_names:
-                        if self.allowed.has_key(hash):
+                        if hash in self.allowed:
                             nf = nf + 1
                             sz = self.allowed[hash]['length']  # size
                             ts = ts + sz
@@ -509,18 +509,17 @@ class Tracker:
 
     def get_scrape(self, paramslist):
         fs = {}
-        if paramslist.has_key('info_hash'):
+        if 'info_hash' in paramslist:
             if self.config['scrape_allowed'] not in ['specific', 'full']:
                 return (400, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                     bencode({'failure reason':
                     'specific scrape function is not available with this tracker.'}))
             for hash in paramslist['info_hash']:
                 if self.allowed is not None:
-                    if self.allowed.has_key(hash):
+                    if hash in self.allowed:
                         fs[hash] = self.scrapedata(hash)
-                else:
-                    if self.downloads.has_key(hash):
-                        fs[hash] = self.scrapedata(hash)
+                elif hash in self.downloads:
+                    fs[hash] = self.scrapedata(hash)
         else:
             if self.config['scrape_allowed'] != 'full':
                 return (400, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
@@ -540,7 +539,7 @@ class Tracker:
          if not self.allow_get:
              return (400, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                  'get function is not available with this tracker.')
-         if not self.allowed.has_key(hash):
+         if hash not in self.allowed:
              return (404, 'Not Found', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'}, alas)
          fname = self.allowed[hash]['file']
          fpath = self.allowed[hash]['path']
@@ -551,30 +550,30 @@ class Tracker:
 
     def check_allowed(self, infohash, paramslist):
         if ( self.aggregator_key is not None
-                and not ( paramslist.has_key('password')
+                and not ('password' in paramslist
                         and paramslist['password'][0] == self.aggregator_key ) ):
             return (200, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                 bencode({'failure reason':
                 'Requested download is not authorized for use with this tracker.'}))
 
         if self.allowed is not None:
-            if not self.allowed.has_key(infohash):
+            if infohash not in self.allowed:
                 return (200, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                     bencode({'failure reason':
                     'Requested download is not authorized for use with this tracker.'}))
             if self.config['allowed_controls']:
-                if self.allowed[infohash].has_key('failure reason'):
+                if 'failure reason' in self.allowed[infohash]:
                     return (200, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                         bencode({'failure reason': self.allowed[infohash]['failure reason']}))
 
-        if paramslist.has_key('tracker'):
+        if 'tracker' in paramslist:
             if ( self.config['multitracker_allowed'] == 'none' or       # turned off
                           paramslist['peer_id'][0] == self.trackerid ): # oops! contacted myself
                 return (200, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                     bencode({'failure reason': 'disallowed'}))
             
             if ( self.config['multitracker_allowed'] == 'autodetect'
-                        and not self.allowed[infohash].has_key('announce-list') ):
+                    and 'announce-list' not in self.allowed[infohash] ):
                 return (200, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                     bencode({'failure reason':
                     'Requested download is not authorized for multitracker use.'}))
@@ -589,7 +588,7 @@ class Tracker:
         self.seedcount.setdefault(infohash, 0)
 
         def params(key, default = None, l = paramslist):
-            if l.has_key(key):
+            if key in l:
                 return l[key][0]
             return default
         
@@ -697,7 +696,7 @@ class Tracker:
                 if gip != peer.get('given ip'):
                     if gip:
                         peer['given ip'] = gip
-                    elif peer.has_key('given ip'):
+                    elif 'given ip' in peer:
                         del peer['given ip']
                     recheck = True
 
@@ -732,7 +731,7 @@ class Tracker:
         data['incomplete'] = len(self.downloads[infohash]) - seeds
         
         if ( self.config['allowed_controls']
-                and self.allowed[infohash].has_key('warning message') ):
+                and 'warning message' in self.allowed[infohash] ):
             data['warning message'] = self.allowed[infohash]['warning message']
 
         if tracker:
@@ -777,7 +776,7 @@ class Tracker:
             else:
                 vv = ([],[],[],[],[])
             for key, ip, port in self.t2tlist.harvest(infohash):   # empty if disabled
-                if not peers.has_key(key):
+                if key not in peers:
                     cp = compact_peer_info(ip, port)
                     vv[0].append(cp)
                     vv[2].append((cp,'\x00'))
@@ -854,7 +853,7 @@ class Tracker:
 
         paramslist = {}
         def params(key, default = None, l = paramslist):
-            if l.has_key(key):
+            if key in l:
                 return l[key][0]
             return default
 
@@ -909,7 +908,7 @@ class Tracker:
             return (400, 'Bad Request', {'Content-Type': 'text/plain'}, 
                 'you sent me garbage - ' + str(e))
 
-        if self.aggregate_forward and not paramslist.has_key('tracker'):
+        if self.aggregate_forward and 'tracker' not in paramslist:
             self.aggregate_senddata(query)
 
         if self.is_aggregator:      # don't return peer data here
@@ -935,7 +934,7 @@ class Tracker:
                              params('tracker'), not params('left'),
                              return_type, rsize, params('supportcrypto'))
 
-        if paramslist.has_key('scrape'):    # deprecated
+        if 'scrape' in paramslist:    # deprecated
             data['scrape'] = self.scrapedata(infohash, False)
 
         if self.dedicated_seed_id:
@@ -983,7 +982,7 @@ class Tracker:
             else:
                 x = 503
             self.natchecklog(peerid, ip, port, x)
-        if not record.has_key('nat'):
+        if 'nat' not in record:
             record['nat'] = int(not result)
             if result:
                 self.natcheckOK(downloadid,peerid,ip,port,record)
@@ -1073,7 +1072,7 @@ class Tracker:
             l = self.becache[infohash]
             y = not peer['left']
             for x in l:
-                if x[y].has_key(peerid):
+                if peerid in x[y]:
                     del x[y][peerid]
         del self.times[infohash][peerid]
         del dls[peerid]
@@ -1087,7 +1086,7 @@ class Tracker:
         if (self.keep_dead != 1):
             for key, value in self.downloads.items():
                 if len(value) == 0 and (
-                        self.allowed is None or not self.allowed.has_key(key) ):
+                        self.allowed is None or key not in self.allowed ):
                     del self.times[key]
                     del self.downloads[key]
                     del self.seedcount[key]

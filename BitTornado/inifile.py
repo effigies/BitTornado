@@ -45,13 +45,13 @@ def ini_write(f, d, comment=''):
                 if DEBUG:
                     print 'new section:' +k
                 if k:
-                    assert not a.has_key(k)
+                    assert k not in a
                     a[k] = {}
                 aa = a[k]
                 for kk,vv in v:
                     assert type(kk) == StringType
                     kk = kk.lower()
-                    assert not aa.has_key(kk)
+                    assert kk not in aa
                     if type(vv) == BooleanType:
                         vv = int(vv)
                     if type(vv) == StringType:
@@ -61,7 +61,7 @@ def ini_write(f, d, comment=''):
                         print 'a['+k+']['+kk+'] = '+str(vv)
             else:
                 aa = a['']
-                assert not aa.has_key(k)
+                assert k not in aa
                 if type(v) == BooleanType:
                     v = int(v)
                 if type(v) == StringType:
@@ -123,7 +123,7 @@ def ini_read(f, errfunc = errfunc):
                 if not l1:
                     errfunc(i,l,'syntax error')
                     continue
-                if dd.has_key(l1):
+                if l1 in dd:
                     errfunc(i,l,'duplicate section')
                     d = dd[l1]
                     continue
@@ -146,7 +146,7 @@ def ini_read(f, errfunc = errfunc):
             if not k:
                 errfunc(i,l,'syntax error')
                 continue
-            if d.has_key(k):
+            if k in d:
                 errfunc(i,l,'duplicate entry')
                 continue
             d[k] = v

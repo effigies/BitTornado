@@ -240,7 +240,7 @@ class PiecePicker:
                 l2.append(old)
                 l2[newp] = piece
                 parray[piece] = newp
-            if self.removed_partials.has_key(piece):
+            if piece in self.removed_partials:
                 del self.removed_partials[piece]
                 self.started.append(piece)
             # now go to downloader and try requesting more

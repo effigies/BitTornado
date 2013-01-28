@@ -15,7 +15,7 @@ def reannounce(fname, announce, announce_list = None, verbose = False):
     
     metainfo['announce'] = announce
     
-    if metainfo.has_key('announce-list'):
+    if 'announce-list' in metainfo:
         if verbose:
             print 'old announce-list for %s: %s' % (fname,
                 '|'.join(','.join(tier) for tier in metainfo['announce-list']))

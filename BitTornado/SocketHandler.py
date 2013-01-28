@@ -146,8 +146,7 @@ class SocketHandler:
                 socktype = socket.AF_UNSPEC
             else:
                 socktype = socket.AF_INET
-            bind = bind.split(',')
-            for addr in bind:
+            for addr in bind.split(','):
                 if sys.version_info < (2,2):
                     addrinfos.append((socket.AF_INET, None, None, None, (addr, port)))
                 else:

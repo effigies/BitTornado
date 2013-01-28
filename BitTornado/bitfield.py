@@ -25,7 +25,7 @@ class Bitfield:
 
             r = [bit for char in bitstring for bit in lookup_table[ord(char)]]
             if extra > 0:
-                if r[-extra:] != [0] * extra:
+                if r[-extra:] != [False] * extra:
                     raise ValueError
                 del r[-extra:]
             self.array = r
@@ -36,7 +36,7 @@ class Bitfield:
 
     def __setitem__(self, index, val):
         val = bool(val)
-        self.numfalse += self.array[index]-val
+        self.numfalse += self.array[index] - val
         self.array[index] = val
 
     def __getitem__(self, index):

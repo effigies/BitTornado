@@ -29,11 +29,9 @@ def add_key(tracker):
                         for i in sha(basekeydata+tracker).digest()[-6:])
 
 def get_key(tracker):
-    try:
-        return "&key="+keys[tracker]
-    except:
+    if tracker not in keys:
         add_key(tracker)
-        return "&key="+keys[tracker]
+    return "&key="+keys[tracker]
 
 class fakeflag:
     def __init__(self, state=False):
@@ -72,7 +70,7 @@ class Rerequester:
         self.interval = config['rerequest_interval']
         self.timeout = config['http_timeout']
 
-        newtrackerlist = []        
+        newtrackerlist = []
         for tier in trackerlist:
             if len(tier)>1:
                 shuffle(tier)

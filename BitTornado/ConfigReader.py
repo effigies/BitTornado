@@ -496,14 +496,15 @@ class configReader:
 
             # reset advanced and crypto windows too
             self.advancedConfig = {}
-            for key in ['ip', 'bind', 'min_peers', 'max_initiate', 'display_interval',
-        'alloc_type', 'alloc_rate', 'max_files_open', 'max_connections', 'super_seeder',
-        'ipv6_binds_v4', 'double_check', 'triple_check', 'lock_files', 'lock_while_reading',
-        'expire_cache_data']:
+            for key in ['ip', 'bind', 'min_peers', 'max_initiate',
+                        'display_interval', 'alloc_type', 'alloc_rate',
+                        'max_files_open', 'max_connections', 'super_seeder',
+                        'ipv6_binds_v4', 'double_check', 'triple_check',
+                        'lock_files', 'lock_while_reading', 'expire_cache_data']:
                 self.advancedConfig[key] = self.defaults[key]
             self.cryptoConfig = {}
-            for key in ['security', 'auto_kick',
-        'crypto_allowed', 'crypto_only', 'crypto_stealth']:
+            for key in ['security', 'auto_kick', 'crypto_allowed',
+                        'crypto_only', 'crypto_stealth']:
                 self.cryptoConfig[key] = self.config[key]
             self.CloseAdvanced()
           except:
@@ -625,10 +626,12 @@ class configReader:
     def advancedMenu(self, event = None):
       try:
         if not self.advancedConfig:
-            for key in ['ip', 'bind', 'min_peers', 'max_initiate', 'display_interval',
-        'alloc_type', 'alloc_rate', 'max_files_open', 'max_connections', 'super_seeder',
-        'ipv6_binds_v4', 'double_check', 'triple_check', 'lock_files', 'lock_while_reading',
-        'expire_cache_data']:
+            for key in ['ip', 'bind', 'min_peers', 'max_initiate',
+                        'display_interval', 'alloc_type', 'alloc_rate',
+                        'max_files_open', 'max_connections', 'super_seeder',
+                        'ipv6_binds_v4', 'double_check', 'triple_check',
+                        'lock_files', 'lock_while_reading',
+                         'expire_cache_data']:
                 self.advancedConfig[key] = self.config[key]
 
         if (self.advancedMenuBox is not None):
@@ -1047,8 +1050,8 @@ class configReader:
     def cryptoMenu(self, event = None):
       try:
         if not self.cryptoConfig:
-            for key in ['security', 'auto_kick',
-        'crypto_allowed', 'crypto_only', 'crypto_stealth']:
+            for key in ['security', 'auto_kick', 'crypto_allowed',
+                        'crypto_only', 'crypto_stealth']:
                 self.cryptoConfig[key] = self.config[key]
 
         if (self.cryptoMenuBox is not None):

@@ -94,8 +94,8 @@ class ConfigDir:
             os.mkdir(self.dir_icons)
         for icon in GetIcons():
             i = os.path.join(self.dir_icons,icon)
-            if not os.path.exists(i):
-                if not copyfile(os.path.join(OLDICONPATH,icon),i):
+            if not os.path.exists(i) and
+                not copyfile(os.path.join(OLDICONPATH,icon),i):
                     CreateIcon(icon,self.dir_icons)
 
         self.dir_torrentcache = os.path.join(dir_root,'torrentcache')

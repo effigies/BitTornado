@@ -1,31 +1,28 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import itertools as it
 from binascii import unhexlify
 
-# parses a list of torrent hashes, in the format of one hash per line in hex format
-
 def parsetorrentlist(filename, parsed):
+    """Parse a list of torrent hashes in the form of one hash per line in
+    hex format"""
+    base_error = '*** WARNING *** line in torrent list '
     new_parsed = {}
     added = {}
-    removed = parsed
-    f = open(filename, 'r')
-    while True:
-        l = f.readline()
-        if not l:
-            break
-        l = l.strip()
-        try:
+    with open(filename, 'r') as listfile:
+        for line in listfile:
+            l = line.strip()
             if len(l) != 40:
-                raise ValueError, 'bad line'
-            h = unhexlify(l)
-        except:
-            print '*** WARNING *** could not parse line in torrent list: '+l
-        if parsed.has_key(h):
-            del removed[h]
-        else:
-            added[h] = True
-        new_parsed[h] = True
-    f.close()
-    return (new_parsed, added, removed)
+                print base_error + 'incorrect length: ' + l
+                continue
+
+            try:
+                h = unhexlify(l)
+                if h not in parsed:
+                    added[h] = True
+                new_parsed[h] = True
+            except TypeError:
+                print base_error + 'has non-hex digits: ' + l
+    return (new_parsed, added)
 

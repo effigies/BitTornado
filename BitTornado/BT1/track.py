@@ -1029,7 +1029,7 @@ class Tracker:
                 return
             try:
                 r = parsetorrentlist(f, self.allowed)
-                (self.allowed, added, garbage2) = r
+                (self.allowed, added) = r
                 self.state['allowed_list'] = self.allowed
             except (IOError, OSError):
                 print '**warning** unable to read allowed torrent list'

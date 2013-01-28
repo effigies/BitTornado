@@ -237,10 +237,8 @@ class Info:
         if 'real_announce_list' in params:
             data['announce-list'] = params['real_announce_list']
         elif 'announce_list' in params and params['announce_list']:
-            l = []
-            for tier in params['announce_list'].split('|'):
-                l.append(tier.split(','))
-            data['announce-list'] = l
+            data['announce-list'] = [tier.split(',')
+                for tier in params['announce_list'].split('|')]
             
         if 'real_httpseeds' in params:
             data['httpseeds'] = params['real_httpseeds']

@@ -46,8 +46,7 @@ def to_bitfield_ipv6(ip):
             b += n + '0'*(32-len(n))
             continue
         n = ('x'*(4-len(n))) + n
-        for i in n:
-            b += hexbinmap[i]
+        b += ''.join(hexbinmap[i] for i in n)
     if doublecolon:
         pos = b.find(':')
         b = b[:pos]+('0'*(129-len(b)))+b[pos+1:]

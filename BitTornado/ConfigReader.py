@@ -31,11 +31,7 @@ def hex2(c):
 def ColorToHex(c):
     return hex2(c.Red()) + ' ' + hex2(c.Green()) + ' ' + hex2(c.Blue())
 
-ratesettingslist = []
-for x in connChoices:
-    if 'super-seed' not in x:
-        ratesettingslist.append(x['name'])
-
+ratesettingslist = [x['name'] for x in connChoices if 'super-seed' not in x]
 
 configFileDefaults = [
     #args only available for the gui client
@@ -551,11 +547,9 @@ class configReader:
                 self.config['upnp_nat_access']=self.upnp_data.GetSelection()
 
             if self.advancedConfig:
-                for key,val in self.advancedConfig.items():
-                    self.config[key] = val
+                self.config.update(self.advancedConfig)
             if self.cryptoConfig:
-                for key,val in self.cryptoConfig.items():
-                    self.config[key] = val
+                self.config.update(self.cryptoConfig)
 
             self.writeConfigFile()
             self._configReset = True

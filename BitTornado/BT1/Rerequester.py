@@ -25,10 +25,8 @@ keys = {}
 basekeydata = str(getpid()) + repr(time()) + 'tracker'
 
 def add_key(tracker):
-    key = ''
-    for i in sha(basekeydata+tracker).digest()[-6:]:
-        key += mapbase64[ord(i) & 0x3F]
-    keys[tracker] = key
+    keys[tracker] = ''.join(mapbase64[ord(i) & 0x3F]
+                        for i in sha(basekeydata+tracker).digest()[-6:])
 
 def get_key(tracker):
     try:

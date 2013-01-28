@@ -22,10 +22,8 @@ class Bitfield:
             extra = len(bitstring) * 8 - length
             if extra < 0 or extra >= 8:
                 raise ValueError
-            t = lookup_table
-            r = []
-            for c in bitstring:
-                r.extend(t[ord(c)])
+
+            r = [bit for char in bitstring for bit in lookup_table[ord(char)]]
             if extra > 0:
                 if r[-extra:] != [0] * extra:
                     raise ValueError
@@ -48,13 +46,9 @@ class Bitfield:
         return self.length
 
     def tostring(self):
-        booleans = self.array
-        t = reverse_lookup_table
-        s = len(booleans) % 8
-        r = [ t[tuple(booleans[x:x+8])] for x in xrange(0, len(booleans)-s, 8) ]
-        if s:
-            r += t[tuple(booleans[-s:] + ([0] * (8-s)))]
-        return ''.join(r)
+        bits = self.array + [False] * (-self.length % 8)
+        return ''.join(reverse_lookup_table[tuple(bits[x:x+8])]
+                        for x in xrange(0, len(bits), 8))
 
     def complete(self):
         return not self.numfalse

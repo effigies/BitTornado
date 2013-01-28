@@ -27,14 +27,10 @@ for i in xrange(256):
     revmap[x] = chr(i)
 
 def tohex(s):
-    r = []
-    for c in s:
-        r.append(hexmap[ord(c)])
-    return ''.join(r)
+    return ''.join(hexmap[ord(c)] for c in s)
 
 def unhex(s):
-    r = [ revmap[s[x:x+2]] for x in xrange(0, len(s), 2) ]
-    return ''.join(r)
+    return ''.join(revmap[s[x:x+2]] for x in xrange(0, len(s), 2))
 
 def copyfile(oldpath, newpath): # simple file copy, all in RAM
     try:

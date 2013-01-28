@@ -45,14 +45,9 @@ def formatDefinitions(options, COLS, presets = {}):
 def usage(str):
     raise ValueError(str)
 
-
 def defaultargs(options):
-    l = {}
-    for (longname, default, doc) in options:
-        if default is not None:
-            l[longname] = default
-    return l
-        
+    return dict((longname, default) for longname, default, doc in options
+                                        if default is not None)
 
 def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
     config = {}
@@ -61,8 +56,9 @@ def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
         longname, default, doc = option
         longkeyed[longname] = option
         config[longname] = default
-    for longname in presets.keys():        # presets after defaults but before arguments
-        config[longname] = presets[longname]
+
+    config.update(presets) # presets after defaults but before arguments
+
     options = []
     args = []
     pos = 0

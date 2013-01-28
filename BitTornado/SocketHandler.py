@@ -130,13 +130,8 @@ class SocketHandler:
 
     def scan_for_timeouts(self):
         t = clock() - self.timeout
-        tokill = []
-        for s in self.single_sockets.values():
-            if s.last_hit < t:
-                tokill.append(s)
-        for k in tokill:
-            if k.socket is not None:
-                self._close_socket(k)
+        map(self._close_socket, s for s in self.single_sockets.values()
+                    if s.last_hit < t and s.socket is not None)
 
     def bind(self, port, bind = '', reuse = False, ipv6_socket_style = 1, upnp = 0):
         port = int(port)

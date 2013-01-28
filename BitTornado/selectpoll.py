@@ -42,12 +42,7 @@ class poll:
         else:
             sleep(timeout)
             return []
-        result = []
-        for s in r:
-            result.append((s, POLLIN))
-        for s in w:
-            result.append((s, POLLOUT))
-        return result
+        return [(s, POLLIN) for s in r] + [(s, POLLOUT) for s in w]
 
 def remove(list, item):
     i = bisect(list, item)

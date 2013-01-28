@@ -35,8 +35,7 @@ def to_long_ipv6(ip):
             n = n.split('.')
             if len(n) != 4:
                 raise ValueError, "bad address"
-            for i in n:
-                b.append(int(i))
+            b.extend(map(int,n))
             continue
         n = ('0'*(4-len(n))) + n
         b.append(int(n[:2],16))
@@ -150,8 +149,7 @@ class IP_List:
                 e1 = e2
         l.append((b1,e1))
         self.ipv4list = [b for b,e in l]
-        for b,e in l:
-            self.ipv4dict[b] = e
+        self.ipv4dict.update(l)
 
     def _import_ipv6(self, entrylist):  #entrylist = sorted list of pairs of ipv6s converted to longs
         assert not self.ipv6list
@@ -169,8 +167,7 @@ class IP_List:
                 e1 = e2
         l.append((b1,e1))
         self.ipv6list = [b for b,e in l]
-        for b,e in l:
-            self.ipv6dict[b] = e
+        self.ipv6dict.update(l)
 
 
     def includes(self, ip):

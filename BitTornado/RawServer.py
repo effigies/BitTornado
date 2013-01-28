@@ -161,11 +161,8 @@ class RawServer:
 
     def _kill_tasks(self):
         if self.tasks_to_kill:
-            new_funcs = []
-            for (t, func, id) in self.funcs:
-                if id not in self.tasks_to_kill:
-                    new_funcs.append((t, func, id))
-            self.funcs = new_funcs
+            self.funcs = [(t, func, tid) for (t, func, tid) in self.funcs
+                            if tid not in self.tasks_to_kill]
             self.tasks_to_kill = []
 
     def kill_tasks(self, id):

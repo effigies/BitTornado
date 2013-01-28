@@ -369,11 +369,8 @@ class BT1Download:
     def checkSaveLocation(self, loc):
         if 'length' in self.info:
             return os.path.exists(loc)
-        for x in self.info['files']:
-            if os.path.exists(os.path.join(loc, x['path'][0])):
-                return True
-        return False
-                
+        return any(os.path.exists(os.path.join(loc, x['path'][0]))
+                    for x in self.info['files'])
 
     def saveAs(self, filefunc, pathfunc = None):
         try:
@@ -392,9 +389,7 @@ class BT1Download:
                 make(file)
                 files = [(file, file_length)]
             else:
-                file_length = 0L
-                for x in self.info['files']:
-                    file_length += x['length']
+                file_length = sum(x['length'] for x in self.info['files'])
                 file = filefunc(self.info['name'], file_length,
                                 self.config['saveas'], True)
                 if file is None:
@@ -408,9 +403,9 @@ class BT1Download:
                         self.errorfunc(file + 'is not a dir')
                         return None
                     if len(os.listdir(file)) > 0:  # if it's not empty
-                        for x in self.info['files']:
-                            if os.path.exists(os.path.join(file, x['path'][0])):
-                                existing = 1
+                        existing = any(
+                            os.path.exists(os.path.join(file, x['path'][0]))
+                                for x in self.info['files'])
                         if not existing:
                             file = os.path.join(file, self.info['name'])
                             if os.path.exists(file) and not os.path.isdir(file):
@@ -427,9 +422,7 @@ class BT1Download:
 
                 files = []
                 for x in self.info['files']:
-                    n = file
-                    for i in x['path']:
-                        n = os.path.join(n, i)
+                    n = os.path.join(file, x['path'])
                     files.append((n, x['length']))
                     make(n)
         except OSError, e:

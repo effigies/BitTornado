@@ -22,16 +22,12 @@ def parsedir(directory, parsed, files, blocked,
         directory = dirs_to_check.pop()
         newtorrents = False
         for f in os.listdir(directory):
-            newtorrent = None
-            for ext in exts:
-                if f.endswith(ext):
-                    newtorrent = ext[1:]
-                    break
+            newtorrent = [ext[1:] for ext in exts if f.endswith(ext)]
             if newtorrent:
                 newtorrents = True
                 p = os.path.join(directory, f)
                 new_files[p] = [(os.path.getmtime(p), os.path.getsize(p)), 0]
-                torrent_type[p] = newtorrent
+                torrent_type[p] = newtorrent[0]
         if not newtorrents:
             for f in os.listdir(directory):
                 p = os.path.join(directory, f)
@@ -103,10 +99,8 @@ def parsedir(directory, parsed, files, blocked,
                 l = i.get('length',0)
                 nf = 1
             elif 'files' in i:
-                for li in i['files']:
-                    nf += 1
-                    if 'length' in li:
-                        l += li['length']
+                nf += len(i['files'])
+                l += sum(li['length'] for li in i['files'] if 'length' in li)
             a['numfiles'] = nf
             a['length'] = l
             a['name'] = i.get('name', f)

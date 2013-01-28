@@ -27,11 +27,7 @@ may have unpredictable results.
 
 from cStringIO import StringIO
 from traceback import print_exc
-from types import DictType, StringType
-try:
-    from types import BooleanType
-except ImportError:
-    BooleanType = None
+from types import DictType, StringType, BooleanType
 
 DEBUG = False
 

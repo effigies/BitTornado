@@ -1,11 +1,7 @@
 # Written by Petru Paler, Uoti Urpala, Ross Cohen and John Hoffman
 # see LICENSE.txt for license information
 
-from types import IntType, LongType, StringType, ListType, TupleType, DictType
-try:
-    from types import BooleanType
-except ImportError:
-    BooleanType = None
+from types import IntType, LongType, StringType, ListType, TupleType, DictType, BooleanType
 try:
     from types import UnicodeType
 except ImportError:

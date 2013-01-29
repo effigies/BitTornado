@@ -148,7 +148,7 @@ class DownloadInfo:
                 metainfo = bdecode(h.read())
                 h.close()
                 self.annCtl.SetValue(metainfo['announce'])
-                if metainfo.has_key('announce-list'):
+                if 'announce-list' in metainfo:
                     self.annListCtl.SetValue('\n'.join(', '.join(tier)
                         for tier in metainfo['announce-list']) + '\n' * 3)
                 else:

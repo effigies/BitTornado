@@ -30,7 +30,7 @@ for metainfo_name in sys.argv[1:]:
     print 'metainfo file.: %s' % os.path.basename(metainfo_name)
     print 'info hash.....: %s' % info_hash.hexdigest()
     piece_length = info['piece length']
-    if info.has_key('length'):
+    if 'length' in info:
         # let's assume we just have a file
         print 'file name.....: %s' % info['name']
         file_length = info['length']
@@ -53,11 +53,11 @@ for metainfo_name in sys.argv[1:]:
     print '%s %i (%i * %i + %i)' \
           % (name,file_length, piece_number, piece_length, last_piece_length)
     print 'announce url..: %s' % metainfo['announce']
-    if metainfo.has_key('announce-list'):
+    if 'announce-list' in metainfo:
         announce_list = '|'.join(','.join(tier)
                                 for tier in metainfo['announce-list'])
         print 'announce-list.: %s' % announce_list
-    if metainfo.has_key('httpseeds'):
+    if 'httpseeds' in metainfo:
         print 'http seeds....: %s' % '|'.join(metainfo['httpseeds'])
-    if metainfo.has_key('comment'):
+    if 'comment' in metainfo:
         print 'comment.......: %s' % metainfo['comment']

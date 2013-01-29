@@ -474,7 +474,7 @@ class DownloadInfoFrame:
 
 
     def getStatusIcon(self, name, bitmap=False):
-        if self.statusIcons.has_key(name):
+        if name in self.statusIcons:
             i = self.statusIcons[name]
             if type(i)  == type(self.icon) and not bitmap:
                 return i
@@ -660,7 +660,7 @@ class DownloadInfoFrame:
                 return
             num = self.connChoice.GetSelection()
             choice = connChoices[num]
-            if choice.has_key('super-seed'):  # selecting super-seed is now a toggle
+            if 'super-seed' in choice:  # selecting super-seed is now a toggle
                 self.dow.set_super_seed()     # one way change, don't go back
                 self.connChoice.SetSelection(self.lastuploadsettings)
                 return
@@ -690,7 +690,7 @@ class DownloadInfoFrame:
             self.onConnScroll (0)
             self.onRateScroll (0)
             self.dow.setInitiate(choice.get('initiate', 40))
-            if choice.has_key('automatic'):
+            if 'automatic' in choice:
                 if not self.autorate:
                     self.autorate = True
                     self.rateSpinner.Enable(False)
@@ -862,11 +862,11 @@ class DownloadInfoFrame:
 
             detailSizer = wxFlexGridSizer(cols = 2, vgap = 6)
 
-            if info.has_key('length'):
+            if 'length' in info:
                 fileListID = None
                 detailSizer.Add(StaticText('file name :'))
                 detailSizer.Add(StaticText(info['name']))
-                if info.has_key('md5sum'):
+                if 'md5sum' in info:
                     detailSizer.Add(StaticText('MD5 hash :'))
                     detailSizer.Add(StaticText(info['md5sum']))
                 file_length = info['length']
@@ -914,7 +914,7 @@ class DownloadInfoFrame:
                         path = path + item
                     path += ' (' + str(file['length']) + ')'
                     fileList.SetStringItem(x, 0, path)
-                    if file.has_key('md5sum'):
+                    if 'md5sum' in file:
                         fileList.SetStringItem(x, 2, '    [' + str(file['md5sum']) + ']')
                     if fileselector:
                         p = fileselector[x]
@@ -982,10 +982,10 @@ class DownloadInfoFrame:
                 turl = p.sub (r'\1', announce)
                 trackerUrl = StaticText(turl, self.FONT, True, 'Blue')
                 detailSizer.Add(trackerUrl)
-            if metainfo.has_key('comment'):
+            if 'comment' in metainfo:
                 detailSizer.Add(StaticText('comment :'))
                 detailSizer.Add(StaticText(metainfo['comment']))
-            if metainfo.has_key('creation date'):
+            if 'creation date' in metainfo:
                 detailSizer.Add(StaticText('creation date :'))
                 try:
                     detailSizer.Add(StaticText(
@@ -1569,7 +1569,7 @@ class DownloadInfoFrame:
             self.onConnChoice(0,
                               self.old_ratesettings.get('uploads'),
                               self.old_ratesettings.get('max upload rate'))
-            if self.old_ratesettings.has_key('max download rate'):
+            if 'max download rate' in self.old_ratesettings:
                 self.dow.setDownloadRate(self.old_ratesettings['max download rate'])
                 if self.advBox:
                     self.downrateSpinner.SetValue(self.old_ratesettings['max download rate'])
@@ -1610,7 +1610,7 @@ class DownloadInfoFrame:
         if self.updateSpinnerFlag == 1:
             self.updateSpinnerFlag = 0
             cc = connChoices[self.connChoice.GetSelection()]
-            if cc.has_key('rate'):
+            if 'rate' in cc:
                 newValue = (self.rateslider.GetValue() * cc['rate'].get('div',1))
                 if self.rateSpinner.GetValue() != newValue:
                     self.rateSpinner.SetValue(newValue)

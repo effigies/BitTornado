@@ -133,7 +133,7 @@ class ConfigDir:
         except:
             return self.config
         l = self.config.keys()
-        for k,v in r.items():
+        for k,v in r.iteritems():
             if k in self.config:
                 t = type(self.config[k])
                 try:
@@ -152,7 +152,7 @@ class ConfigDir:
 
     def saveConfig(self, new_config = None):
         if new_config:
-            for k,v in new_config.items():
+            for k,v in new_config.iteritems():
                 if k in self.config:
                     self.config[k] = v
         try:
@@ -370,7 +370,7 @@ class ConfigDir:
                 times.setdefault(f,[]).append(t)
             names.setdefault(f,[]).append(p)
 
-        for k,v in times.items():
+        for k,v in times.iteritems():
             if max(v) < exptime and not k in still_active:
                 for f in names[k]:
                     try:

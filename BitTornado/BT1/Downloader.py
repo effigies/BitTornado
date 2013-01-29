@@ -449,7 +449,7 @@ class Downloader:
     def num_disconnected_seeds(self):
         # first expire old ones
         expired = []
-        for id,t in self.disconnectedseeds.items():
+        for id,t in self.disconnectedseeds.iteritems():
             if clock() - t > EXPIRE_TIME:     #Expire old seeds after so long
                 expired.append(id)
         for id in expired:

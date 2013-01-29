@@ -198,7 +198,7 @@ class StorageWrapper:
 
         self.check_targets = {}
         got = {}
-        for p,v in self.places.items():
+        for v in self.places.itervalues():
             assert v not in got
             got[v] = 1
         for i in xrange(len(self.hashes)):
@@ -629,7 +629,7 @@ class StorageWrapper:
                 # automatically limited.
                 self.blocked_moveout.add(index)
             return False
-        for p, v in self.places.items():
+        for v in self.places.itervalues():
             if v == index:
                 break
         else:
@@ -719,7 +719,7 @@ class StorageWrapper:
                 d.good(index)
         del self.download_history[index]
         if index in self.failed_pieces:
-            for d in self.failed_pieces[index].keys():
+            for d in self.failed_pieces[index]:
                 if d is not None:
                     d.failed(index)
             del self.failed_pieces[index]
@@ -798,7 +798,7 @@ class StorageWrapper:
         if not self.double_check:
             return
         sources = []
-        for p,v in self.places.items():
+        for p,v in self.places.iteritems():
             if v in pieces_to_check:
                 sources.append(p)
         assert len(sources) == len(pieces_to_check)
@@ -853,7 +853,7 @@ class StorageWrapper:
 
         self.blocked_movein = Olist()
         self.blocked_moveout = Olist()
-        for p,v in self.places.items():
+        for p,v in self.places.iteritems():
             if p != v:
                 if self.blocked[p] and not self.blocked[v]:
                     self.blocked_movein.add(p)

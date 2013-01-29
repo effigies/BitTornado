@@ -86,7 +86,7 @@ def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
                     assert 0
             except ValueError, e:
                 usage('wrong format of --%s - %s' % (key, str(e)))
-    for key, value in config.items():
+    for key, value in config.iteritems():
         if value is None:
             usage("Option --%s is required." % key)
     if minargs is not None and len(args) < minargs:

@@ -34,7 +34,7 @@ DEBUG = False
 def ini_write(f, d, comment=''):
     try:
         a = {'':{}}
-        for k,v in d.items():
+        for k,v in d.iteritems():
             assert type(k) == StringType
             k = k.lower()
             if type(v) == DictType:

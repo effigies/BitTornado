@@ -144,7 +144,7 @@ class Storage:
 
     def sync(self):
         # may raise IOError or OSError
-        for file in self.whandles.keys():
+        for file in self.whandles:
             self._sync(file)
 
 
@@ -320,13 +320,13 @@ class Storage:
 
     def flush(self):
         # may raise IOError or OSError
-        for file in self.whandles.keys():
+        for file in self.whandles:
             self.lock.acquire()
             self.handles[file].flush()
             self.lock.release()
 
     def close(self):
-        for file, f in self.handles.items():
+        for file, f in self.handles.iteritems():
             try:
                 self.unlock_file(file, f)
             except:

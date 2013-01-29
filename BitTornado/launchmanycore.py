@@ -211,10 +211,10 @@ class LaunchMany:
         ( self.torrent_cache, self.file_cache, self.blocked_files,
             added, removed ) = r
 
-        for hash, data in removed.items():
+        for hash, data in removed.iteritems():
             self.Output.message('dropped "'+data['path']+'"')
             self.remove(hash)
-        for hash, data in added.items():
+        for hash, data in added.iteritems():
             self.Output.message('added "'+data['path']+'"')
             self.add(hash, data)
 

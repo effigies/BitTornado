@@ -138,7 +138,7 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         return 20, self.read_crypto_block3b
 
     def read_crypto_block3b(self, s):
-        for k in self.multihandler.singlerawservers.keys():
+        for k in self.multihandler.singlerawservers:
             if self.encrypter.test_skey(s,k):
                 self.multihandler.singlerawservers[k]._external_connection_made(
                         self.connection, None, self.buffer,

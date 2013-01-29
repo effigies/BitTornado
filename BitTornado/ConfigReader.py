@@ -149,7 +149,7 @@ class configReader:
 
 
     def resetConfigDefaults(self):
-        for p,v in self.defaults.items():
+        for p,v in self.defaults.iteritems():
             if p not in defaultsToIgnore:
                 self.config[p] = v
         self.configDir.saveConfig()

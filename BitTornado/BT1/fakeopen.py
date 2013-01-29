@@ -40,7 +40,7 @@ class FakeHandle:
 class FakeOpen:
     def __init__(self, initial = {}):
         self.files = {}
-        for key, value in initial.items():
+        for key, value in initial.iteritems():
             self.files[key] = list(value)
     
     def open(self, filename, mode):

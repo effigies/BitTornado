@@ -90,12 +90,12 @@ defaults = [
 def statefiletemplate(x):
     if type(x) != DictType:
         raise ValueError
-    for cname, cinfo in x.items():
+    for cname, cinfo in x.iteritems():
         if cname == 'peers':
-            for y in cinfo.values():      # The 'peers' key is a dictionary of SHA hashes (torrent ids)
+            for y in cinfo.itervalues():      # The 'peers' key is a dictionary of SHA hashes (torrent ids)
                 if type(y) != DictType:   # ... for the active torrents, and each is a dictionary
                     raise ValueError
-                for id, info in y.items(): # ... of client ids interested in that torrent
+                for id, info in y.iteritems(): # ... of client ids interested in that torrent
                     if (len(id) != 20):
                         raise ValueError
                     if type(info) != DictType:  # ... each of which is also a dictionary
@@ -123,7 +123,7 @@ def statefiletemplate(x):
                 raise ValueError
             if 'allowed_dir_files' in x:
                 adlist = [z[1] for z in x['allowed_dir_files'].values()]
-                for y in cinfo.keys():        # and each should have a corresponding key here
+                for y in cinfo:        # and each should have a corresponding key here
                     if not y in adlist:
                         raise ValueError
         elif cname == 'allowed_dir_files':
@@ -262,9 +262,9 @@ class Tracker:
         else:
             x = 5
         self.cache_default = [({},{}) for i in xrange(x)]
-        for infohash, ds in self.downloads.items():
+        for infohash, ds in self.downloads.iteritems():
             self.seedcount[infohash] = 0
-            for x,y in ds.items():
+            for x,y in ds.iteritems():
                 ip = y['ip']
                 if ( (self.allowed_IPs and not self.allowed_IPs.includes(ip))
                      or (self.banned_IPs and self.banned_IPs.includes(ip)) ):
@@ -280,9 +280,9 @@ class Tracker:
                     ip = gip
                 self.natcheckOK(infohash,x,ip,y['port'],y)
             
-        for x in self.downloads.keys():
+        for x in self.downloads:
             self.times[x] = {}
-            for y in self.downloads[x].keys():
+            for y in self.downloads[x]:
                 self.times[x][y] = 0
 
         self.trackerid = createPeerID('-T-')
@@ -428,12 +428,12 @@ class Tracker:
             if self.config['allowed_dir']:
                 if self.show_names:
                     names = [ (self.allowed[hash]['name'],hash)
-                              for hash in self.allowed.keys() ]
+                              for hash in self.allowed ]
                 else:
                     names = [ (None,hash)
-                              for hash in self.allowed.keys() ]
+                              for hash in self.allowed ]
             else:
-                names = [ (None,hash) for hash in self.downloads.keys() ]
+                names = [ (None,hash) for hash in self.downloads ]
             if not names:
                 s.write('<p>not tracking any files yet...</p>\n')
             else:
@@ -526,9 +526,9 @@ class Tracker:
                     bencode({'failure reason':
                     'full scrape function is not available with this tracker.'}))
             if self.allowed is not None:
-                keys = self.allowed.keys()
+                keys = self.allowed.iterkeys()
             else:
-                keys = self.downloads.keys()
+                keys = self.downloads.iterkeys()
             for hash in keys:
                 fs[hash] = self.scrapedata(hash)
 
@@ -1035,7 +1035,7 @@ class Tracker:
                 return
             self.allowed_list_mtime = os.path.getmtime(f)
 
-        for infohash in added.keys():
+        for infohash in added:
             self.downloads.setdefault(infohash, {})
             self.completed.setdefault(infohash, 0)
             self.seedcount.setdefault(infohash, 0)
@@ -1078,13 +1078,13 @@ class Tracker:
         del dls[peerid]
 
     def expire_downloaders(self):
-        for x in self.times.keys():
-            for myid, t in self.times[x].items():
+        for x in self.times:
+            for myid, t in self.times[x].iteritems():
                 if t < self.prevtime:
                     self.delete_peer(x,myid)
         self.prevtime = clock()
         if (self.keep_dead != 1):
-            for key, value in self.downloads.items():
+            for key, value in self.downloads.iteritems():
                 if len(value) == 0 and (
                         self.allowed is None or key not in self.allowed ):
                     del self.times[key]

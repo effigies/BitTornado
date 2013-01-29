@@ -115,7 +115,7 @@ class HTTPConnection:
             responsestring + '\r\n')
         if not self.pre1:
             headers['Content-Length'] = len(data)
-            for key, value in headers.items():
+            for key, value in headers.iteritems():
                 r.write(key + ': ' + str(value) + '\r\n')
             r.write('\r\n')
         if self.command != 'HEAD':

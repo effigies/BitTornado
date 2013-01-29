@@ -40,7 +40,7 @@ def parsedir(directory, parsed, files, blocked,
     removed = {}
     # files[path] = [(modification_time, size), hash], hash is 0 if the file
     # has not been successfully parsed
-    for p,v in new_files.items():   # re-add old items and check for changes
+    for p,v in new_files.iteritems():  # re-add old items and check for changes
         oldval = files.get(p)
         if not oldval:          # new file
             to_add.append(p)
@@ -125,7 +125,7 @@ def parsedir(directory, parsed, files, blocked,
         new_parsed[h] = a
         added[h] = a
 
-    for p,v in files.items():       # and finally, mark removed torrents
+    for p,v in files.iteritems():       # and finally, mark removed torrents
         if p not in new_files and p not in blocked:
             if NOISY:
                 errfunc('removing '+p)

@@ -227,10 +227,8 @@ class FileSelector:
         try:
             s = self.storage.pickle()
             sw = self.storagewrapper.pickle()
-            for k in s.keys():
-                d[k] = s[k]
-            for k in sw.keys():
-                d[k] = sw[k]
+            d.update(s)
+            d.update(sw)
         except (IOError, OSError):
             pass
         return d

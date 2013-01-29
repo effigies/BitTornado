@@ -150,7 +150,7 @@ class configReader:
 
     def resetConfigDefaults(self):
         for p,v in self.defaults.items():
-            if not p in defaultsToIgnore:
+            if p not in defaultsToIgnore:
                 self.config[p] = v
         self.configDir.saveConfig()
 
@@ -725,7 +725,7 @@ class configReader:
             setval = 'no limit '
         else:
             setval = str(setval)
-        if not setval in self.maxfilesopen_choices:
+        if setval not in self.maxfilesopen_choices:
             setval = self.maxfilesopen_choices[0]
         self.maxfilesopen_data.SetStringSelection(setval)
 
@@ -737,7 +737,7 @@ class configReader:
             setval = 'no limit '
         else:
             setval = str(setval)
-        if not setval in self.maxconnections_choices:
+        if setval not in self.maxconnections_choices:
             setval = self.maxconnections_choices[0]
         self.maxconnections_data.SetStringSelection(setval)
 
@@ -753,7 +753,7 @@ class configReader:
             setval = 'never '
         else:
             setval = str(setval)
-        if not setval in self.expirecache_choices:
+        if setval not in self.expirecache_choices:
             setval = self.expirecache_choices[0]
         self.expirecache_data.SetFont(self.default_font)
         self.expirecache_data.SetStringSelection(setval)
@@ -851,7 +851,7 @@ class configReader:
                 setval = 'no limit '
             else:
                 setval = str(setval)
-            if not setval in self.maxfilesopen_choices:
+            if setval not in self.maxfilesopen_choices:
                 setval = self.maxfilesopen_choices[0]
             self.maxfilesopen_data.SetStringSelection(setval)
             setval = self.defaults['max_connections']
@@ -859,7 +859,7 @@ class configReader:
                 setval = 'no limit '
             else:
                 setval = str(setval)
-            if not setval in self.maxconnections_choices:
+            if setval not in self.maxconnections_choices:
                 setval = self.maxconnections_choices[0]
             self.maxconnections_data.SetStringSelection(setval)
             self.superseeder_data.SetSelection(int(self.defaults['super_seeder']))
@@ -868,7 +868,7 @@ class configReader:
                 setval = 'never '
             else:
                 setval = str(setval)
-            if not setval in self.expirecache_choices:
+            if setval not in self.expirecache_choices:
                 setval = self.expirecache_choices[0]
             self.expirecache_data.SetStringSelection(setval)
           except:

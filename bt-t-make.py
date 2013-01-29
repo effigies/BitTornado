@@ -177,10 +177,7 @@ class BasicDownloadInfo:
             metainfo = bdecode(h.read())
             h.close()
             self.announce = metainfo['announce']
-            if metainfo.has_key('announce-list'):
-                self.announce_list = metainfo['announce-list']
-            else:
-                self.announce_list = None
+            self.announce_list = metainfo.get('announce-list')
         except:
             return
 

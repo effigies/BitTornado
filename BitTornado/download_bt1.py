@@ -665,10 +665,8 @@ class BT1Download:
             self.rerequest.hit()
 
     def startRerequester(self, seededfunc = None, force_rapid_update = False):
-        if 'announce-list' in self.response:
-            trackerlist = self.response['announce-list']
-        else:
-            trackerlist = [[self.response['announce']]]
+        trackerlist = self.response.get('announce-list',
+                        [[self.response['announce']]])
 
         self.rerequest = Rerequester(self.port, self.myid, self.infohash, 
             trackerlist, self.config, 

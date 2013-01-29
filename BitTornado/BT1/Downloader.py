@@ -390,10 +390,7 @@ class Downloader:
 
     def make_download(self, connection):
         ip = connection.get_ip()
-        if ip in self.perip:
-            perip = self.perip[ip]
-        else:
-            perip = self.perip.setdefault(ip, PerIPStats(ip))
+        perip = self.perip.setdefault(ip, PerIPStats(ip))
         perip.peerid = connection.get_readable_id()
         perip.numconnections += 1
         d = SingleDownload(self, connection)

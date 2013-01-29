@@ -139,12 +139,11 @@ class T2TList:
         # step 1:  Create a new list with all tracker/torrent combinations in allowed_dir        
         newlist = {}
         for hash, data in allowed_list.items():
-            if 'announce-list' in data:
-                for tier in data['announce-list']:
-                    for tracker in tier:
-                        self.disallowed.setdefault(tracker, False)
-                        newlist.setdefault(tracker, {})
-                        newlist[tracker][hash] = None # placeholder
+            for tier in data.get('announce-list',[]):
+                for tracker in tier:
+                    self.disallowed.setdefault(tracker, False)
+                    newlist.setdefault(tracker, {})
+                    newlist[tracker][hash] = None # placeholder
                             
         # step 2:  Go through and copy old data to the new list.
         # if the new list has no place for it, then it's old, so deactivate it

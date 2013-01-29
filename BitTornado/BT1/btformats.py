@@ -25,7 +25,7 @@ def check_info(info):
     if ('files' in info) == ('length' in info):
         raise ValueError, 'single/multiple file mix'
     if 'length' in info:
-        length = info.get('length')
+        length = info['length']
         if type(length) not in ints or length < 0:
             raise ValueError, 'bad metainfo - bad length'
     else:

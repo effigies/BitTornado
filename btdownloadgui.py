@@ -821,14 +821,9 @@ class DownloadInfoFrame:
             metainfo = self.dow.getResponse()
             if metainfo is None:
                 return
-            if metainfo.has_key('announce'):
-                announce = metainfo['announce']
-            else:
-                announce = None
-            if metainfo.has_key('announce-list'):
-                announce_list = metainfo['announce-list']
-            else:
-                announce_list = None
+            announce = metainfo.get('announce')
+            announce_list = metainfo.get('announce-list')
+
             info = metainfo['info']
             info_hash = self.dow.infohash
             piece_length = info['piece length']

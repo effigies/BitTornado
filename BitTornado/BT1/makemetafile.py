@@ -72,10 +72,7 @@ def completedir(dir, url, params = {}, flag = threading.Event(),
     files = os.listdir(dir)
     files.sort()
     ext = '.torrent'
-    if 'target' in params:
-        target = params['target']
-    else:
-        target = ''
+    target = params.get('target','')
 
     togen = []
     for f in files:

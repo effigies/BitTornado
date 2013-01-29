@@ -96,7 +96,7 @@ def parsedir(directory, parsed, files, blocked,
             l = 0
             nf = 0
             if 'length' in i:
-                l = i.get('length',0)
+                l = i['length']
                 nf = 1
             elif 'files' in i:
                 nf += len(i['files'])

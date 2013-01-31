@@ -129,12 +129,12 @@ class FileSelector:
         if files_updated:
             self.storage.reset_file_status()
 
-        changed_pieces = {}
+        changed_pieces = set()
         for piece, start, data in buffer:
             if not self.storagewrapper.write_raw(piece, start, data):
                 return False
             data.release()
-            changed_pieces[piece] = 1
+            changed_pieces.add(piece)
         if not self.storagewrapper.doublecheck_data(changed_pieces):
             return False
 

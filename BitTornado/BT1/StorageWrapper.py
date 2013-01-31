@@ -107,8 +107,8 @@ class StorageWrapper:
         self.waschecked = [False] * len(hashes)
         self.places = {}
         self.holes = []
-        self.stat_active = {}
-        self.stat_new = {}
+        self.stat_active = set()
+        self.stat_new = set()
         self.dirty = {}
         self.stat_numflunked = 0
         self.stat_numdownloaded = 0
@@ -197,10 +197,10 @@ class StorageWrapper:
             return False
 
         self.check_targets = {}
-        got = {}
+        got = set()
         for v in self.places.itervalues():
             assert v not in got
-            got[v] = 1
+            got.add(v)
         for i in xrange(len(self.hashes)):
             if i in self.places:  # restored from pickled
                 self.check_targets[self.hashes[i]] = []
@@ -486,9 +486,9 @@ class StorageWrapper:
         if self.inactive_requests[index] == 1:
             self._make_inactive(index)
         self.numactive[index] += 1
-        self.stat_active[index] = 1
+        self.stat_active.add(index)
         if index not in self.dirty:
-            self.stat_new[index] = 1
+            self.stat_new.add(index)
         rs = self.inactive_requests[index]
 #        r = min(rs)
 #        rs.remove(r)
@@ -671,9 +671,8 @@ class StorageWrapper:
         self.numactive[index] -= 1
         assert self.numactive[index] >= 0
         if not self.numactive[index]:
-            del self.stat_active[index]
-        if index in self.stat_new:
-            del self.stat_new[index]
+            self.stat_active.discare(index)
+        self.stat_new.discard(index)
 
         if self.inactive_requests[index] or self.numactive[index]:
             return True
@@ -697,11 +696,9 @@ class StorageWrapper:
             self.stat_numflunked += 1
 
             self.failed_pieces[index] = {}
-            allsenders = {}
-            for d in self.download_history[index].itervalues():
-                allsenders[d] = 1
+            allsenders = set(self.download_history[index].itervalues())
             if len(allsenders) == 1:
-                culprit = allsenders.keys()[0]
+                culprit = allsenders.pop()
                 if culprit is not None:
                     culprit.failed(index, bump = True)
                 del self.failed_pieces[index] # found the culprit already
@@ -735,9 +732,8 @@ class StorageWrapper:
         self.amount_inactive += length
         self.numactive[index] -= 1
         if not self.numactive[index]:
-            del self.stat_active[index]
-            if index in self.stat_new:
-                del self.stat_new[index]
+            self.stat_active.discare(index)
+            self.stat_new.discard(index)
 
 
     def get_piece(self, index, begin, length):
@@ -922,11 +918,11 @@ class StorageWrapper:
 
 
     def unpickle(self, data, valid_places):
-        got = {}
+        got = set()
         places = {}
         dirty = {}
         download_history = {}
-        stat_active = {}
+        stat_active = set()
         stat_numfound = self.stat_numfound
         amount_obtained = self.amount_obtained
         amount_inactive = self.amount_inactive
@@ -959,8 +955,8 @@ class StorageWrapper:
                 assert index not in got
                 assert place not in got
                 places[index] = place
-                got[index] = 1
-                got[place] = 1
+                got.add(index)
+                got.add(place)
 
             for index in xrange(len(self.hashes)):
                 if have[index]:
@@ -970,7 +966,7 @@ class StorageWrapper:
                             continue
                         assert index not in got
                         places[index] = index
-                        got[index] = 1
+                        got.add(index)
                     length = self._piecelen(index)
                     amount_obtained += length
                     stat_numfound += 1
@@ -986,11 +982,11 @@ class StorageWrapper:
                         continue
                     assert index not in got
                     places[index] = index
-                    got[index] = 1
+                    got.add(index)
                 assert len(plist) % 2 == 0
                 plist = [plist[x:x+2] for x in xrange(0,len(plist),2)]
                 dirty[index] = plist
-                stat_active[index] = 1
+                stat_active.add(index)
                 download_history[index] = {}
                 # invert given partials
                 length = self._piecelen(index)

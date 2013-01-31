@@ -6,9 +6,16 @@ try:
     from types import UnicodeType
 except ImportError:
     UnicodeType = None
-from cStringIO import StringIO
 
 def decode_int(x, f):
+    """Decode integer in string x at position f
+
+    An integer with ASCII representation X will be encoded as "iXe". A
+    ValueError will be thrown if X begins with 0 but is not simply '0', or if
+    X begins with '-0'.
+    
+    Returns (parsed integer, next token start position)
+    """
     f += 1
     newf = x.index('e', f)
     try:
@@ -20,9 +27,18 @@ def decode_int(x, f):
             raise ValueError
     elif x[f] == '0' and newf != f+1:
         raise ValueError
+
     return (n, newf+1)
   
 def decode_string(x, f):
+    """Decode string in string x at position f
+
+    A string is encoded as an integer length, followed by a colon and a string
+    of the length given. A ValueError is thrown if length begins with '0' but
+    is not '0'.
+    
+    Returns (parsed string, next token start position)
+    """
     colon = x.index(':', f)
     try:
         n = int(x[f:colon])
@@ -30,14 +46,26 @@ def decode_string(x, f):
         n = long(x[f:colon])
     if x[f] == '0' and colon != f+1:
         raise ValueError
+
     colon += 1
     return (x[colon:colon+n], colon+n)
 
 def decode_unicode(x, f):
+    """Decode unicode string in string x at position f
+
+    A unicode string is simply a string encoding preceded by a u.
+    """
     s, f = decode_string(x, f+1)
     return (s.decode('UTF-8'),f)
 
 def decode_list(x, f):
+    """Decode list in string x at position f
+    
+    A list takes the form lXe where X is the concatenation of the encodings of
+    all elements in the list.
+    
+    Returns (parsed list, next token start position)
+    """
     r, f = [], f+1
     while x[f] != 'e':
         v, f = decode_func[x[f]](x, f)
@@ -45,6 +73,15 @@ def decode_list(x, f):
     return (r, f + 1)
 
 def decode_dict(x, f):
+    """Decode dictionary in string x at position f
+
+    A dictionary is encoded as dXe where X is the concatenation of the
+    encodings of all key,value pairs in the dictionary, sorted by key.
+    Key, value paris are themselves concatenations of the encodings of
+    keys and values, where keys are assumed to be strings.
+    
+    Returns (parsed dictionary, next token start position)
+    """
     r, f = {}, f+1
     lastkey = None
     while x[f] != 'e':
@@ -72,9 +109,10 @@ decode_func['9'] = decode_string
 #decode_func['u'] = decode_unicode
   
 def bdecode(x, sloppy = 0):
+    """Decode a string encoded with bencode, such as the contents of a
+    .torrent file"""
     try:
         r, l = decode_func[x[0]](x, 0)
-#    except (IndexError, KeyError):
     except (IndexError, KeyError, ValueError):
         raise ValueError, "bad bencoded data"
     if not sloppy and l != len(x):
@@ -236,26 +274,55 @@ def encode_bencached(x,r):
     assert x.marker == bencached_marker
     r.append(x.bencoded)
 
-def encode_int(x,r):
+def encode_int(x, r):
+    """Encode integer x into string segments appended to list r
+
+    An integer with ASCII representation X will be encoded as "iXe".
+    """
     r.extend(('i',str(x),'e'))
 
-def encode_bool(x,r):
+def encode_bool(x, r):
+    """Encode boolean x into string segments appended to list r
+
+    A boolean is treated as an integer (0 or 1).
+    """
     encode_int(int(x),r)
 
-def encode_string(x,r):    
+def encode_string(x, r):
+    """Encode string x into string segments appended to list r
+
+    A string is encoded as an integer length, followed by a colon and a string
+    of the length given.
+    """
     r.extend((str(len(x)),':',x))
 
-def encode_unicode(x,r):
+def encode_unicode(x, r):
+    """Encode unicode string x into string segments appended to list r
+
+    A unicode string is converted into UTF-8 and encoded as any other string.
+    """
     #r.append('u')
     encode_string(x.encode('UTF-8'),r)
 
-def encode_list(x,r):
-        r.append('l')
-        for e in x:
-            encode_func[type(e)](e, r)
-        r.append('e')
+def encode_list(x, r):
+    """Encode list x into string segments appended to list r
+    
+    A list takes the form lXe where X is the concatenation of the encodings of
+    all elements in the list.
+    """
+    r.append('l')
+    for e in x:
+        encode_func[type(e)](e, r)
+    r.append('e')
 
-def encode_dict(x,r):
+def encode_dict(x, r):
+    """Encode dictionary x into string segments appended to list r
+
+    A dictionary is encoded as dXe where X is the concatenation of the
+    encodings of all key,value pairs in the dictionary, sorted by key.
+    Key, value paris are themselves concatenations of the encodings of
+    keys and values, where keys are assumed to be strings.
+    """
     r.append('d')
     ilist = x.items()
     ilist.sort()
@@ -272,12 +339,17 @@ encode_func[StringType] = encode_string
 encode_func[ListType] = encode_list
 encode_func[TupleType] = encode_list
 encode_func[DictType] = encode_dict
-if BooleanType:
-    encode_func[BooleanType] = encode_bool
+encode_func[BooleanType] = encode_bool
 if UnicodeType:
     encode_func[UnicodeType] = encode_unicode
     
 def bencode(x):
+    """Encode a data structure into a string.
+    
+    Creates a list in which to collect string segments and returns the
+    joined result.
+    
+    See encode_* for details."""
     r = []
     try:
         encode_func[type(x)](x, r)

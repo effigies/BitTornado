@@ -20,35 +20,16 @@ STATS_INTERVAL = 0.2
 def dummy_status(fractionDone = None, activity = None):
     pass
 
-class Olist:
-    def __init__(self, l = []):
-        self.d = {}
-        for i in l:
-            self.d[i] = 1
-    def __len__(self):
-        return len(self.d)
-    def includes(self, i):
-        return i in self.d
-    def add(self, i):
-        self.d[i] = 1
-    def extend(self, l):
-        for i in l:
-            self.d[i] = 1
+class OrderedSet(set):
     def pop(self, n=0):
-        # assert self.d
-        k = self.d.keys()
         if n == 0:
-            i = min(k)
+            i = min(self)
         elif n == -1:
-            i = max(k)
+            i = max(self)
         else:
-            k.sort()
-            i = k[n]
-        del self.d[i]
+            i = sorted(self)[n]
+        self.remove(i)
         return i
-    def remove(self, i):
-        if i in self.d:
-            del self.d[i]
 
 class fakeflag:
     def __init__(self, state=False):
@@ -102,8 +83,8 @@ class StorageWrapper:
         self.have_cloaked_data = None
         self.blocked = [False] * len(hashes)
         self.blocked_holes = []
-        self.blocked_movein = Olist()
-        self.blocked_moveout = Olist()
+        self.blocked_movein = OrderedSet()
+        self.blocked_moveout = OrderedSet()
         self.waschecked = [False] * len(hashes)
         self.places = {}
         self.holes = []
@@ -378,11 +359,11 @@ class StorageWrapper:
             self.bgalloc_active = True
             n = self._allocfunc()
             if n is not None:
-                if self.blocked_moveout.includes(n):
+                if n in self.blocked_moveout:
                     self.blocked_moveout.remove(n)
                     b = n
                 else:
-                    b = self.blocked_moveout.pop(0)
+                    b = self.blocked_moveout.pop()
                 oldpos = self._move_piece(b,n)
                 self.places[oldpos] = oldpos
             return len(self.holes) / self.numholes
@@ -582,17 +563,17 @@ class StorageWrapper:
         old.release()
 
         if self.blocked[index]:
-            self.blocked_moveout.remove(index)
+            self.blocked_moveout.discard(index)
             if self.blocked[newpos]:
-                self.blocked_movein.remove(index)
+                self.blocked_movein.discard(index)
             else:
                 self.blocked_movein.add(index)
         else:
-            self.blocked_movein.remove(index)
+            self.blocked_movein.discard(index)
             if self.blocked[newpos]:
                 self.blocked_moveout.add(index)
             else:
-                self.blocked_moveout.remove(index)
+                self.blocked_moveout.discard(index)
                     
         return oldpos
             
@@ -847,8 +828,8 @@ class StorageWrapper:
 
         self.blocked = new_blocked
 
-        self.blocked_movein = Olist()
-        self.blocked_moveout = Olist()
+        self.blocked_movein = OrderedSet()
+        self.blocked_moveout = OrderedSet()
         for p,v in self.places.iteritems():
             if p != v:
                 if self.blocked[p] and not self.blocked[v]:

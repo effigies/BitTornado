@@ -531,7 +531,7 @@ class Encoder:
         self.schedulefunc(self.send_keepalives, self.keepalive_delay)
         if self.paused:
             return
-        for c in self.connections.values():
+        for c in self.connections.itervalues():
             c.keepalive()
 
     def start_connections(self, list):
@@ -567,7 +567,7 @@ class Encoder:
                 encrypted = True
             else:
                 return True
-        for v in self.connections.values():
+        for v in self.connections.itervalues():
             if v is None:
                 continue
             if id and v.id == id:
@@ -603,7 +603,7 @@ class Encoder:
             self.connecter.external_connection_made -= 1
             return False
         ip = connection.get_ip(True)
-        for v in self.connections.values():
+        for v in self.connections.itervalues():
             if connection is not v:
                 if connection.id == v.id:
                     if ip == v.get_ip(True):
@@ -639,7 +639,7 @@ class Encoder:
         return True
 
     def close_all(self):
-        for c in self.connections.values():
+        for c in self.connections.itervalues():
             c.close()
         self.connections = {}
 

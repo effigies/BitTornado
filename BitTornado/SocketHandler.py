@@ -130,8 +130,9 @@ class SocketHandler:
 
     def scan_for_timeouts(self):
         t = clock() - self.timeout
-        map(self._close_socket, s for s in self.single_sockets.values()
-                    if s.last_hit < t and s.socket is not None)
+        for s in self.single_sockets.itervalues():
+            if s.last_hit < t and s.socket is not None:
+                self._close_socket(s)
 
     def bind(self, port, bind = '', reuse = False, ipv6_socket_style = 1, upnp = 0):
         port = int(port)
@@ -170,7 +171,7 @@ class SocketHandler:
                 server.listen(64)
                 self.poll.register(server, POLLIN)
             except socket.error, e:
-                for server in self.servers.values():
+                for server in self.servers.itervalues():
                     try:
                         server.close()
                     except:
@@ -182,7 +183,7 @@ class SocketHandler:
             raise socket.error('unable to open server port')
         if upnp:
             if not UPnP_open_port(port):
-                for server in self.servers.values():
+                for server in self.servers.itervalues():
                     try:
                         server.close()
                     except:
@@ -334,7 +335,7 @@ class SocketHandler:
             connects = len(self.single_sockets)
             to_close = int(connects*0.05)+1 # close 5% of sockets
             self.max_connects = connects-to_close
-            closelist = self.single_sockets.values()
+            closelist = self.single_sockets.itervalues()
             shuffle(closelist)
             closelist = closelist[:to_close]
             for sock in closelist:
@@ -349,12 +350,12 @@ class SocketHandler:
 
 
     def shutdown(self):
-        for ss in self.single_sockets.values():
+        for ss in self.single_sockets.itervalues():
             try:
                 ss.close()
             except:
                 pass
-        for server in self.servers.values():
+        for server in self.servers.itervalues():
             try:
                 server.close()
             except:

@@ -226,7 +226,7 @@ class MultiHandler:
 
     def listen_forever(self):
         self.rawserver.listen_forever(self)
-        for srs in self.singlerawservers.values():
+        for srs in self.singlerawservers.itervalues():
             srs.finished = True
             srs.running = False
             srs.doneflag.set()

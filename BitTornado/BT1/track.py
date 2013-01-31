@@ -115,14 +115,14 @@ def statefiletemplate(x):
         elif cname == 'completed':
             if (type(cinfo) != DictType): # The 'completed' key is a dictionary of SHA hashes (torrent ids)
                 raise ValueError          # ... for keeping track of the total completions per torrent
-            for y in cinfo.values():      # ... each torrent has an integer value
+            for y in cinfo.itervalues():  # ... each torrent has an integer value
                 if type(y) not in (IntType,LongType):
                     raise ValueError      # ... for the number of reported completions for that torrent
         elif cname == 'allowed':
             if (type(cinfo) != DictType): # a list of info_hashes and included data
                 raise ValueError
             if 'allowed_dir_files' in x:
-                adlist = [z[1] for z in x['allowed_dir_files'].values()]
+                adlist = set(z[1] for z in x['allowed_dir_files'].itervalues())
                 for y in cinfo:        # and each should have a corresponding key here
                     if not y in adlist:
                         raise ValueError
@@ -130,7 +130,7 @@ def statefiletemplate(x):
             if (type(cinfo) != DictType): # a list of files, their attributes and info hashes
                 raise ValueError
             dirkeys = {}
-            for y in cinfo.values():      # each entry should have a corresponding info_hash
+            for y in cinfo.itervalues():      # each entry should have a corresponding info_hash
                 if not y[1]:
                     continue
                 if y[1] not in x['allowed']:

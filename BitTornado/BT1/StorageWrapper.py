@@ -698,7 +698,7 @@ class StorageWrapper:
 
             self.failed_pieces[index] = {}
             allsenders = {}
-            for d in self.download_history[index].values():
+            for d in self.download_history[index].itervalues():
                 allsenders[d] = 1
             if len(allsenders) == 1:
                 culprit = allsenders.keys()[0]
@@ -714,7 +714,7 @@ class StorageWrapper:
         self.amount_left -= length
         self.stat_numdownloaded += 1
 
-        for d in self.download_history[index].values():
+        for d in self.download_history[index].itervalues():
             if d is not None:
                 d.good(index)
         del self.download_history[index]

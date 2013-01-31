@@ -32,6 +32,7 @@ def check_info(info):
         files = info.get('files')
         if type(files) != ListType:
             raise ValueError
+        paths = {}
         for f in files:
             if type(f) != DictType:
                 raise ValueError, 'bad metainfo - bad file value'
@@ -46,10 +47,10 @@ def check_info(info):
                     raise ValueError, 'bad metainfo - bad path dir'
                 if not reg.match(p):
                     raise ValueError, 'path %s disallowed for security reasons' % p
-        for i in xrange(len(files)):
-            for j in xrange(i):
-                if files[i]['path'] == files[j]['path']:
-                    raise ValueError, 'bad metainfo - duplicate path'
+            tpath = tuple(path)
+            if tpath in paths:
+                raise ValueError, 'bad metainfo - duplicate path'
+            paths[tpath] = True
 
 def check_message(message):
     if type(message) != DictType:

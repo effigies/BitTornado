@@ -94,7 +94,7 @@ class ConfigDir:
             os.mkdir(self.dir_icons)
         for icon in GetIcons():
             i = os.path.join(self.dir_icons,icon)
-            if not os.path.exists(i) and
+            if not os.path.exists(i) and \
                 not copyfile(os.path.join(OLDICONPATH,icon),i):
                     CreateIcon(icon,self.dir_icons)
 

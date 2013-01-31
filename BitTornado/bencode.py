@@ -18,14 +18,10 @@ def decode_int(x, f):
     """
     f += 1
     newf = x.index('e', f)
-    try:
-        n = int(x[f:newf])
-    except:
-        n = long(x[f:newf])
-    if x[f] == '-':
-        if x[f + 1] == '0':
-            raise ValueError
-    elif x[f] == '0' and newf != f+1:
+    n = int(x[f:newf])
+
+    # '-0' is invalid and strings beginning with '0' must be == '0'
+    if x[f:f+2] == '-0' or (x[f] == '0' and newf != f+1):
         raise ValueError
 
     return (n, newf+1)
@@ -40,10 +36,9 @@ def decode_string(x, f):
     Returns (parsed string, next token start position)
     """
     colon = x.index(':', f)
-    try:
-        n = int(x[f:colon])
-    except (OverflowError, ValueError):
-        n = long(x[f:colon])
+    n = int(x[f:colon])
+
+    # '0:' is the only valid string beginning with '0'
     if x[f] == '0' and colon != f+1:
         raise ValueError
 
@@ -351,11 +346,7 @@ def bencode(x):
     
     See encode_* for details."""
     r = []
-    try:
-        encode_func[type(x)](x, r)
-    except:
-        print "*** error *** could not encode type %s (value: %s)" % (type(x), x)
-        assert 0
+    encode_func[type(x)](x, r)
     return ''.join(r)
 
 def test_bencode():
@@ -375,7 +366,12 @@ def test_bencode():
     try:
         bencode({1: 'foo'})
         assert 0
-    except AssertionError:
+    except TypeError:
+        pass
+    try:
+        bencode({'foo': 1.0})
+        assert 0
+    except KeyError:
         pass
 
   

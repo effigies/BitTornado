@@ -35,7 +35,7 @@ def uniconvertl(srclist, encoding):
         for src in srclist:
             r.append(uniconvert(src, encoding))
     except UnicodeError:
-        raise UnicodeError('bad filename: '+os.path.join(srclist))
+        raise UnicodeError('bad filename: '+os.path.join(*srclist))
     return r
 
 def uniconvert(src, encoding):

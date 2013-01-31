@@ -422,7 +422,7 @@ class BT1Download:
 
                 files = []
                 for x in self.info['files']:
-                    n = os.path.join(file, x['path'])
+                    n = os.path.join(file, *x['path'])
                     files.append((n, x['length']))
                     make(n)
         except OSError, e:

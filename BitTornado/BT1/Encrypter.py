@@ -1,11 +1,9 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-from cStringIO import StringIO
+import socket
+import urllib
 from binascii import hexlify
-from socket import error as socketerror
-from urllib import quote
-from traceback import print_exc
 from BitTornado.BTcrypto import Crypto
 
 DEBUG = False
@@ -24,10 +22,10 @@ def tobinary16(i):
 def make_readable(s):
     if not s:
         return ''
-    if quote(s).find('%') >= 0:
+    if urllib.quote(s).find('%') >= 0:
         return hexlify(s).upper()
     return '"'+s+'"'
-   
+
 
 class IncompleteCounter:
     def __init__(self):
@@ -569,7 +567,7 @@ class Encoder:
             con = Connection(self, c, id, encrypted = encrypted)
             self.connections[c] = con
             c.set_handler(con)
-        except socketerror:
+        except socket.error:
             return False
         return True
 

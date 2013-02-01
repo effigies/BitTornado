@@ -1,11 +1,8 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-from traceback import print_exc
-from binascii import b2a_hex
 from clock import clock
 from CurrentRateMeasure import Measure
-from cStringIO import StringIO
 from math import sqrt
 
 DEBUG = False

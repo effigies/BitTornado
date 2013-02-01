@@ -98,7 +98,6 @@ class InvokeEvent(wxPyEvent):
         self.kwargs = kwargs
 
 
-
 class DownloadInfoFrame:
     def __init__(self, flag, configfile):
         self._errorwindow = None

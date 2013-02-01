@@ -1,11 +1,9 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
+import urllib
 from cStringIO import StringIO
 from binascii import hexlify
-from socket import error as socketerror
-from urllib import quote
-from traceback import print_exc
 import Connecter
 
 DEBUG = False
@@ -24,7 +22,7 @@ def tobinary(i):
 def make_readable(s):
     if not s:
         return ''
-    if quote(s).find('%') >= 0:
+    if urllib.quote(s).find('%') >= 0:
         return hexlify(s).upper()
     return '"'+s+'"'
    

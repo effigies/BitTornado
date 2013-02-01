@@ -78,9 +78,7 @@ class Info:
             f()  progress         - callback function to report progress
             bool progress_percent - flag for reporting percentage or change
         """
-        self.encoding = ENCODING
-        if 'encoding' in params:
-            self.encoding = params['encoding']
+        self.encoding = params.get('encoding',ENCODING)
 
         self.name = uniconvert(source,self.encoding)
         self.size = size

@@ -26,7 +26,7 @@ class BadDataGuard:
 
     def failed(self, index, bump = False):
         self.stats.bad.setdefault(index, 0)
-        self.downloader.gotbaddata[self.ip] = 1
+        self.downloader.gotbaddata.add(self.ip)
         self.stats.bad[index] += 1
         if len(self.stats.bad) > 1:
             if self.download is not None:
@@ -84,18 +84,16 @@ class SingleDownload:
         self.guard.download = None
 
     def _letgo(self):
-        if self in self.downloader.queued_out:
-            del self.downloader.queued_out[self]
+        self.downloader.queued_out.discard(self)
         if not self.active_requests:
             return
         if self.downloader.endgamemode:
             self.active_requests = []
             return
-        lost = {}
+        lost = set()
         for index, begin, length in self.active_requests:
             self.downloader.storage.request_lost(index, begin, length)
-            lost[index] = 1
-        lost = lost.keys()
+            lost.add(index)
         self.active_requests = []
         if self.downloader.paused:
             return
@@ -187,7 +185,7 @@ class SingleDownload:
             return
         if len(self.active_requests) >= self._backlog(new_unchoke):
             if not (self.active_requests or self.backlog):
-                self.downloader.queued_out[self] = 1
+                self.downloader.queued_out.add(self)
             return
         lost_interests = []
         while len(self.active_requests) < self.backlog:
@@ -237,7 +235,7 @@ class SingleDownload:
             return
         if len(self.active_requests) >= self._backlog(new_unchoke):
             if not (self.active_requests or self.backlog) and not self.choked:
-                self.downloader.queued_out[self] = 1
+                self.downloader.queued_out.add(self)
             return
         want = [a for a in self.downloader.all_requests if self.have[a[0]] and a not in self.active_requests]
         if not (self.active_requests or want):
@@ -343,7 +341,7 @@ class Downloader:
         self.disconnectedseeds = {}
         self.downloads = []
         self.perip = {}
-        self.gotbaddata = {}
+        self.gotbaddata = set()
         self.kicked = {}
         self.banned = {}
         self.kickbans_ok = kickbans_ok
@@ -357,7 +355,7 @@ class Downloader:
         self.download_rate = 0
         self.bytes_requested = 0
         self.last_time = clock()
-        self.queued_out = {}
+        self.queued_out = set()
         self.requeueing = False
         self.paused = False
 
@@ -373,9 +371,9 @@ class Downloader:
         self.last_time = t
         if not self.requeueing and self.queued_out and self.bytes_requested < 0:
             self.requeueing = True
-            q = self.queued_out.keys()
+            q = list(self.queued_out)
             random.shuffle(q)
-            self.queued_out = {}
+            self.queued_out = set()
             for d in q:
                 d._request_more()
             self.requeueing = False

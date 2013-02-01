@@ -16,7 +16,7 @@ def parsedir(directory, parsed, files, blocked,
         errfunc('checking dir')
     dirs_to_check = [directory]
     new_files = {}
-    new_blocked = {}
+    new_blocked = set()
     torrent_type = {}
     while dirs_to_check:    # first, recurse directories and gather torrents
         directory = dirs_to_check.pop()
@@ -54,7 +54,7 @@ def parsedir(directory, parsed, files, blocked,
                     new_parsed[h] = parsed[h]
                 new_files[p] = oldval
             else:
-                new_blocked[p] = 1  # same broken unparseable file
+                new_blocked.add(p)  # same broken unparseable file
             continue
         if h in parsed and h not in blocked:
             if NOISY:
@@ -70,7 +70,7 @@ def parsedir(directory, parsed, files, blocked,
             if p not in blocked or files[p][0] != v:
                 errfunc('**warning** '+
                     p +' is a duplicate torrent for '+new_parsed[h]['path'])
-            new_blocked[p] = 1
+            new_blocked.add(p)
             continue
                 
         if NOISY:
@@ -84,7 +84,7 @@ def parsedir(directory, parsed, files, blocked,
             if h in new_parsed:
                 errfunc('**warning** '+
                     p +' is a duplicate torrent for '+new_parsed[h]['path'])
-                new_blocked[p] = 1
+                new_blocked.add(p)
                 continue
 
             a = {}
@@ -114,7 +114,7 @@ def parsedir(directory, parsed, files, blocked,
                 a['metainfo'] = d
         except:
             errfunc('**warning** '+p+' has errors')
-            new_blocked[p] = 1
+            new_blocked.add(p)
             continue
         try:
             ff.close()

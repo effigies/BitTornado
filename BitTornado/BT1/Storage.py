@@ -40,7 +40,7 @@ class Storage:
         total = 0l
         so_far = 0l
         self.handles = {}
-        self.whandles = {}
+        self.whandles = set()
         self.tops = {}
         self.sizes = {}
         self.mtimes = {}
@@ -188,7 +188,7 @@ class Storage:
         f = self.handles[file]
         del self.handles[file]
         if file in self.whandles:
-            del self.whandles[file]
+            self.whandles.remove(file)
             f.flush()
             self.unlock_file(file, f)
             f.close()
@@ -215,7 +215,7 @@ class Storage:
                 try:
                     f = self._open(file, 'rb+')
                     self.handles[file] = f
-                    self.whandles[file] = 1
+                    self.whandles.add(file)
                     self.lock_file(file, f)
                 except (IOError, OSError), e:
                     if DEBUG:
@@ -233,7 +233,7 @@ class Storage:
                 if for_write:
                     f = self._open(file, 'rb+')
                     self.handles[file] = f
-                    self.whandles[file] = 1
+                    self.whandles.add(file)
                     self.lock_file(file, f)
                 else:
                     f = self._open(file, 'rb')
@@ -336,7 +336,7 @@ class Storage:
             except:
                 pass
         self.handles = {}
-        self.whandles = {}
+        self.whandles = set()
         self.handlebuffer = None
 
 
@@ -515,7 +515,7 @@ class Storage:
             for file, size, mtime in l:
                 pfiles[file] = (size, mtime)
 
-            valid_pieces = {}
+            valid_pieces = set()
             for i in xrange(len(self.files)):
                 if self.disabled[i]:
                     continue
@@ -527,10 +527,10 @@ class Storage:
                     print 'adding '+file
                 for p in xrange( int(start/self.piece_length),
                                  int((end-1)/self.piece_length)+1 ):
-                    valid_pieces[p] = 1
+                    valid_pieces.add(p)
 
             if DEBUG:
-                print valid_pieces.keys()
+                print list(valid_pieces)
             
             def test(old, size, mtime):
                 oldsize, oldmtime = old
@@ -552,8 +552,7 @@ class Storage:
                                 print 'removing '+file
                             for p in xrange( int(start/self.piece_length),
                                              int((end-1)/self.piece_length)+1 ):
-                                if p in valid_pieces:
-                                    del valid_pieces[p]
+                                valid_pieces.discard(p)
                     continue
                 file, size = self.files[i]
                 if not size:
@@ -565,14 +564,13 @@ class Storage:
                         print 'removing '+file
                     for p in xrange( int(start/self.piece_length),
                                      int((end-1)/self.piece_length)+1 ):
-                        if p in valid_pieces:
-                            del valid_pieces[p]
+                        valid_pieces.discard(p)
         except:
             if DEBUG:
                 print_exc()
             return []
 
         if DEBUG:
-            print valid_pieces.keys()                        
-        return valid_pieces.keys()
+            print list(valid_pieces)
+        return valid_pieces
 

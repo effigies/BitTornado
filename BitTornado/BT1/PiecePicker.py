@@ -13,11 +13,11 @@ class PiecePicker:
         self.priority_step = priority_step
         self.cutoff = rarest_first_priority_cutoff
         self.numpieces = numpieces
-        self.started = []
+        self.started = set()
         self.totalcount = 0
         self.numhaves = [0] * numpieces
         self.priority = [1] * numpieces
-        self.removed_partials = {}
+        self.removed_partials = set()
         self.crosscount = [numpieces]
         self.crosscount2 = [numpieces]
         self.has = [0] * numpieces
@@ -129,8 +129,7 @@ class PiecePicker:
 
 
     def requested(self, piece):
-        if piece not in self.started:
-            self.started.append(piece)
+        self.started.add(piece)
 
     def _remove_from_interests(self, piece, keep_partial = False):
         l = self.interests[self.level_in_interests[piece]]
@@ -143,7 +142,7 @@ class PiecePicker:
         try:
             self.started.remove(piece)
             if keep_partial:
-                self.removed_partials[piece] = 1
+                self.removed_partials.add(piece)
         except ValueError:
             pass
 
@@ -203,10 +202,7 @@ class PiecePicker:
         l.append(piece)
         for i in range(pos,len(l)):
             self.pos_in_interests[l[i]] = i
-        try:
-            self.started.remove(piece)
-        except:
-            pass
+        self.started.discard(piece)
 
     def set_priority(self, piece, p):
         if self.superseed:
@@ -241,8 +237,8 @@ class PiecePicker:
                 l2[newp] = piece
                 parray[piece] = newp
             if piece in self.removed_partials:
-                del self.removed_partials[piece]
-                self.started.append(piece)
+                self.removed_partials.remove(piece)
+                self.started.add(piece)
             # now go to downloader and try requesting more
             return True
         numint = self.level_in_interests[piece]

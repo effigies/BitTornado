@@ -129,7 +129,7 @@ def statefiletemplate(x):
         elif cname == 'allowed_dir_files':
             if (type(cinfo) != DictType): # a list of files, their attributes and info hashes
                 raise ValueError
-            dirkeys = {}
+            dirkeys = set()
             for y in cinfo.itervalues():      # each entry should have a corresponding info_hash
                 if not y[1]:
                     continue
@@ -137,7 +137,7 @@ def statefiletemplate(x):
                     raise ValueError
                 if y[1] in dirkeys: # and each should have a unique info_hash
                     raise ValueError
-                dirkeys[y[1]] = 1
+                dirkeys.add(y[1])
             
 
 alas = 'your file may exist elsewhere in the universe\nbut alas, not here\n'
@@ -341,7 +341,7 @@ class Tracker:
         elif config['allowed_dir']:
             self.allowed = self.state.setdefault('allowed',{})
             self.allowed_dir_files = self.state.setdefault('allowed_dir_files',{})
-            self.allowed_dir_blocked = {}
+            self.allowed_dir_blocked = set()
             self.parse_allowed()
             self.remove_from_state('allowed_list')
 

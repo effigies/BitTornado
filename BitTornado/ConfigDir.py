@@ -189,15 +189,15 @@ class ConfigDir:
     ###### TORRENT HANDLING ######
 
     def getTorrents(self):
-        d = {}
+        d = set()
         for f in os.listdir(self.dir_torrentcache):
             f = os.path.basename(f)
             try:
                 f, garbage = f.split('.')
             except:
                 pass
-            d[unhexlify(f)] = 1
-        return d.keys()
+            d.add(unhexlify(f))
+        return d
 
     def getTorrentVariations(self, t):
         t = hexlify(t)

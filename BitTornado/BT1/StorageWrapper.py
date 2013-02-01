@@ -638,9 +638,9 @@ class StorageWrapper:
                 return True
             if old[:].tostring() != piece:
                 try:
-                    self.failed_pieces[index][self.download_history[index][begin]] = 1
+                    self.failed_pieces[index].add(self.download_history[index][begin])
                 except:
-                    self.failed_pieces[index][None] = 1
+                    self.failed_pieces[index].add(None)
             old.release()
         self.download_history.setdefault(index,{})[begin] = source
         
@@ -676,7 +676,7 @@ class StorageWrapper:
             self.amount_inactive += length
             self.stat_numflunked += 1
 
-            self.failed_pieces[index] = {}
+            self.failed_pieces[index] = set()
             allsenders = set(self.download_history[index].itervalues())
             if len(allsenders) == 1:
                 culprit = allsenders.pop()

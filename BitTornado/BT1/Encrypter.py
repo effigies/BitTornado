@@ -504,7 +504,7 @@ class Encoder:
         self.measurefunc = measurefunc
         self.config = config
         self.connections = {}
-        self.banned = {}
+        self.banned = set()
         self.external_bans = bans
         self.to_connect = []
         self.paused = False
@@ -631,7 +631,7 @@ class Encoder:
         self.connections = {}
 
     def ban(self, ip):
-        self.banned[ip] = 1
+        self.banned.add(ip)
 
     def pause(self, flag):
         self.paused = flag

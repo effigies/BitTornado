@@ -3,13 +3,13 @@
 
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
-from binascii import b2a_hex
+from binascii import hexlify
 
 DEBUG1 = False
 DEBUG2 = False
 
 def toint(s):
-    return long(b2a_hex(s), 16)
+    return long(hexlify(s), 16)
 
 def tobinary(i):
     return (chr(i >> 24) + chr((i >> 16) & 0xFF) + 

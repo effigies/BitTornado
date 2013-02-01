@@ -2,7 +2,7 @@
 # see LICENSE.txt for license information
 
 from cStringIO import StringIO
-from binascii import b2a_hex
+from binascii import hexlify
 from socket import error as socketerror
 from urllib import quote
 from traceback import print_exc
@@ -15,33 +15,19 @@ protocol_name = 'BitTorrent protocol'
 option_pattern = chr(0)*8
 
 def toint(s):
-    return long(b2a_hex(s), 16)
+    return long(hexlify(s), 16)
 
 def tobinary(i):
     return (chr(i >> 24) + chr((i >> 16) & 0xFF) + 
         chr((i >> 8) & 0xFF) + chr(i & 0xFF))
 
-hexchars = '0123456789ABCDEF'
-hexmap = []
-for i in xrange(256):
-    hexmap.append(hexchars[(i&0xF0)/16]+hexchars[i&0x0F])
-
-def tohex(s):
-    r = []
-    for c in s:
-        r.append(hexmap[ord(c)])
-    return ''.join(r)
-
 def make_readable(s):
     if not s:
         return ''
     if quote(s).find('%') >= 0:
-        return tohex(s)
+        return hexlify(s).upper()
     return '"'+s+'"'
    
-def toint(s):
-    return long(b2a_hex(s), 16)
-
 # header, reserved, download id, my id, [length, message]
 
 streamno = 0
@@ -70,7 +56,7 @@ class StreamCheck:
 
     def read_download_id(self, s):
         if DEBUG:
-            print self.no, 'download ID ' + tohex(s)
+            print self.no, 'download ID ' + hexlify(s)
         return 20, self.read_peer_id
 
     def read_peer_id(self, s):

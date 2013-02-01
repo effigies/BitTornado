@@ -4,9 +4,9 @@
 def _int_to_booleans(x):
     return tuple(bool((x << i) & 0x80) for i in xrange(8))
 
-lookup_table = [_int_to_booleans(i) for i in xrange(256)]
+charbitmap = [_int_to_booleans(i) for i in xrange(256)]
 
-reverse_lookup_table = dict((e,chr(i)) for i,e in enumerate(lookup_table))
+bitcharmap = dict((e,chr(i)) for i,e in enumerate(charbitmap))
 
 class Bitfield:
     def __init__(self, length = None, bitstring = None, copyfrom = None):
@@ -23,7 +23,7 @@ class Bitfield:
             if extra < 0 or extra >= 8:
                 raise ValueError
 
-            r = [bit for char in bitstring for bit in lookup_table[ord(char)]]
+            r = [bit for char in bitstring for bit in charbitmap[ord(char)]]
             if extra > 0:
                 if r[-extra:] != [False] * extra:
                     raise ValueError
@@ -47,7 +47,7 @@ class Bitfield:
 
     def tostring(self):
         bits = self.array + [False] * (-self.length % 8)
-        return ''.join(reverse_lookup_table[tuple(bits[x:x+8])]
+        return ''.join(bitcharmap[tuple(bits[x:x+8])]
                         for x in xrange(0, len(bits), 8))
 
     def complete(self):

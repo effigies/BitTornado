@@ -3,6 +3,7 @@
 import sys
 import os
 import time
+from binascii import hexlify, unhexlify
 from inifile import ini_write, ini_read
 from bencode import bencode, bdecode
 from types import IntType, LongType, StringType, FloatType
@@ -17,20 +18,6 @@ except:
 OLDICONPATH = os.path.abspath(os.path.dirname(realpath(sys.argv[0])))
 
 DIRNAME = '.'+product_name
-
-hexchars = '0123456789abcdef'
-hexmap = []
-revmap = {}
-for i in xrange(256):
-    x = hexchars[(i&0xF0)/16]+hexchars[i&0x0F]
-    hexmap.append(x)
-    revmap[x] = chr(i)
-
-def tohex(s):
-    return ''.join(hexmap[ord(c)] for c in s)
-
-def unhex(s):
-    return ''.join(revmap[s[x:x+2]] for x in xrange(0, len(s), 2))
 
 def copyfile(oldpath, newpath): # simple file copy, all in RAM
     try:
@@ -209,11 +196,11 @@ class ConfigDir:
                 f, garbage = f.split('.')
             except:
                 pass
-            d[unhex(f)] = 1
+            d[unhexlify(f)] = 1
         return d.keys()
 
     def getTorrentVariations(self, t):
-        t = tohex(t)
+        t = hexlify(t)
         d = []
         for f in os.listdir(self.dir_torrentcache):
             f = os.path.basename(f)
@@ -227,7 +214,7 @@ class ConfigDir:
         return d
 
     def getTorrent(self, t, v = -1):
-        t = tohex(t)
+        t = hexlify(t)
         if v == -1:
             v = max(self.getTorrentVariations(t))   # potential exception
         if v:
@@ -244,7 +231,7 @@ class ConfigDir:
         return r
 
     def writeTorrent(self, data, t, v = -1):
-        t = tohex(t)
+        t = hexlify(t)
         if v == -1:
             try:
                 v = max(self.getTorrentVariations(t))+1
@@ -269,7 +256,7 @@ class ConfigDir:
     def getTorrentData(self, t):
         if t in self.TorrentDataBuffer:
             return self.TorrentDataBuffer[t]
-        t = os.path.join(self.dir_datacache,tohex(t))
+        t = os.path.join(self.dir_datacache,hexlify(t))
         if not os.path.exists(t):
             return None
         try:
@@ -287,7 +274,7 @@ class ConfigDir:
     def writeTorrentData(self, t, data):
         self.TorrentDataBuffer[t] = data
         try:
-            f = open(os.path.join(self.dir_datacache,tohex(t)),'wb')
+            f = open(os.path.join(self.dir_datacache,hexlify(t)),'wb')
             f.write(bencode(data))
             success = True
         except:
@@ -302,12 +289,12 @@ class ConfigDir:
 
     def deleteTorrentData(self, t):
         try:
-            os.remove(os.path.join(self.dir_datacache,tohex(t)))
+            os.remove(os.path.join(self.dir_datacache,hexlify(t)))
         except:
             pass
 
     def getPieceDir(self, t):
-        return os.path.join(self.dir_piececache,tohex(t))
+        return os.path.join(self.dir_piececache,hexlify(t))
 
 
     ###### EXPIRATION HANDLING ######
@@ -327,7 +314,7 @@ class ConfigDir:
             except:
                 pass
             try:
-                f = unhex(f)
+                f = unhexlify(f)
                 assert len(f) == 20
             except:
                 continue
@@ -342,7 +329,7 @@ class ConfigDir:
         for f in os.listdir(self.dir_datacache):
             p = os.path.join(self.dir_datacache,f)
             try:
-                f = unhex(os.path.basename(f))
+                f = unhexlify(os.path.basename(f))
                 assert len(f) == 20
             except:
                 continue
@@ -356,7 +343,7 @@ class ConfigDir:
         for f in os.listdir(self.dir_piececache):
             p = os.path.join(self.dir_piececache,f)
             try:
-                f = unhex(os.path.basename(f))
+                f = unhexlify(os.path.basename(f))
                 assert len(f) == 20
             except:
                 continue

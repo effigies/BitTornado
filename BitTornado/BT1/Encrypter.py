@@ -2,7 +2,7 @@
 # see LICENSE.txt for license information
 
 from cStringIO import StringIO
-from binascii import b2a_hex
+from binascii import hexlify
 from socket import error as socketerror
 from urllib import quote
 from traceback import print_exc
@@ -16,27 +16,16 @@ protocol_name = 'BitTorrent protocol'
 option_pattern = chr(0)*8
 
 def toint(s):
-    return long(b2a_hex(s), 16)
+    return long(hexlify(s), 16)
 
 def tobinary16(i):
     return chr((i >> 8) & 0xFF) + chr(i & 0xFF)
-
-hexchars = '0123456789ABCDEF'
-hexmap = []
-for i in xrange(256):
-    hexmap.append(hexchars[(i&0xF0)/16]+hexchars[i&0x0F])
-
-def tohex(s):
-    r = []
-    for c in s:
-        r.append(hexmap[ord(c)])
-    return ''.join(r)
 
 def make_readable(s):
     if not s:
         return ''
     if quote(s).find('%') >= 0:
-        return tohex(s)
+        return hexlify(s).upper()
     return '"'+s+'"'
    
 
@@ -114,7 +103,7 @@ class Connection:
         self.write = self._log_write
 
     def _log_write(self, s):
-        self.log.write('w:'+b2a_hex(s)+'\n')
+        self.log.write('w:'+hexlify(s)+'\n')
         self._logwritefunc(s)
         
 
@@ -255,9 +244,9 @@ class Connection:
     def read_crypto_ia(self, s):
         if DEBUG:
             self._log_start()
-            self.log.write('r:'+b2a_hex(s)+'(ia)\n')
+            self.log.write('r:'+hexlify(s)+'(ia)\n')
             if self.buffer:
-                self.log.write('r:'+b2a_hex(self.buffer)+'(buffer)\n')
+                self.log.write('r:'+hexlify(self.buffer)+'(buffer)\n')
         return self.read_crypto_block3done(s)
 
     def read_crypto_block3done(self, ia=''):
@@ -400,7 +389,7 @@ class Connection:
 
     def _read(self, s):
         if self.log:
-            self.log.write('r:'+b2a_hex(s)+'\n')
+            self.log.write('r:'+hexlify(s)+'\n')
         self.Encoder.measurefunc(len(s))
         self.buffer += s
         while True:
@@ -444,7 +433,7 @@ class Connection:
 
     def _read2(self, s):    # more efficient, requires buffer['',''] & bufferlen
         if self.log:
-            self.log.write('r:'+b2a_hex(s)+'\n')
+            self.log.write('r:'+hexlify(s)+'\n')
         self.Encoder.measurefunc(len(s))
         while True:
             if self.closed:

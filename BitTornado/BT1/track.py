@@ -26,7 +26,7 @@ from cStringIO import StringIO
 from traceback import print_exc
 from BitTornado.clock import clock
 from types import StringType, IntType, LongType, ListType, DictType
-from binascii import b2a_hex, a2b_hex, a2b_base64
+from binascii import hexlify
 import BitTornado.__init__
 from BitTornado.__init__ import version, createPeerID
 
@@ -470,10 +470,10 @@ class Tracker:
                             else:
                                 linkname = name
                             s.write('<tr><td><code>%s</code></td><td>%s</td><td align="right">%s</td><td align="right">%i</td><td align="right">%i</td><td align="right">%i</td><td align="right">%s</td></tr>\n' \
-                                % (b2a_hex(hash), linkname, size_format(sz), c, d, n, size_format(szt)))
+                                % (hexlify(hash), linkname, size_format(sz), c, d, n, size_format(szt)))
                     else:
                         s.write('<tr><td><code>%s</code></td><td align="right"><code>%i</code></td><td align="right"><code>%i</code></td><td align="right"><code>%i</code></td></tr>\n' \
-                            % (b2a_hex(hash), c, d, n))
+                            % (hexlify(hash), c, d, n))
                 if self.config['allowed_dir'] and self.show_names:
                     s.write('<tr><td align="right" colspan="2">%i files</td><td align="right">%s</td><td align="right">%i</td><td align="right">%i</td><td align="right">%i</td><td align="right">%s</td></tr>\n'
                             % (nf, size_format(ts), tc, td, tn, size_format(tt)))

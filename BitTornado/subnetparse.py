@@ -10,11 +10,11 @@ def _int_to_bitstring(x, bits=8):
 hexbinmap = dict(('%x' % x, _int_to_bitstring(x, 4)) for x in xrange(16))
 hexbinmap['x'] = '0000'
 
-chrbinmap = [_int_to_bitstring(n) for n in xrange(256)]
+charbinmap = [_int_to_bitstring(n) for n in xrange(256)]
 
 def to_bitfield_ipv4(ip):
     try: 
-        return ''.join(chrbinmap[ord(i)] for i in socket.inet_aton(ip))
+        return ''.join(charbinmap[ord(i)] for i in socket.inet_aton(ip))
     except socket.error:
         raise ValueError, "bad address"
 

@@ -22,6 +22,7 @@ import random
 import socket
 import threading
 import traceback
+from binascii import hexlify
 from webbrowser import open_new
 from StringIO import StringIO
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
@@ -82,18 +83,6 @@ def comma_format(s):
     for i in range(len(r)-3, 0, -3):
         r = r[:i]+','+r[i:]
     return(r)
-
-hexchars = '0123456789abcdef'
-hexmap = []
-for i in xrange(256):
-    x = hexchars[(i&0xF0)/16]+hexchars[i&0x0F]
-    hexmap.append(x)
-
-def tohex(s):
-    r = []
-    for c in s:
-        r.append(hexmap[ord(c)])
-    return ''.join(r)
 
 wxEVT_INVOKE = wxNewEventType()
 
@@ -931,7 +920,7 @@ class DownloadInfoFrame:
                 colSizer.AddGrowableRow(3)
 
             detailSizer.Add(StaticText('info_hash :'),0,wxALIGN_CENTER_VERTICAL)
-            detailSizer.Add(wxTextCtrl(panel, -1, tohex(info_hash), size = (325, -1), style = wxTE_READONLY))
+            detailSizer.Add(wxTextCtrl(panel, -1, hexlify(info_hash), size = (325, -1), style = wxTE_READONLY))
             num_pieces = int((file_length+piece_length-1)/piece_length)
             detailSizer.Add(StaticText(name + ' : '))
             detailSizer.Add(StaticText('%s (%s bytes)' % (size_format(file_length), comma_format(file_length))))

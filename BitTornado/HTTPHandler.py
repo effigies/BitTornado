@@ -1,15 +1,13 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-from cStringIO import StringIO
-from sys import stdout
+import sys
 import time
+from cStringIO import StringIO
 from clock import clock
 from gzip import GzipFile
 
 DEBUG = False
-
-weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 months = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -159,4 +157,4 @@ class HTTPHandler:
         t = clock()
         if t - self.lastflush > self.minflush:
             self.lastflush = t
-            stdout.flush()
+            sys.stdout.flush()

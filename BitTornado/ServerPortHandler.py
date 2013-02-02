@@ -1,8 +1,6 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
-from cStringIO import StringIO
-#from RawServer import RawServer
 from BTcrypto import Crypto
 
 from BT1.Encrypter import protocol_name

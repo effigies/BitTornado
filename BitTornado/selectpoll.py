@@ -1,7 +1,7 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-from select import select, error
+from select import select
 from time import sleep
 from types import IntType
 from bisect import bisect
@@ -40,7 +40,8 @@ class poll:
             except ValueError:
                 return None
         else:
-            sleep(timeout)
+            if timeout:
+                sleep(timeout)
             return []
         return [(s, POLLIN) for s in r] + [(s, POLLOUT) for s in w]
 

@@ -3,13 +3,13 @@
 # see LICENSE.txt for license information
 
 from __future__ import generators   # for python 2.2
-from random import randrange,randint,seed
+import random
 try:
     from os import urandom
 except:
-    seed()
-    urandom = lambda x: ''.join([chr(randint(0,255)) for i in xrange(x)])
-from sha import sha
+    random.seed()
+    urandom = lambda x: ''.join([chr(random.randint(0,255)) for i in xrange(x)])
+import sha
 
 try:
     from Crypto.Cipher import ARC4
@@ -43,12 +43,12 @@ class Crypto:
 
     def received_key(self, k):
         self.S = numtobyte(pow(bytetonum(k), self.privkey, DH_PRIME))
-        self.block3a = sha('req1'+self.S).digest()
-        self.block3bkey = sha('req3'+self.S).digest()
+        self.block3a = sha.sha('req1'+self.S).digest()
+        self.block3bkey = sha.sha('req3'+self.S).digest()
         self.block3b = None
 
     def _gen_block3b(self, SKEY):
-        a = sha('req2'+SKEY).digest()
+        a = sha.sha('req2'+SKEY).digest()
         return ''.join([ chr(ord(a[i])^ord(self.block3bkey[i]))
                          for i in xrange(20) ])
 
@@ -64,8 +64,8 @@ class Crypto:
     def set_skey(self, SKEY):
         if not self.block3b:
             self.block3b = self._gen_block3b(SKEY)
-        crypta = ARC4.new(sha('keyA'+self.S+SKEY).digest())
-        cryptb = ARC4.new(sha('keyB'+self.S+SKEY).digest())
+        crypta = ARC4.new(sha.sha('keyA'+self.S+SKEY).digest())
+        cryptb = ARC4.new(sha.sha('keyB'+self.S+SKEY).digest())
         if self.initiator:
             self.encrypt = crypta.encrypt
             self.decrypt = cryptb.decrypt
@@ -92,4 +92,4 @@ class Crypto:
         self._write = _write
 
     def padding(self):
-        return urandom(randrange(PAD_MAX-16)+16)
+        return urandom(random.randrange(PAD_MAX-16)+16)

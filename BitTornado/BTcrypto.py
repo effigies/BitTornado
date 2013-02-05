@@ -3,13 +3,14 @@
 # see LICENSE.txt for license information
 
 from __future__ import generators   # for python 2.2
+import sha
 import random
+import binascii
 try:
     from os import urandom
 except:
     random.seed()
     urandom = lambda x: ''.join([chr(random.randint(0,255)) for i in xrange(x)])
-import sha
 
 try:
     from Crypto.Cipher import ARC4
@@ -23,12 +24,10 @@ PAD_MAX = 200 # less than protocol maximum, and later assumed to be < 256
 DH_BYTES = 96
 
 def bytetonum(x):
-    return long(x.encode('hex'), 16)
+    return long(binascii.hexlify(x), 16)
 
 def numtobyte(x):
-    x = hex(x).lstrip('0x').rstrip('Ll')
-    x = '0'*(192 - len(x)) + x
-    return x.decode('hex')
+    return binascii.unhexlify('{0:0192x}'.format(x))
 
 class Crypto:
     def __init__(self, initiator, disable_crypto = False):

@@ -610,7 +610,7 @@ class StorageWrapper:
                 # automatically limited.
                 self.blocked_moveout.add(index)
             return False
-        for v in self.places.itervalues():
+        for p, v in self.places.iteritems():
             if v == index:
                 break
         else:

@@ -144,7 +144,7 @@ class Storage:
 
     def sync(self):
         # may raise IOError or OSError
-        for file in self.whandles:
+        for file in list(self.whandles):
             self._sync(file)
 
 

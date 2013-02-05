@@ -652,7 +652,7 @@ class StorageWrapper:
         self.numactive[index] -= 1
         assert self.numactive[index] >= 0
         if not self.numactive[index]:
-            self.stat_active.discare(index)
+            self.stat_active.discard(index)
         self.stat_new.discard(index)
 
         if self.inactive_requests[index] or self.numactive[index]:
@@ -713,7 +713,7 @@ class StorageWrapper:
         self.amount_inactive += length
         self.numactive[index] -= 1
         if not self.numactive[index]:
-            self.stat_active.discare(index)
+            self.stat_active.discard(index)
             self.stat_new.discard(index)
 
 

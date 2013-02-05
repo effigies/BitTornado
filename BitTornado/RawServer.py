@@ -52,7 +52,7 @@ class RawServer:
         self.funcs = []
         self.externally_added = []
         self.finished = threading.Event()
-        self.tasks_to_kill = []
+        self.tasks_to_kill = set()
         self.excflag = excflag
         
         if sockethandler is None:
@@ -163,10 +163,10 @@ class RawServer:
         if self.tasks_to_kill:
             self.funcs = [(t, func, tid) for (t, func, tid) in self.funcs
                             if tid not in self.tasks_to_kill]
-            self.tasks_to_kill = []
+            self.tasks_to_kill = set()
 
     def kill_tasks(self, id):
-        self.tasks_to_kill.append(id)
+        self.tasks_to_kill.add(id)
 
     def exception(self, kbint = False):
         if not kbint:

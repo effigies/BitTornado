@@ -30,12 +30,10 @@ class HTTPConnection:
             return True
         self.buf += data
         while True:
-            try:
-                i = self.buf.index('\n')
-            except ValueError:
+            val, nl, buf = self.buf.partition('\n')
+            if not nl:
                 return True
-            val = self.buf[:i]
-            self.buf = self.buf[i+1:]
+            self.buf = buf
             self.next_func = self.next_func(val)
             if self.donereading:
                 return True

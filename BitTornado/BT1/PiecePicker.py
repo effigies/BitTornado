@@ -143,7 +143,7 @@ class PiecePicker:
             self.started.remove(piece)
             if keep_partial:
                 self.removed_partials.add(piece)
-        except ValueError:
+        except KeyError:
             pass
 
     def complete(self, piece):

@@ -4,15 +4,6 @@
 # Modifications by various people
 # see LICENSE.txt for license information
 
-from BitTornado import PSYCO
-if PSYCO.psyco:
-    try:
-        import psyco
-        assert psyco.__version__ >= 0x010100f0
-        psyco.full()
-    except:
-        pass
-
 import sys
 import os
 import re
@@ -737,10 +728,6 @@ class DownloadInfoFrame:
             si = ( 'exact Version String: ' + version + '\n' +
                    'Python version: ' + sys.version + '\n' +
                    'wxPython version: ' + wxVERSION_STRING + '\n' )
-            try:
-                si += 'Psyco version: ' + hex(psyco.__version__)[2:] + '\n'
-            except:
-                pass
             colSizer.Add(StaticText(si))
 
             babble1 = StaticText(
@@ -2118,10 +2105,6 @@ class DownloadInfoFrame:
                   'OS: ' + sys.platform + '\n' +
                   'Python version: ' + sys.version + '\n' +
                   'wxWindows version: ' + wxVERSION_STRING + '\n' )
-            try:
-                t += 'Psyco version: ' + hex(psyco.__version__)[2:] + '\n'
-            except:
-                pass
             try:
                 t += 'Allocation method: ' + self.config['alloc_type']
                 if self.dow.storagewrapper.bgalloc_active:

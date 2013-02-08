@@ -4,21 +4,10 @@
 # multitracker extensions by John Hoffman
 # see LICENSE.txt for license information
 
-from BitTornado import PSYCO
-if PSYCO.psyco:
-    try:
-        import psyco
-        assert psyco.__version__ >= 0x010100f0
-        psyco.full()
-    except:
-        pass
-
 import sys
 import os
-assert sys.version >= '2', "Install Python 2.0 or greater"
 from BitTornado.BT1.makemetafile import make_meta_file, defaults, announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions
-
 
 def prog(amount):
     print '%.1f%% complete\r' % (amount * 100),

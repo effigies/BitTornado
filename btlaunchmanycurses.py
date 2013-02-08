@@ -5,15 +5,6 @@
 
 DOWNLOAD_SCROLL_RATE = 1
 
-from BitTornado import PSYCO
-if PSYCO.psyco:
-    try:
-        import psyco
-        assert psyco.__version__ >= 0x010100f0
-        psyco.full()
-    except:
-        pass
-
 import sys
 import os
 import time

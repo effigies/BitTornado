@@ -3,15 +3,6 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
-from BitTornado import PSYCO
-if PSYCO.psyco:
-    try:
-        import psyco
-        assert psyco.__version__ >= 0x010100f0
-        psyco.full()
-    except:
-        pass
-
 import sys
 import os
 from BitTornado.launchmanycore import LaunchMany

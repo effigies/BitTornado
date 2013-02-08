@@ -391,11 +391,3 @@ def test_bencode():
         assert 0
     except KeyError:
         pass
-
-  
-try:
-    import psyco
-    psyco.bind(bdecode)
-    psyco.bind(bencode)
-except ImportError:
-    pass

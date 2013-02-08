@@ -104,8 +104,7 @@ class configReader:
             self.config['gui_ratesettingsdefault'] = (
                                 self.defaults['gui_ratesettingsdefault'] )
             updated = True
-        if self.config['ipv6_enabled'] and (
-                        sys.version_info < (2,3) or not socket.has_ipv6 ):
+        if self.config['ipv6_enabled'] and not socket.has_ipv6:
             self.config['ipv6_enabled'] = 0
             updated = True
         for c in ['gui_checkingcolor','gui_downloadcolor','gui_seedingcolor']:
@@ -262,7 +261,7 @@ class configReader:
         self.autoflush_checkbox.SetFont(self.default_font)
         self.autoflush_checkbox.SetValue(self.config['auto_flush'])
 
-        if sys.version_info >= (2,3) and socket.has_ipv6:
+        if socket.has_ipv6:
             self.ipv6enabled_checkbox = wxCheckBox(panel, -1, "Initiate and receive connections via IPv6 *")
             self.ipv6enabled_checkbox.SetFont(self.default_font)
             self.ipv6enabled_checkbox.SetValue(self.config['ipv6_enabled'])
@@ -352,7 +351,7 @@ class configReader:
         block1sizer.Add(self.buffering_checkbox)
         block1sizer.Add(self.breakup_checkbox)
         block1sizer.Add(self.autoflush_checkbox)
-        if sys.version_info >= (2,3) and socket.has_ipv6:
+        if socket.has_ipv6:
             block1sizer.Add(self.ipv6enabled_checkbox)
         block1sizer.Add(self.gui_forcegreenonfirewall_checkbox)
         block12sizer.Add(block1sizer)
@@ -473,7 +472,7 @@ class configReader:
             self.buffering_checkbox.SetValue(self.defaults['buffer_reads'])
             self.breakup_checkbox.SetValue(self.defaults['breakup_seed_bitfield'])
             self.autoflush_checkbox.SetValue(self.defaults['auto_flush'])
-            if sys.version_info >= (2,3) and socket.has_ipv6:
+            if socket.has_ipv6:
                 self.ipv6enabled_checkbox.SetValue(self.defaults['ipv6_enabled'])
             self.gui_forcegreenonfirewall_checkbox.SetValue(self.defaults['gui_forcegreenonfirewall'])
             self.gui_font_data.SetValue(self.defaults['gui_font'])
@@ -527,7 +526,7 @@ class configReader:
                 self.config['auto_flush']=5
             else:
                 self.config['auto_flush']=0
-            if sys.version_info >= (2,3) and socket.has_ipv6:
+            if socket.has_ipv6:
                 self.config['ipv6_enabled']=int(self.ipv6enabled_checkbox.GetValue())
             self.config['gui_forcegreenonfirewall']=int(self.gui_forcegreenonfirewall_checkbox.GetValue())
             self.config['minport']=self.minport_data.GetValue()
@@ -668,7 +667,7 @@ class configReader:
                     size = (self.FONT*13, int(self.FONT*2.2)), style = wxTE_PROCESS_TAB)
         self.bind_data.SetFont(self.default_font)
         
-        if sys.version_info >= (2,3) and socket.has_ipv6:
+        if socket.has_ipv6:
             self.ipv6bindsv4_data=wxChoice(panel, -1,
                              choices = ['separate sockets', 'single socket'])
             self.ipv6bindsv4_data.SetFont(self.default_font)
@@ -765,7 +764,7 @@ class configReader:
         datasizer.Add(self.ip_data)
         datasizer.Add(StaticText('IP to bind to: '), 1, wxALIGN_CENTER_VERTICAL)
         datasizer.Add(self.bind_data)
-        if sys.version_info >= (2,3) and socket.has_ipv6:
+        if socket.has_ipv6:
             datasizer.Add(StaticText('IPv6 socket handling: '), 1, wxALIGN_CENTER_VERTICAL)
             datasizer.Add(self.ipv6bindsv4_data)
         datasizer.Add(StaticText('Minimum number of peers: '), 1, wxALIGN_CENTER_VERTICAL)
@@ -826,7 +825,7 @@ class configReader:
           try:
             self.ip_data.SetValue(self.defaults['ip'])
             self.bind_data.SetValue(self.defaults['bind'])
-            if sys.version_info >= (2,3) and socket.has_ipv6:
+            if socket.has_ipv6:
                 self.ipv6bindsv4_data.SetSelection(self.defaults['ipv6_binds_v4'])
             self.minpeers_data.SetValue(self.defaults['min_peers'])
             self.displayinterval_data.SetValue(int(self.defaults['display_interval']*1000))
@@ -878,7 +877,7 @@ class configReader:
           try:
             self.advancedConfig['ip'] = self.ip_data.GetValue()
             self.advancedConfig['bind'] = self.bind_data.GetValue()
-            if sys.version_info >= (2,3) and socket.has_ipv6:
+            if socket.has_ipv6:
                 self.advancedConfig['ipv6_binds_v4'] = self.ipv6bindsv4_data.GetSelection()
             self.advancedConfig['min_peers'] = self.minpeers_data.GetValue()
             self.advancedConfig['display_interval'] = float(self.displayinterval_data.GetValue())/1000
@@ -1019,7 +1018,7 @@ class configReader:
         EVT_BUTTON(self.advancedMenuBox, defaultsButton.GetId(), setDefaults)
         EVT_ENTER_WINDOW(self.ip_data, ip_hint)
         EVT_ENTER_WINDOW(self.bind_data, bind_hint)
-        if sys.version_info >= (2,3) and socket.has_ipv6:
+        if socket.has_ipv6:
             EVT_ENTER_WINDOW(self.ipv6bindsv4_data, ipv6bindsv4_hint)
         EVT_ENTER_WINDOW(self.minpeers_data, minpeers_hint)
         EVT_ENTER_WINDOW(self.displayinterval_data, displayinterval_hint)

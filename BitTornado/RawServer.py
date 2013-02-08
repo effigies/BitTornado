@@ -13,7 +13,6 @@ from clock import clock
 
 def autodetect_ipv6():
     try:
-        assert sys.version_info >= (2,3)
         assert socket.has_ipv6
         socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     except:

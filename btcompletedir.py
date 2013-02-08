@@ -4,7 +4,6 @@
 # see LICENSE.txt for license information
 
 import sys
-assert sys.version >= '2', "Install Python 2.0 or greater"
 import os
 from BitTornado.BT1.makemetafile import defaults, completedir, announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions

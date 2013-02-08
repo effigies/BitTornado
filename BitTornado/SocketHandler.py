@@ -148,10 +148,7 @@ class SocketHandler:
             else:
                 socktype = socket.AF_INET
             for addr in bind.split(','):
-                if sys.version_info < (2,2):
-                    addrinfos.append((socket.AF_INET, None, None, None, (addr, port)))
-                else:
-                    addrinfos.extend(socket.getaddrinfo(addr, port,
+                addrinfos.extend(socket.getaddrinfo(addr, port,
                                                socktype, socket.SOCK_STREAM))
         else:
             if self.ipv6_enable:
@@ -242,30 +239,29 @@ class SocketHandler:
     def start_connection(self, dns, handler = None, randomize = False):
         if handler is None:
             handler = self.handler
-        if sys.version_info < (2,2):
-            s = self.start_connection_raw(dns,socket.AF_INET,handler)
+
+        if self.ipv6_enable:
+            socktype = socket.AF_UNSPEC
         else:
-            if self.ipv6_enable:
-                socktype = socket.AF_UNSPEC
-            else:
-                socktype = socket.AF_INET
+            socktype = socket.AF_INET
+        try:
+            addrinfos = socket.getaddrinfo(dns[0], int(dns[1]),
+                                           socktype, socket.SOCK_STREAM)
+        except socket.error, e:
+            raise
+        except Exception, e:
+            raise socket.error(str(e))
+        if randomize:
+            shuffle(addrinfos)
+        for addrinfo in addrinfos:
             try:
-                addrinfos = socket.getaddrinfo(dns[0], int(dns[1]),
-                                               socktype, socket.SOCK_STREAM)
-            except socket.error, e:
-                raise
-            except Exception, e:
-                raise socket.error(str(e))
-            if randomize:
-                shuffle(addrinfos)
-            for addrinfo in addrinfos:
-                try:
-                    s = self.start_connection_raw(addrinfo[4],addrinfo[0],handler)
-                    break
-                except:
-                    pass
-            else:
-                raise socket.error('unable to connect')
+                s = self.start_connection_raw(addrinfo[4],addrinfo[0],handler)
+                break
+            except:
+                pass
+        else:
+            raise socket.error('unable to connect')
+
         return s
 
 

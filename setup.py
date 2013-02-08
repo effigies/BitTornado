@@ -4,7 +4,6 @@
 # see LICENSE.txt for license information
 
 import sys
-assert sys.version >= '2', "Install Python 2.0 or greater"
 from distutils.core import setup, Extension
 import BitTornado
 

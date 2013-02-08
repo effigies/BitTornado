@@ -113,35 +113,26 @@ class IP_List:
         return False
 
 
-    def read_fieldlist(self, file):   # reads a list from a file in the format 'ip/len <whatever>'
-        f = open(file, 'r')
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            line = line.strip().expandtabs()
-            if not line or line[0] == '#':
-                continue
-            try:
-                line, garbage = line.split(' ',1)
-            except:
-                pass
-            try:
-                line, garbage = line.split('#',1)
-            except:
-                pass
-            try:
-                ip, depth = line.split('/')
-            except:
-                ip = line
-                depth = None
-            try:
-                if depth is not None:                
-                    depth = int(depth)
-                self._append(ip,depth)
-            except:
-                print '*** WARNING *** could not parse IP range: '+line
-        f.close()
+    def read_fieldlist(self, filename):
+        """Read a list from a file in the format 'ip[/len] <whatever>'
+        
+        Leading whitespace is ignored, as are lines beginning with '#'
+        """
+        with open(filename, 'r') as f:
+            for line in f:
+                fields = line.split()
+                if not fields or fields[0][0] == '#'
+                    continue
+
+                ip, slash, depth = fields[0].partition('/')
+
+                try:
+                    if depth != '':
+                        self._append(ip,int(depth))
+                    else:
+                        self._append(ip)
+                except:
+                    print '*** WARNING *** could not parse IP range: '+line
         self.ipv4list.sort()
         self.ipv6list.sort()
 

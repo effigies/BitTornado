@@ -8,7 +8,7 @@ from BitTornado.clock import clock
 
 EXPIRE_TIME = 60 * 60
 
-class PerIPStats: 	 
+class PerIPStats:      
     def __init__(self, ip):
         self.numgood = 0
         self.bad = {}
@@ -442,7 +442,7 @@ class Downloader:
 #            self.picker.seed_seen_recently()
         self.disconnectedseeds[id]=clock()
 
-#	def expire_disconnected_seeds(self):
+#    def expire_disconnected_seeds(self):
 
     def num_disconnected_seeds(self):
         # first expire old ones

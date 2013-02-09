@@ -20,15 +20,15 @@ def autodetect_ipv6():
     return 1
 
 def autodetect_socket_style():
-	if sys.platform.find('linux') < 0:
-		return 1
-	else:
-		try:
+    if sys.platform.find('linux') < 0:
+        return 1
+    else:
+        try:
             with open('/proc/sys/net/ipv6/bindv6only','r') as f:
-			    dual_socket_style = int(f.read())
-			return int(not dual_socket_style)
-		except:
-			return 0
+                dual_socket_style = int(f.read())
+            return int(not dual_socket_style)
+        except:
+            return 0
 
 
 READSIZE = 32768

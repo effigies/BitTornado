@@ -1,54 +1,17 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
+import struct
 import socket
 from bisect import bisect, insort
 
 def to_long_ipv4(ip):
-    shiftbyte = lambda x, y: 256*x + y
-    return reduce(shiftbyte, map(ord, socket.inet_aton(ip)))
+    return struct.unpack(">L", socket.inet_aton(ip))[0]
 
 def to_long_ipv6(ip):
-    if ip == '':
-        raise ValueError, "bad address"
-    if ip == '::':      # boundary handling
-        ip = ''
-    elif ip[:2] == '::':
-        ip = ip[1:]
-    elif ip[0] == ':':
-        raise ValueError, "bad address"
-    elif ip[-2:] == '::':
-        ip = ip[:-1]
-    elif ip[-1] == ':':
-        raise ValueError, "bad address"
-
-    b = []
-    doublecolon = False
-    for n in ip.split(':'):
-        if n == '':     # double-colon
-            if doublecolon:
-                raise ValueError, "bad address"
-            doublecolon = True
-            b.append(None)
-            continue
-        if n.find('.') >= 0: # IPv4
-            n = n.split('.')
-            if len(n) != 4:
-                raise ValueError, "bad address"
-            b.extend(map(int,n))
-            continue
-        n = ('0'*(4-len(n))) + n
-        b.append(int(n[:2],16))
-        b.append(int(n[2:],16))
-    bb = 0L
-    for n in b:
-        if n is None:
-            for i in xrange(17-len(b)):
-                bb *= 256
-            continue
-        bb *= 256
-        bb += n
-    return bb
+    shiftword = lambda x, y: (2**32)*x + y
+    return reduce(shiftword,
+                struct.unpack(">4L", socket.inet_pton(socket.AF_INET6,ip)))
 
 ipv4addrmask = 65535L*256*256*256*256
 

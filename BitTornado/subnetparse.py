@@ -7,9 +7,6 @@ from bisect import bisect, insort
 def _int_to_bitstring(x, bits=8):
     return ''.join(str((x >> i) & 0x1) for i in xrange(bits-1,-1,-1))
 
-hexbinmap = dict(('%x' % x, _int_to_bitstring(x, 4)) for x in xrange(16))
-hexbinmap['x'] = '0000'
-
 charbinmap = [_int_to_bitstring(n) for n in xrange(256)]
 
 def to_bitfield_ipv4(ip):
@@ -19,40 +16,8 @@ def to_bitfield_ipv4(ip):
         raise ValueError, "bad address"
 
 def to_bitfield_ipv6(ip):
-    b = ''
-    doublecolon = False
-
-    if ip == '':
-        raise ValueError, "bad address"
-    if ip == '::':      # boundary handling
-        ip = ''
-    elif ip[:2] == '::':
-        ip = ip[1:]
-    elif ip[0] == ':':
-        raise ValueError, "bad address"
-    elif ip[-2:] == '::':
-        ip = ip[:-1]
-    elif ip[-1] == ':':
-        raise ValueError, "bad address"
-    for n in ip.split(':'):
-        if n == '':     # double-colon
-            if doublecolon:
-                raise ValueError, "bad address"
-            doublecolon = True
-            b += ':'
-            continue
-        if n.find('.') >= 0: # IPv4
-            n = to_bitfield_ipv4(n)
-            b += n + '0'*(32-len(n))
-            continue
-        n = ('x'*(4-len(n))) + n
-        b += ''.join(hexbinmap[i] for i in n)
-    if doublecolon:
-        pos = b.find(':')
-        b = b[:pos]+('0'*(129-len(b)))+b[pos+1:]
-    if len(b) != 128:   # always check size
-        raise ValueError, "bad address"
-    return b
+    return ''.join(charbinmap[ord(i)]
+                    for i in socket.inet_pton(socket.AF_INET6,ip)
 
 ipv4addrmask = to_bitfield_ipv6('::ffff:0:0')[:96]
 
@@ -121,7 +86,7 @@ class IP_List:
         with open(filename, 'r') as f:
             for line in f:
                 fields = line.split()
-                if not fields or fields[0][0] == '#'
+                if not fields or fields[0][0] == '#':
                     continue
 
                 ip, slash, depth = fields[0].partition('/')

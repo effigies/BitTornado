@@ -182,20 +182,3 @@ class IP_List:
                     print '*** WARNING *** could not parse IP range: '+iprange
                 l.append((ip1,ip2))
         self._import_ipv4(l)
-
-
-def is_ipv4(ip):
-    return ip.find(':') < 0
-
-def is_valid_ip(ip):
-    try:
-        if is_ipv4(ip):
-            a = ip.split('.')
-            assert len(a) == 4
-            for i in a:
-                chr(int(i))
-            return True
-        to_long_ipv6(ip)
-        return True
-    except:
-        return False

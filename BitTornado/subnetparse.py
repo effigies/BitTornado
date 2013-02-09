@@ -117,38 +117,27 @@ def ipv6_to_ipv4(ip):
     if not ip.startswith(ipv4addrmask):
         raise ValueError, "not convertible to IPv4"
     ip = ip[-32:]
-    x = ''
-    for i in range(4):
-        x += str(int(ip[:8],2))
-        if i < 3:
-            x += '.'
-        ip = ip[8:]
-    return x
+    x = '.'.join(str(int(ip[i:i+8],2)) for i in xrange(0,32,8))
 
 def to_ipv4(ip):
     if is_ipv4(ip):
-        _valid_ipv4(ip)
         return ip
     return ipv6_to_ipv4(ip)
 
 def is_ipv4(ip):
-    return ip.find(':') < 0
-
-def _valid_ipv4(ip):
-    ip = ip.split('.')
-    if len(ip) != 4:
-        raise ValueError
-    for i in ip:
-        chr(int(i))
+    try:
+        socket.inet_aton(ip)
+        return True
+    except:
+        return False
 
 def is_valid_ip(ip):
+    if not ip:
+        return False
+    if is_ipv4(ip):
+        return True
     try:
-        if not ip:
-            return False
-        if is_ipv4(ip):
-            _valid_ipv4(ip)
-            return True
-        to_bitfield_ipv6(ip)
+        socket.inet_pton(socket.AF_INET6,ip)
         return True
     except:
         return False

@@ -3,6 +3,7 @@
 import sys
 import os
 import time
+import shutil
 from binascii import hexlify, unhexlify
 from inifile import ini_write, ini_read
 from bencode import bencode, bdecode
@@ -18,31 +19,6 @@ except:
 OLDICONPATH = os.path.abspath(os.path.dirname(realpath(sys.argv[0])))
 
 DIRNAME = '.'+product_name
-
-def copyfile(oldpath, newpath): # simple file copy, all in RAM
-    try:
-        f = open(oldpath,'rb')
-        r = f.read()
-        success = True
-    except:
-        success = False
-    try:
-        f.close()
-    except:
-        pass
-    if not success:
-        return False
-    try:
-        f = open(newpath,'wb')
-        f.write(r)
-    except:
-        success = False
-    try:
-        f.close()
-    except:
-        pass
-    return success
-
 
 class ConfigDir:
 
@@ -82,7 +58,7 @@ class ConfigDir:
         for icon in GetIcons():
             i = os.path.join(self.dir_icons,icon)
             if not os.path.exists(i) and \
-                not copyfile(os.path.join(OLDICONPATH,icon),i):
+                not shutil.copyfile(os.path.join(OLDICONPATH,icon),i):
                     CreateIcon(icon,self.dir_icons)
 
         self.dir_torrentcache = os.path.join(dir_root,'torrentcache')

@@ -244,9 +244,8 @@ class Info:
             data['httpseeds'] = params['httpseeds'].split('|')
         
         # Write file
-        h = open(target, 'wb')
-        h.write(bencode(data))
-        h.close()
+        with open(target, 'wb') as h:
+            h.write(bencode(data))
 
 class BTTree:
     """BTTree - Recursive data structure that tracks the total size of a
@@ -312,20 +311,18 @@ class BTTree:
         return info
 
     def addFileToInfos(self, infos):
-        h = open(self.loc,'rb')
-        pos = 0L
-        piece_length = 0
-        for i in infos:
-            piece_length = max(piece_length, i.piece_length)
-            i.add_file_info(self.size, self.path)
-        
-        while pos < self.size:
-            a = min(piece_length, self.size - pos)
-            buf = h.read(a)
-            pos += a
-            [i.add_data(buf) for i in infos]
-        
-        h.close()
+        with open(self.loc,'rb') as h:
+            pos = 0L
+            piece_length = 0
+            for i in infos:
+                piece_length = max(piece_length, i.piece_length)
+                i.add_file_info(self.size, self.path)
+            
+            while pos < self.size:
+                a = min(piece_length, self.size - pos)
+                buf = h.read(a)
+                pos += a
+                [i.add_data(buf) for i in infos]
 
     def updateInfo(self, info):
         """Add a sub-BTTree to an Info structure

@@ -206,9 +206,8 @@ class Tracker:
         self.favicon = None
         if favicon:
             try:
-                h = open(favicon,'r')
-                self.favicon = h.read()
-                h.close()
+                with open(favicon,'r') as h:
+                    self.favicon = h.read()
             except:
                 print "**warning** specified favicon file -- %s -- does not exist." % favicon
         self.rawserver = rawserver
@@ -235,9 +234,8 @@ class Tracker:
 
         if os.path.exists(self.dfile):
             try:
-                h = open(self.dfile, 'rb')
-                ds = h.read()
-                h.close()
+                with open(self.dfile, 'rb') as h:
+                    ds = h.read()
                 tempstate = bdecode(ds)
                 if 'peers' not in tempstate:
                     tempstate = {'peers': tempstate}
@@ -1002,9 +1000,8 @@ class Tracker:
 
     def save_state(self):
         self.rawserver.add_task(self.save_state, self.save_dfile_interval)
-        h = open(self.dfile, 'wb')
-        h.write(bencode(self.state))
-        h.close()
+        with open(self.dfile, 'wb') as h:
+            h.write(bencode(self.state))
 
 
     def parse_allowed(self):

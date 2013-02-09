@@ -2168,12 +2168,11 @@ def run(params):
         import profile, pstats
         p = profile.Profile()
         p.runcall(_run, params)
-        log = open('profile_data_wx.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
-        normalstdout = sys.stdout
-        sys.stdout = log
-#        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
-        pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
-        sys.stdout = normalstdout
+        log_fname = 'profile_data_wx.'+time.strftime('%y%m%d%H%M%S')+'.txt'
+        with open(log_fname,'a') as log:
+            normalstdout, sys.stdout = sys.stdout, log
+            pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
+            sys.stdout = normalstdout
     else:
         _run(params)
         
@@ -2186,12 +2185,11 @@ def next(params, d, doneflag, configfile):
         import profile, pstats
         p = profile.Profile()
         p.runcall(_next, params, d, doneflag, configfile)
-        log = open('profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
-        normalstdout = sys.stdout
-        sys.stdout = log
-#        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
-        pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
-        sys.stdout = normalstdout
+        log_fname = 'profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt'
+        with open(log_fname,'a') as log:
+            normalstdout, sys.stdout = sys.stdout, log
+            pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
+            sys.stdout = normalstdout
     else:
         _next(params, d, doneflag, configfile)
 

@@ -8,7 +8,7 @@ from SocketHandler import SocketHandler, UPnP_ERROR
 import socket
 from cStringIO import StringIO
 from traceback import print_exc
-from select import error
+import select
 from clock import clock
 
 def autodetect_ipv6():
@@ -24,9 +24,8 @@ def autodetect_socket_style():
 		return 1
 	else:
 		try:
-			f = open('/proc/sys/net/ipv6/bindv6only','r')
-			dual_socket_style = int(f.read())
-			f.close()
+            with open('/proc/sys/net/ipv6/bindv6only','r') as f:
+			    dual_socket_style = int(f.read())
 			return int(not dual_socket_style)
 		except:
 			return 0
@@ -138,7 +137,7 @@ class RawServer:
                 except (SystemError, MemoryError), e:
                     self.failfunc(str(e))
                     return
-                except error:
+                except select.error:
                     if self.doneflag.isSet():
                         return
                 except KeyboardInterrupt:

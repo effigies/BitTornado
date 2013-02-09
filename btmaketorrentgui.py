@@ -135,9 +135,8 @@ class DownloadInfo:
         dl = wxFileDialog (self.frame, 'Choose .torrent file to use', '', '', '*.torrent', wxOPEN)
         if dl.ShowModal() == wxID_OK:
             try:
-                h = open(dl.GetPath(), 'rb')
-                metainfo = bdecode(h.read())
-                h.close()
+                with open(dl.GetPath(), 'rb') as h:
+                    metainfo = bdecode(h.read())
                 self.annCtl.SetValue(metainfo['announce'])
                 if 'announce-list' in metainfo:
                     self.annListCtl.SetValue('\n'.join(', '.join(tier)

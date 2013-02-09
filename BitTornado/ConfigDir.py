@@ -134,32 +134,18 @@ class ConfigDir:
 
     def getState(self):
         try:
-            f = open(self.statefile,'rb')
-            r = f.read()
+            with open(self.statefile,'rb') as f:
+                return bdecode(f.read())
         except:
-            r = None
-        try:
-            f.close()
-        except:
-            pass
-        try:
-            r = bdecode(r)
-        except:
-            r = None
-        return r        
+            return None
 
     def saveState(self, state):
         try:
-            f = open(self.statefile,'wb')
-            f.write(bencode(state))
-            success = True
+            with open(self.statefile,'wb') as f:
+                f.write(bencode(state))
+            return True
         except:
-            success = False
-        try:
-            f.close()
-        except:
-            pass
-        return success
+            return False
 
 
     ###### TORRENT HANDLING ######
@@ -196,15 +182,10 @@ class ConfigDir:
         if v:
             t += '.'+str(v)
         try:
-            f = open(os.path.join(self.dir_torrentcache,t),'rb')
-            r = bdecode(f.read())
+            with open(os.path.join(self.dir_torrentcache,t),'rb') as f:
+                return bdecode(f.read())
         except:
-            r = None
-        try:
-            f.close()
-        except:
-            pass
-        return r
+            return None
 
     def writeTorrent(self, data, t, v = -1):
         t = hexlify(t)
@@ -216,14 +197,11 @@ class ConfigDir:
         if v:
             t += '.'+str(v)
         try:
-            f = open(os.path.join(self.dir_torrentcache,t),'wb')
-            f.write(bencode(data))
+            with open(os.path.join(self.dir_torrentcache,t),'wb') as f:
+                f.write(bencode(data))
         except:
-            v = None
-        try:
-            f.close()
-        except:
-            pass
+            return None
+
         return v
 
 
@@ -236,32 +214,22 @@ class ConfigDir:
         if not os.path.exists(t):
             return None
         try:
-            f = open(t,'rb')
-            r = bdecode(f.read())
+            with open(t,'rb') as f:
+                r = bdecode(f.read())
         except:
             r = None
-        try:
-            f.close()
-        except:
-            pass
         self.TorrentDataBuffer[t] = r
         return r
 
     def writeTorrentData(self, t, data):
         self.TorrentDataBuffer[t] = data
         try:
-            f = open(os.path.join(self.dir_datacache,hexlify(t)),'wb')
-            f.write(bencode(data))
-            success = True
+            with open(os.path.join(self.dir_datacache,hexlify(t)),'wb') as f:
+                f.write(bencode(data))
+            return True
         except:
-            success = False
-        try:
-            f.close()
-        except:
-            pass
-        if not success:
             self.deleteTorrentData(t)
-        return success
+            return False
 
     def deleteTorrentData(self, t):
         try:

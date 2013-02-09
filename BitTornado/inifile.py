@@ -100,8 +100,8 @@ else:
 
 def ini_read(f, errfunc = errfunc):
     try:
-        r = open(f,'r')
-        ll = r.readlines()
+        with open(f,'r') as r:
+            ll = r.readlines()
         d = {}
         dd = {'':d}
         for i in xrange(len(ll)):
@@ -152,8 +152,4 @@ def ini_read(f, errfunc = errfunc):
         if DEBUG:
             print_exc()
         dd = None
-    try:
-        r.close()
-    except:
-        pass
     return dd

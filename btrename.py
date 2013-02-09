@@ -15,18 +15,16 @@ from BitTornado.bencode import bencode, bdecode
 VERSION = '20120601'
 
 def rename(fname, newname, verbose = False):
-    metainfo_file = open(fname, 'rb')
-    metainfo = bdecode(metainfo_file.read())
-    metainfo_file.close()
+    with open(fname, 'rb') as metainfo_file:
+        metainfo = bdecode(metainfo_file.read())
 
     if verbose:
         print "%s: %s -> %s" % (fname, metainfo['info']['name'], newname)
 
     metainfo['info']['name'] = newname
 
-    metainfo_file = open(fname, 'wb')
-    metainfo_file.write(bencode(metainfo))
-    metainfo_file.close
+    with open(fname, 'wb') as metainfo_file:
+        metainfo_file.write(bencode(metainfo))
 
 def main(argv):
     prog, ext = os.path.splitext(os.path.basename(argv[0]))

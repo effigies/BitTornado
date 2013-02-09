@@ -21,12 +21,11 @@ if len(sys.argv) == 1:
     sys.exit(2) # common exit code for syntax error
 
 for metainfo_name in sys.argv[1:]:
-    metainfo_file = open(metainfo_name, 'rb')
-    metainfo = bdecode(metainfo_file.read())
-#    print metainfo
+    with open(metainfo_name, 'rb') as metainfo_file:
+        metainfo = bdecode(metainfo_file.read())
     info = metainfo['info']
     info_hash = sha.sha(bencode(info))
-
+    
     print 'metainfo file.: %s' % os.path.basename(metainfo_name)
     print 'info hash.....: %s' % info_hash.hexdigest()
     piece_length = info['piece length']

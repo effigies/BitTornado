@@ -27,9 +27,8 @@ _idrandom = [None]
 
 def resetPeerIDs():
     try:
-        f = open('/dev/urandom','rb')
-        x = f.read(20)
-        f.close()
+        with open('/dev/urandom','rb') as f:
+            x = f.read(20)
     except:
         x = ''
 

@@ -76,8 +76,8 @@ def parsedir(directory, parsed, files, blocked,
         if NOISY:
             errfunc('adding '+p)
         try:
-            ff = open(p, 'rb')
-            d = bdecode(ff.read())
+            with open(p, 'rb') as ff:
+                d = bdecode(ff.read())
             check_info(d['info'])
             h = sha.sha(bencode(d['info'])).digest()
             new_file[1] = h
@@ -116,10 +116,6 @@ def parsedir(directory, parsed, files, blocked,
             errfunc('**warning** '+p+' has errors')
             new_blocked.add(p)
             continue
-        try:
-            ff.close()
-        except:
-            pass
         if NOISY:
             errfunc('... successful')
         new_parsed[h] = a

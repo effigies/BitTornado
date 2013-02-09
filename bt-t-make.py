@@ -164,9 +164,8 @@ class BasicDownloadInfo:
 
     def _announcecopy(self, f):
         try:
-            h = open(f, 'rb')
-            metainfo = bdecode(h.read())
-            h.close()
+            with open(f, 'rb') as h:
+                metainfo = bdecode(h.read())
             self.announce = metainfo['announce']
             self.announce_list = metainfo.get('announce-list')
         except:
@@ -563,9 +562,8 @@ class AdvancedDownloadInfo:
 
     def _announcecopy(self, f, external = False):
         try:
-            h = open(f, 'rb')
-            metainfo = bdecode(h.read())
-            h.close()
+            with open(f, 'rb') as h:
+                metainfo = bdecode(h.read())
             self.annCtl.SetValue(metainfo['announce'])
             if 'announce-list' in metainfo:
                 self.annListCtl.SetValue('\n'.join(', '.join(tier)
@@ -774,9 +772,8 @@ class AdvancedDownloadInfo:
         d = dl.GetPath()
 
         try:
-            f = open(d,'wb')
-            f.write(metainfo)
-            f.close()
+            with open(d,'wb') as f:
+                f.write(metainfo)
             garbage, self.thostselection = os.path.split(d)
         except:
             pass

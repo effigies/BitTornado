@@ -217,11 +217,10 @@ if __name__ == '__main__':
         import profile, pstats
         p = profile.Profile()
         p.runcall(run, sys.argv[1:])
-        log = open('profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt','a')
-        normalstdout = sys.stdout
-        sys.stdout = log
-#        pstats.Stats(p).strip_dirs().sort_stats('cumulative').print_stats()
-        pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
-        sys.stdout = normalstdout
+        log_fname = 'profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt'
+        with open(log_fname,'a') as log:
+            normalstdout, sys.stdout = sys.stdout, log
+            pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
+            sys.stdout = normalstdout
     else:
         run(sys.argv[1:])

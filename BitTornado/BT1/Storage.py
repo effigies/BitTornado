@@ -74,16 +74,14 @@ class Storage:
                     if exists(file):
                         l = getsize(file)
                         if l > length:
-                            h = open(file, 'rb+')
-                            h.truncate(length)
-                            h.flush()
-                            h.close()
+                            with open(file, 'rb+') as h:
+                                h.truncate(length)
+                                h.flush()
                             l = length
                     else:
                         l = 0
-                        h = open(file, 'wb+')
-                        h.flush()
-                        h.close()
+                        with open(file, 'wb+') as h:
+                            h.flush()
                     self.mtimes[file] = getmtime(file)
                 self.tops[file] = l
                 self.sizes[file] = length
@@ -423,9 +421,8 @@ class Storage:
             return
         file = r[3]
         if not exists(file):
-            h = open(file, 'wb+')
-            h.flush()
-            h.close()
+            with open(file, 'wb+') as h:
+                h.flush()
         if file not in self.tops:
             self.tops[file] = getsize(file)
         if file not in self.mtimes:
@@ -443,9 +440,8 @@ class Storage:
             if not os.path.isdir(self.bufferdir):
                 os.makedirs(self.bufferdir)
             if not exists(file):
-                h = open(file, 'wb+')
-                h.flush()
-                h.close()
+                with open(file, 'wb+') as h:
+                    h.flush()
             if file not in self.tops:
                 self.tops[file] = getsize(file)
             if file not in self.mtimes:

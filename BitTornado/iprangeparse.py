@@ -196,32 +196,28 @@ class IP_List:
         return False
 
 
-    # reads a list from a file in the format 'whatever:whatever:ip-ip'
-    # (not IPv6 compatible at all)
-    def read_rangelist(self, file):
+    def read_rangelist(self, filename):
+        """Read a list from a file in the format 'whatever:whatever:ip[-ip]
+        (not IPv6 compatible at all)"""
         l = []
-        f = open(file, 'r')
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            line = line.strip()
-            if not line or line[0] == '#':
-                continue
-            line = line.split(':')[-1]
-            try:
-                ip1,ip2 = line.split('-')
-            except:
-                ip1 = line
-                ip2 = line
-            try:
-                ip1 = to_long_ipv4(ip1)
-                ip2 = to_long_ipv4(ip2)
-                assert ip1 <= ip2
-            except:
-                print '*** WARNING *** could not parse IP range: '+line
-            l.append((ip1,ip2))
-        f.close()
+        with open(filename, 'r') as f:
+            for line in f:
+                fields = line.split()
+                if not fields or fields[0][0] == '#':
+                    continue
+
+                iprange = fields[0].split(':')[-1]
+                ip1, dash, ip2 = iprange.partition('-')
+                if not ip2:
+                    ip2 = ip1
+
+                try:
+                    ip1 = to_long_ipv4(ip1)
+                    ip2 = to_long_ipv4(ip2)
+                    assert ip1 <= ip2
+                except:
+                    print '*** WARNING *** could not parse IP range: '+iprange
+                l.append((ip1,ip2))
         self._import_ipv4(l)
 
 

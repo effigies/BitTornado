@@ -10,14 +10,11 @@ def _int_to_bitstring(x, bits=8):
 charbinmap = [_int_to_bitstring(n) for n in xrange(256)]
 
 def to_bitfield_ipv4(ip):
-    try: 
-        return ''.join(charbinmap[ord(i)] for i in socket.inet_aton(ip))
-    except socket.error:
-        raise ValueError, "bad address"
+    return ''.join(charbinmap[ord(i)] for i in socket.inet_aton(ip))
 
 def to_bitfield_ipv6(ip):
     return ''.join(charbinmap[ord(i)]
-                    for i in socket.inet_pton(socket.AF_INET6,ip)
+                    for i in socket.inet_pton(socket.AF_INET6,ip))
 
 ipv4addrmask = to_bitfield_ipv6('::ffff:0:0')[:96]
 

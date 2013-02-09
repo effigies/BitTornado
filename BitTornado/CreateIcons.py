@@ -1,9 +1,10 @@
-# Generated from bt_MakeCreateIcons - 05/10/04 22:15:33
-# T-0.3.0 (BitTornado)
+# Generated from bt_MakeCreateIcons - 02/08/13 19:11:02
+# T-0.3.18 (BitTornado)
 
-from binascii import a2b_base64
-from zlib import decompress
-from os.path import join
+import os
+import zlib
+import binascii
+
 
 icons = {
     "icon_bt.ico":
@@ -87,19 +88,14 @@ icons = {
         "tMtNZ19Oyb02p8C3aqr3dr2GbXl/7fZyOej5rW653WZ7MzzHZV+v7O2/EZM+" +
         "Pt45kbX6ScWHNWfOilo3n5thucXv8org1XF3DRQYrAEWiVY3"
 }
-
+        
 def GetIcons():
     return icons.keys()
 
 def CreateIcon(icon, savedir):
     try:
-        f = open(join(savedir,icon),"wb")
-        f.write(decompress(a2b_base64(icons[icon])))
-        success = 1
+        with open(os.path.join(savedir,icon),"wb") as f:
+            f.write(zlib.decompress(binascii.a2b_base64(icons[icon])))
+        return 1
     except:
-        success = 0
-    try:
-        f.close()
-    except:
-        pass
-    return success
+        return 0

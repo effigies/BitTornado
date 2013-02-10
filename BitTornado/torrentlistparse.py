@@ -1,7 +1,6 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
-import itertools as it
 from binascii import unhexlify
 
 def parsetorrentlist(filename, parsed):

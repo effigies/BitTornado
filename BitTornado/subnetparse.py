@@ -117,7 +117,7 @@ def ipv6_to_ipv4(ip):
     if not ip.startswith(ipv4addrmask):
         raise ValueError, "not convertible to IPv4"
     ip = ip[-32:]
-    x = '.'.join(str(int(ip[i:i+8],2)) for i in xrange(0,32,8))
+    return '.'.join(str(int(ip[i:i+8],2)) for i in xrange(0,32,8))
 
 def to_ipv4(ip):
     if is_ipv4(ip):

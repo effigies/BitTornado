@@ -7,8 +7,8 @@
 import os
 import sha
 import threading
-from BitTornado.bencode import bencode
-from BitTornado.BT1.btformats import check_info
+from bencode import bencode
+from BT1.btformats import check_info
 from time import time
 try:
     from sys import getfilesystemencoding

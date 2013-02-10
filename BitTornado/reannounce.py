@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-
-# Written by Henry 'Pi' James and Bram Cohen
-# multitracker extensions by John Hoffman
-# see LICENSE.txt for license information
-
 from BitTornado.bencode import bencode, bdecode
 
 def reannounce(fname, announce, announce_list = None, verbose = False):

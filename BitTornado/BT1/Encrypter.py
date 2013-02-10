@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 import socket
 import urllib
 from binascii import hexlify

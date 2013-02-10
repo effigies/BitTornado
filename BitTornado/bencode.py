@@ -1,5 +1,5 @@
-# Written by Petru Paler, Uoti Urpala, Ross Cohen and John Hoffman
-# see LICENSE.txt for license information
+"""Encode/decode data structures for use in BitTorrent applications
+"""
 
 from types import IntType, LongType, StringType, ListType, TupleType, DictType, BooleanType
 try:

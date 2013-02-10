@@ -23,8 +23,6 @@ import socket
 import bisect
 import operator
 
-__author__ = 'Christopher J. Johnson <effigies@gmail.com>'
-
 class Address(long):
     """Integer representations of network addresses, building on the socket
     library.

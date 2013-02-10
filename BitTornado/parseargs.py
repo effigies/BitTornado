@@ -1,6 +1,3 @@
-# Written by Bill Bumgarner and Bram Cohen
-# see LICENSE.txt for license information
-
 from types import *
 from cStringIO import StringIO
 

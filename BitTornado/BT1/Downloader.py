@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 import random
 from BitTornado.CurrentRateMeasure import Measure
 from BitTornado.bitfield import Bitfield

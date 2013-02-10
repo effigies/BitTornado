@@ -1,6 +1,3 @@
-# Written by John Hoffman
-# see LICENSE.txt for license information
-
 from BTcrypto import Crypto
 
 from BT1.Encrypter import protocol_name

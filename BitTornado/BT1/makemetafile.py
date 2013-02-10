@@ -1,8 +1,3 @@
-# Written by Bram Cohen
-# multitracker extensions by John Hoffman
-# refactoring by Chris Johnson
-# see LICENSE.txt for license information
-
 import os
 import threading
 from traceback import print_exc

@@ -1,5 +1,3 @@
-#written by John Hoffman
-
 import sys
 import os
 import time

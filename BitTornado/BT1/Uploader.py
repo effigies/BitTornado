@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from BitTornado.CurrentRateMeasure import Measure
 
 class Upload:

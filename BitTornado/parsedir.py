@@ -1,5 +1,3 @@
-# Written by John Hoffman and Uoti Urpala
-# see LICENSE.txt for license information
 from bencode import bencode, bdecode
 from BT1.btformats import check_info
 import sha

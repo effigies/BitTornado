@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from clock import clock
 from CurrentRateMeasure import Measure
 from math import sqrt

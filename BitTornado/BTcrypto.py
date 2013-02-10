@@ -1,7 +1,3 @@
-# Written by John Hoffman
-# based on code by Uoti Urpala
-# see LICENSE.txt for license information
-
 from __future__ import generators   # for python 2.2
 import sha
 import random

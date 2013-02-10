@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from random import randrange, shuffle
 from BitTornado.clock import clock
 

@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# Written by Chris Johnson
-#
-# This is a generalization of the BitTorrent and BitTornado makemetafile.py
-# files, which were respectively written by Bram Cohen and Jon Hoffman
+"""Generate metafile data for use in BitTorrent applications
+
+These data structures are generalizations of the original BitTorrent and
+BitTornado makemetafile.py behaviors.
+"""
 
 import os
 import sha

@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
 from binascii import hexlify

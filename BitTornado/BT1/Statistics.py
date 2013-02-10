@@ -1,6 +1,3 @@
-# Written by Edward Keyes
-# see LICENSE.txt for license information
-
 import threading
 
 class Statistics_Response:

@@ -1,6 +1,3 @@
-# Written by Bram Cohen, Uoti Urpala, and John Hoffman
-# see LICENSE.txt for license information
-
 def _int_to_booleans(x):
     return tuple(bool((x << i) & 0x80) for i in xrange(8))
 

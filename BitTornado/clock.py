@@ -1,5 +1,4 @@
-# Written by John Hoffman
-# see LICENSE.txt for license information
+"""Replicate win32 time.clock() behavior for all platforms"""
 
 from time import *
 import sys

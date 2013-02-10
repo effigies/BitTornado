@@ -1,6 +1,3 @@
-# Written by John Hoffman
-# see LICENSE.txt for license information
-
 from BitTornado.CurrentRateMeasure import Measure
 from random import randint
 from urlparse import urlparse

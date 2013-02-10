@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from cStringIO import StringIO
 from urllib import quote
 from threading import Event

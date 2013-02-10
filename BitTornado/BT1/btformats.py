@@ -1,6 +1,3 @@
-# Written by Bram Cohen
-# see LICENSE.txt for license information
-
 from types import StringType, LongType, IntType, ListType, DictType
 from re import compile
 

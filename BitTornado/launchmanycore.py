@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-
-# Written by John Hoffman
-# see LICENSE.txt for license information
-
 from download_bt1 import BT1Download
 from RawServer import RawServer, UPnP_ERROR
 from RateLimiter import RateLimiter

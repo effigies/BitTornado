@@ -4,6 +4,19 @@ version_short = 'T-0.3.18'
 version = version_short+' ('+product_name+')'
 report_email = version_short+'@degreez.net'
 
+__author__ = """
+Christopher J. Johnson <effigies@gmail.com>
+
+Original BitTornado code by:
+Bram Cohen, Henry 'Pi' James, Bill Bumgarner, Petru Paler,
+Uoti Urpala, Ross Cohen, Edward Keyes and John Hoffman
+"""
+__credits__ = """
+Yejun Yang and Myers Carpenter for NAT port mapping code adapted
+    in natpunch
+"""
+__version__ = version_short
+
 from types import StringType
 from sha import sha
 from time import time, clock

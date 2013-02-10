@@ -1,6 +1,3 @@
-# Written by John Hoffman
-# see LICENSE.txt for license information
-
 from httplib import HTTPConnection, HTTPSConnection, HTTPException
 from urlparse import urlparse
 from bencode import bdecode

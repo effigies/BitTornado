@@ -1,7 +1,3 @@
-# Written by Bram Cohen
-# modified for multitracker operation by John Hoffman
-# see LICENSE.txt for license information
-
 from BitTornado.zurllib import urlopen, quote
 from urlparse import urlparse, urlunparse
 from socket import gethostbyname

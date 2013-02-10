@@ -1,6 +1,3 @@
-# Written by John Hoffman
-# see LICENSE.txt for license information
-
 '''
 reads/writes a Windows-style INI file
 format:

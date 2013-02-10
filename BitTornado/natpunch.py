@@ -1,8 +1,3 @@
-# Written by John Hoffman
-# derived from NATPortMapping.py by Yejun Yang
-# and from example code by Myers Carpenter
-# see LICENSE.txt for license information
-
 import socket
 from traceback import print_exc
 from NetworkAddress import AddrList

@@ -5,7 +5,7 @@
 
 import socket
 from traceback import print_exc
-from subnetparse import IP_List
+from NetworkAddress import AddrList
 from clock import clock
 from __init__ import createPeerID
 
@@ -192,13 +192,13 @@ class _UPnP:    # master holding class
         
     def get_ip(self):
         if self.last_got_ip + EXPIRE_CACHE < clock():
-            local_ips = IP_List()
+            local_ips = AddrList()
             local_ips.set_intranet_addresses()
             try:
                 for info in socket.getaddrinfo(socket.gethostname(),0,socket.AF_INET):
                             # exception if socket library isn't recent
                     self.local_ip = info[4][0]
-                    if local_ips.includes(self.local_ip):
+                    if self.local_ip in local_ips:
                         self.last_got_ip = clock()
                         if DEBUG:
                             print 'Local IP found: '+self.local_ip

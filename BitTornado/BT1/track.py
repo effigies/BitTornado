@@ -8,6 +8,7 @@ import time
 import signal
 import random
 import threading
+from BitTornado.NetworkAddress import is_ipv4, is_valid_ip, ipv6_to_ipv4, to_ipv4, AddrList
 from BitTornado.parseargs import parseargs, formatDefinitions
 from BitTornado.RawServer import RawServer, autodetect_ipv6, autodetect_socket_style
 from BitTornado.HTTPHandler import HTTPHandler, months
@@ -15,8 +16,6 @@ from BitTornado.parsedir import parsedir
 from NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.BTcrypto import CRYPTO_OK
 from T2T import T2TList
-from BitTornado.subnetparse import IP_List, ipv6_to_ipv4, to_ipv4, is_valid_ip, is_ipv4
-from BitTornado.iprangeparse import IP_List as IP_Range_List
 from BitTornado.torrentlistparse import parsetorrentlist
 from BitTornado.bencode import bencode, bdecode, Bencached
 from BitTornado.zurllib import urlopen, quote, unquote
@@ -142,7 +141,7 @@ def statefiletemplate(x):
 
 alas = 'your file may exist elsewhere in the universe\nbut alas, not here\n'
 
-local_IPs = IP_List()
+local_IPs = AddrList()
 local_IPs.set_intranet_addresses()
 
 
@@ -160,7 +159,7 @@ def _get_forwarded_ip(headers):
             x,y = header.split(',')
         except:
             return header
-        if is_valid_ip(x) and not local_IPs.includes(x):
+        if is_valid_ip(x) and x not in local_IPs:
             return x
         return y
     header = headers.get('client-ip')
@@ -181,7 +180,7 @@ def _get_forwarded_ip(headers):
 
 def get_forwarded_ip(headers):
     x = _get_forwarded_ip(headers)
-    if not is_valid_ip(x) or local_IPs.includes(x):
+    if not is_valid_ip(x) or x in local_IPs:
         return None
     return x
 
@@ -264,8 +263,8 @@ class Tracker:
             self.seedcount[infohash] = 0
             for x,y in ds.iteritems():
                 ip = y['ip']
-                if ( (self.allowed_IPs and not self.allowed_IPs.includes(ip))
-                     or (self.banned_IPs and self.banned_IPs.includes(ip)) ):
+                if ( (self.allowed_IPs and ip not in self.allowed_IPs)
+                     or (self.banned_IPs and ip in self.banned_IPs) ):
                     del ds[x]
                     continue
                 if not y['left']:
@@ -274,7 +273,7 @@ class Tracker:
                     continue
                 gip = y.get('given_ip')
                 if is_valid_ip(gip) and (
-                    not self.only_local_override_ip or local_IPs.includes(ip) ):
+                    not self.only_local_override_ip or ip in local_IPs ):
                     ip = gip
                 self.natcheckOK(infohash,x,ip,y['port'],y)
             
@@ -619,7 +618,7 @@ class Tracker:
             requirecrypto = 0
 
         peer = peers.get(myid)
-        islocal = local_IPs.includes(ip)
+        islocal = ip in local_IPs
         mykey = params('key')
         if peer:
             auth = peer.get('key',-1) == mykey or peer.get('ip') == ip
@@ -834,8 +833,8 @@ class Tracker:
             except ValueError:
                 ipv4 = False
 
-        if ( (self.allowed_IPs and not self.allowed_IPs.includes(ip))
-             or (self.banned_IPs and self.banned_IPs.includes(ip)) ):
+        if ( (self.allowed_IPs and ip not in self.allowed_IPs)
+             or (self.banned_IPs and ip in self.banned_IPs) ):
             return (400, 'Not Authorized', {'Content-Type': 'text/plain', 'Pragma': 'no-cache'},
                 bencode({'failure reason':
                 'your IP is not allowed on this tracker'}))
@@ -1043,7 +1042,7 @@ class Tracker:
             
         f = self.config['allowed_ips']
         if f and self.allowed_ip_mtime != os.path.getmtime(f):
-            self.allowed_IPs = IP_List()
+            self.allowed_IPs = AddrList()
             try:
                 self.allowed_IPs.read_fieldlist(f)
                 self.allowed_ip_mtime = os.path.getmtime(f)
@@ -1052,7 +1051,7 @@ class Tracker:
                 
         f = self.config['banned_ips']
         if f and self.banned_ip_mtime != os.path.getmtime(f):
-            self.banned_IPs = IP_Range_List()
+            self.banned_IPs = AddrList()
             try:
                 self.banned_IPs.read_rangelist(f)
                 self.banned_ip_mtime = os.path.getmtime(f)

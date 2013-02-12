@@ -1,7 +1,7 @@
-import sys
 import time
 import socket
-from errno import EWOULDBLOCK, ECONNREFUSED, EHOSTUNREACH
+import random
+from errno import EWOULDBLOCK
 try:
     from select import poll, error, POLLIN, POLLOUT, POLLERR, POLLHUP
     timemult = 1000
@@ -9,12 +9,9 @@ except ImportError:
     from selectpoll import poll, error, POLLIN, POLLOUT, POLLERR, POLLHUP
     timemult = 1
 from clock import clock
-from random import shuffle, randrange
 from natpunch import UPnP_open_port, UPnP_close_port
-# from BT1.StreamCheck import StreamCheck
-# import inspect
 
-all = POLLIN | POLLOUT
+POLLALL = POLLIN | POLLOUT
 
 UPnP_ERROR = "unable to forward port via UPnP"
 
@@ -105,7 +102,7 @@ class SingleSocket:
                 self.socket_handler.dead_from_write.append(self)
                 return
         if self.buffer:
-            self.socket_handler.poll.register(self.socket, all)
+            self.socket_handler.poll.register(self.socket, POLLALL)
         else:
             self.socket_handler.poll.register(self.socket, POLLIN)
 
@@ -194,12 +191,12 @@ class SocketHandler:
         if maxport-minport < 50 or not randomizer:
             portrange = range(minport, maxport+1)
             if randomizer:
-                shuffle(portrange)
+                random.shuffle(portrange)
                 portrange = portrange[:20]  # check a maximum of 20 ports
         else:
             portrange = []
             while len(portrange) < 20:
-                listen_port = randrange(minport, maxport+1)
+                listen_port = random.randrange(minport, maxport+1)
                 if not listen_port in portrange:
                     portrange.append(listen_port)
         for listen_port in portrange:
@@ -249,7 +246,7 @@ class SocketHandler:
         except Exception, e:
             raise socket.error(str(e))
         if randomize:
-            shuffle(addrinfos)
+            random.shuffle(addrinfos)
         for addrinfo in addrinfos:
             try:
                 s = self.start_connection_raw(addrinfo[4],addrinfo[0],handler)
@@ -329,7 +326,7 @@ class SocketHandler:
             to_close = int(connects*0.05)+1 # close 5% of sockets
             self.max_connects = connects-to_close
             closelist = self.single_sockets.itervalues()
-            shuffle(closelist)
+            random.shuffle(closelist)
             closelist = closelist[:to_close]
             for sock in closelist:
                 self._close_socket(sock)

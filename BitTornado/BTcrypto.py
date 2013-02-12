@@ -1,4 +1,3 @@
-from __future__ import generators   # for python 2.2
 import sha
 import random
 import binascii

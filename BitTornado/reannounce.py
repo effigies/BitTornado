@@ -1,4 +1,4 @@
-from BitTornado.bencode import bencode, bdecode
+from bencode import bencode, bdecode
 
 def reannounce(fname, announce, announce_list = None, verbose = False):
     with open(fname, 'rb') as metainfo_file:

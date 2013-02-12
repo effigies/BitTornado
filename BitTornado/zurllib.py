@@ -4,7 +4,6 @@ from bencode import bdecode
 import socket
 from gzip import GzipFile
 from StringIO import StringIO
-from urllib import quote, unquote
 from __init__ import product_name, version_short
 
 VERSION = product_name+'/'+version_short

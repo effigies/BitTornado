@@ -1,8 +1,8 @@
-from types import *
+from types import NoneType, StringType, IntType, LongType, FloatType
 
 def formatDefinitions(options, COLS, presets = {}):
     spaces = " " * 10
-    width = COLS - (11)
+    width = COLS - 11
     if width < 15:
         width = COLS - 2
         spaces = " "
@@ -26,8 +26,10 @@ def formatDefinitions(options, COLS, presets = {}):
     return '\n'.join(lines)
 
 def defaultargs(options):
-    return dict((longname, default) for longname, default, doc in options
-                                        if default is not None)
+    config = {}
+    for longname, default, doc in options:
+        config[longname] = default
+    return config
 
 def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
     config = {}

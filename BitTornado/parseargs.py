@@ -1,40 +1,29 @@
 from types import *
-from cStringIO import StringIO
 
-
-def splitLine(line, COLS=80, indent=10):
-    """Word wrap a string to a given number of columns, including indentation
-    """
-    spaces = " " * indent
-    width = COLS - (indent + 1)
-    if indent and width < 15:
+def formatDefinitions(options, COLS, presets = {}):
+    spaces = " " * 10
+    width = COLS - (11)
+    if width < 15:
         width = COLS - 2
         spaces = " "
 
-    r = []
-    while len(line) > width:
-        pre, sep, post = line[:width].rpartition(' ')
-        line = post + line[width:]
-        r.append(spaces + pre)
-    if line:
-        r.append(spaces + line)
-    return '\n'.join(r)
-
-def formatDefinitions(options, COLS, presets = {}):
-    s = StringIO()
+    lines = []
     for (longname, default, doc) in options:
-        s.write('--' + longname + ' <arg>\n')
+        lines.append("--{} <arg>".format(longname))
         default = presets.get(longname, default)
-        if type(default) in (IntType, LongType):
-            try:
-                default = int(default)
-            except:
-                pass
-        if default is not None:
-            doc += ' (defaults to ' + repr(default) + ')'
-        s.write(splitLine(doc,COLS,10))
-        s.write('\n\n')
-    return s.getvalue()
+        if default:
+            doc += ' (defaults to {})'.format(default)
+
+        # Word wrap documentation string
+        while len(doc) > width:
+            pre, sep, post = doc[:width].rpartition(' ')
+            doc = post + doc[width:]
+            lines.append(spaces + pre)
+        if doc:
+            lines.append(spaces + doc)
+
+        lines.append('')
+    return '\n'.join(lines)
 
 def usage(str):
     raise ValueError(str)

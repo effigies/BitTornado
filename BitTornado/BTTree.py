@@ -30,13 +30,10 @@ def uniconvertl(srclist, encoding):
     Return
         str[]   - Converted strings
     """
-    r = []
     try:
-        for src in srclist:
-            r.append(uniconvert(src, encoding))
+        return [uniconvert(src, encoding) for src in srclist]
     except UnicodeError:
         raise UnicodeError('bad filename: '+os.path.join(*srclist))
-    return r
 
 def uniconvert(src, encoding):
     """Convert a string to Unicode

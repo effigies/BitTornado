@@ -3,25 +3,22 @@ from cStringIO import StringIO
 
 
 def splitLine(line, COLS=80, indent=10):
-    indent = " " * indent
-    width = COLS - (len(indent) + 1)
+    """Word wrap a string to a given number of columns, including indentation
+    """
+    spaces = " " * indent
+    width = COLS - (indent + 1)
     if indent and width < 15:
         width = COLS - 2
-        indent = " "
-    s = StringIO()
-    i = 0
-    for word in line.split():
-        if i == 0:
-            s.write(indent+word)
-            i = len(word)
-            continue
-        if i + len(word) >= width:
-            s.write('\n'+indent+word)
-            i = len(word)
-            continue
-        s.write(' '+word)
-        i += len(word) + 1
-    return s.getvalue()
+        spaces = " "
+
+    r = []
+    while len(line) > width:
+        pre, sep, post = line[:width].rpartition(' ')
+        line = post + line[width:]
+        r.append(spaces + pre)
+    if line:
+        r.append(spaces + line)
+    return '\n'.join(r)
 
 def formatDefinitions(options, COLS, presets = {}):
     s = StringIO()

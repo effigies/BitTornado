@@ -25,57 +25,51 @@ def formatDefinitions(options, COLS, presets = {}):
         lines.append('')
     return '\n'.join(lines)
 
-def usage(str):
-    raise ValueError(str)
-
 def defaultargs(options):
     return dict((longname, default) for longname, default, doc in options
                                         if default is not None)
 
 def parseargs(argv, options, minargs = None, maxargs = None, presets = {}):
     config = {}
-    longkeyed = {}
-    for option in options:
-        longname, default, doc = option
-        longkeyed[longname] = option
+    for longname, default, doc in options:
         config[longname] = default
 
     config.update(presets) # presets after defaults but before arguments
 
-    options = []
     args = []
-    pos = 0
-    while pos < len(argv):
-        if argv[pos][:2] != '--':
-            args.append(argv[pos])
-            pos += 1
-        else:
-            if pos == len(argv) - 1:
-                usage('parameter passed in at end with no value')
-            key, value = argv[pos][2:], argv[pos+1]
-            pos += 2
-            if key not in longkeyed:
-                usage('unknown key --' + key)
-            longname, default, doc = longkeyed[key]
-            try:
-                t = type(config[longname])
-                if t is NoneType or t is StringType:
-                    config[longname] = value
-                elif t in (IntType, LongType):
-                    config[longname] = long(value)
-                elif t is FloatType:
-                    config[longname] = float(value)
-                else:
-                    assert 0
-            except ValueError, e:
-                usage('wrong format of --%s - %s' % (key, str(e)))
+    while argv:
+        arg, argv = argv[0], argv[1:]
+        if arg[:2] != '--':
+            args.append(arg)
+            continue
+
+        if not argv:
+            raise ValueError('parameter passed in at end with no value')
+        key, value, argv = arg[2:], argv[0], argv[1:]
+
+        if key not in config:
+            raise ValueError('unknown key --' + key)
+        try:
+            t = type(config[key])
+            if t in (NoneType,StringType):
+                config[key] = value
+            elif t in (IntType, LongType):
+                config[key] = long(value)
+            elif t is FloatType:
+                config[key] = float(value)
+            else:
+                assert 0
+        except ValueError, e:
+            raise ValueError('wrong format of --%s - %s' % (key, str(e)))
+
     for key, value in config.iteritems():
         if value is None:
-            usage("Option --%s is required." % key)
+            raise ValueError("Option --%s is required." % key)
     if minargs is not None and len(args) < minargs:
-        usage("Must supply at least %d args." % minargs)
+        raise ValueError("Must supply at least %d args." % minargs)
     if maxargs is not None and len(args) > maxargs:
-        usage("Too many args - %d max." % maxargs)
+        raise ValueError("Too many args - %d max." % maxargs)
+
     return (config, args)
 
 def test_parseargs():

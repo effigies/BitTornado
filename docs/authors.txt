@@ -39,7 +39,7 @@ BitTornado/NetworkAddress.py
     - Christopher J. Johnson
         - based on code by John Hoffman
 BitTornado/parseargs.py
-    - Bill Bumgarner and Bram Cohen
+    - Bill Bumgarner, Bram Cohen and Christopher J. Johnson
 BitTornado/parsedir.py
     - John Hoffman and Uoti Urpala
 BitTornado/piecebuffer.py

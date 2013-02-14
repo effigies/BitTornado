@@ -5,13 +5,16 @@
 
 import sys
 import os
-from BitTornado.BT1.makemetafile import defaults, completedir, announcelist_details
+from BitTornado.BT1.makemetafile import defaults, completedir, \
+        announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions
+
 
 def main(argv):
     program, ext = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <trackerurl> <dir> [dir...] [params...]" % program
-    desc = "Makes a .torrent file for every file or directory present in each dir."
+    desc = "Make a .torrent file for every file or directory present in " \
+            "each given directory"
 
     if len(argv) < 3:
         print "%s\n%s\n%s%s" % (usage, desc,

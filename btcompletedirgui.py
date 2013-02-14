@@ -10,13 +10,15 @@ from BitTornado.BT1.makemetafile import completedir
 try:
     from wxPython.wx import *
 except:
-    print 'wxPython is either not installed or has not been installed properly.'
+    print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
 wxEVT_INVOKE = wxNewEventType()
 
+
 def EVT_INVOKE(win, func):
     win.Connect(-1, -1, wxEVT_INVOKE, func)
+
 
 class InvokeEvent(wxPyEvent):
     def __init__(self, func, args, kwargs):
@@ -26,15 +28,17 @@ class InvokeEvent(wxPyEvent):
         self.args = args
         self.kwargs = kwargs
 
+
 class DownloadInfo:
     def __init__(self):
-        frame = wxFrame(None, -1, 'BitTorrent complete dir 1.0.1', size = wxSize(550, 250))
+        frame = wxFrame(None, -1, 'BitTorrent complete dir 1.0.1',
+                        size=wxSize(550, 250))
         self.frame = frame
 
         panel = wxPanel(frame, -1)
 
-        gridSizer = wxFlexGridSizer(cols = 2, rows = 2, vgap = 15, hgap = 8)
-        
+        gridSizer = wxFlexGridSizer(cols=2, rows=2, vgap=15, hgap=8)
+
         gridSizer.Add(wxStaticText(panel, -1, 'directory to build:'))
         self.dirCtl = wxTextCtrl(panel, -1, '')
 
@@ -52,13 +56,13 @@ class DownloadInfo:
         gridSizer.Add(self.annCtl, 0, wxEXPAND)
 
         gridSizer.Add(wxStaticText(panel, -1, 'piece size:'))
-        self.piece_length = wxChoice(panel, -1, choices = ['2 ** 21', '2 ** 20', '2 ** 19', 
-            '2 ** 18', '2 ** 17', '2 ** 16', '2 ** 15'])
+        self.piece_length = wxChoice(panel, -1, choices=['2 ** 21', '2 ** 20',
+            '2 ** 19', '2 ** 18', '2 ** 17', '2 ** 16', '2 ** 15'])
         self.piece_length.SetSelection(3)
         gridSizer.Add(self.piece_length)
 
         gridSizer.AddGrowableCol(1)
- 
+
         border = wxBoxSizer(wxVERTICAL)
         border.Add(gridSizer, 0, wxEXPAND | wxNORTH | wxEAST | wxWEST, 25)
         b2 = wxButton(panel, -1, 'make')
@@ -69,14 +73,17 @@ class DownloadInfo:
         panel.SetAutoLayout(True)
 
     def select(self, x):
-        dl = wxDirDialog(self.frame, style = wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON)
+        dl = wxDirDialog(self.frame,
+                style=(wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON))
         if dl.ShowModal() == wxID_OK:
             self.dirCtl.SetValue(dl.GetPath())
 
     def complete(self, x):
         if self.dirCtl.GetValue() == '':
-            dlg = wxMessageDialog(self.frame, message = 'You must select a directory', 
-                caption = 'Error', style = wxOK | wxICON_ERROR)
+            dlg = wxMessageDialog(self.frame,
+                message='You must select a directory',
+                caption='Error',
+                style=(wxOK | wxICON_ERROR))
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -88,22 +95,24 @@ class DownloadInfo:
 
 from traceback import print_exc
 
+
 class CompleteDir:
     def __init__(self, d, a, pl):
         self.d = d
         self.a = a
         self.pl = pl
         self.flag = threading.Event()
-        frame = wxFrame(None, -1, 'BitTorrent make directory', size = wxSize(550, 250))
+        frame = wxFrame(None, -1, 'BitTorrent make directory',
+            size=wxSize(550, 250))
         self.frame = frame
 
         panel = wxPanel(frame, -1)
 
-        gridSizer = wxFlexGridSizer(cols = 1, vgap = 15, hgap = 8)
+        gridSizer = wxFlexGridSizer(cols=1, vgap=15, hgap=8)
 
         self.currentLabel = wxStaticText(panel, -1, 'checking file sizes')
         gridSizer.Add(self.currentLabel, 0, wxEXPAND)
-        self.gauge = wxGauge(panel, -1, range = 1000, style = wxGA_SMOOTH)
+        self.gauge = wxGauge(panel, -1, range=1000, style=wxGA_SMOOTH)
         gridSizer.Add(self.gauge, 0, wxEXPAND)
         gridSizer.Add(10, 10, 1, wxEXPAND)
         self.button = wxButton(panel, -1, 'cancel')
@@ -111,7 +120,7 @@ class CompleteDir:
         gridSizer.AddGrowableRow(2)
         gridSizer.AddGrowableCol(0)
 
-        g2 = wxFlexGridSizer(cols = 1, vgap = 15, hgap = 8)
+        g2 = wxFlexGridSizer(cols=1, vgap=15, hgap=8)
         g2.Add(gridSizer, 1, wxEXPAND | wxALL, 25)
         g2.AddGrowableRow(0)
         g2.AddGrowableCol(0)
@@ -121,12 +130,13 @@ class CompleteDir:
         EVT_CLOSE(frame, self.done)
         EVT_INVOKE(frame, self.onInvoke)
         frame.Show(True)
-        threading.Thread(target = self.complete).start()
+        threading.Thread(target=self.complete).start()
 
     def complete(self):
         params = {'piece_size_pow2': self.pl}
         try:
-            completedir(self.d, self.a, params, self.flag, self.valcallback, self.filecallback)
+            completedir(self.d, self.a, params, self.flag, self.valcallback,
+                self.filecallback)
             if not self.flag.isSet():
                 self.currentLabel.SetLabel('Done!')
                 self.gauge.SetValue(1000)
@@ -134,8 +144,8 @@ class CompleteDir:
         except (OSError, IOError), e:
             self.currentLabel.SetLabel('Error!')
             self.button.SetLabel('Close')
-            dlg = wxMessageDialog(self.frame, message = 'Error - ' + str(e), 
-                caption = 'Error', style = wxOK | wxICON_ERROR)
+            dlg = wxMessageDialog(self.frame, message='Error - ' + str(e),
+                caption='Error', style=(wxOK | wxICON_ERROR))
             dlg.ShowModal()
             dlg.Destroy()
 
@@ -149,19 +159,21 @@ class CompleteDir:
         self.invokeLater(self.onfile, [f])
 
     def onfile(self, f):
-        self.currentLabel.SetLabel('building ' + os.path.join(self.d, f) + '.torrent')
+        self.currentLabel.SetLabel(
+            'building {}.torrent'.format(os.path.join(self.d, f)))
 
     def onInvoke(self, event):
         if not self.flag.isSet():
             apply(event.func, event.args, event.kwargs)
 
-    def invokeLater(self, func, args = [], kwargs = {}):
+    def invokeLater(self, func, args=[], kwargs={}):
         if not self.flag.isSet():
             wxPostEvent(self.frame, InvokeEvent(func, args, kwargs))
 
     def done(self, event):
         self.flag.set()
         self.frame.Destroy()
+
 
 class btWxApp(wxApp):
     def OnInit(self):

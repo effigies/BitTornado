@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'Copy announce URLs from one torrent to others'
 
 # btreannounce.py written by Henry 'Pi' James and Bram Cohen
 # multitracker extensions by John Hoffman
@@ -10,12 +11,12 @@ import getopt
 from BitTornado.bencode import bdecode
 from BitTornado.reannounce import reannounce
 
+
 def main(argv):
-    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    """Copy announce information from source to all specified torrents"""
+    program, _ext = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <source.torrent> <file1.torrent> " \
             "[file2.torrent...]" % program
-    desc = 'copies announce information from source to all specified torrents'
-
     try:
         opts, args = getopt.getopt(argv[1:], "hv",
                         ("help", "verbose"))
@@ -24,19 +25,19 @@ def main(argv):
         return 1
 
     if len(args) < 2:
-        print "%s\n%s\n" % usage, desc
+        print "%s\n%s\n" % (usage, main.__doc__)
         return 2
 
-    with open(args[0],'rb') as metainfo_file:
+    with open(args[0], 'rb') as metainfo_file:
         source_metainfo = bdecode(metainfo_file.read())
-    
+
     verbose = False
 
-    for opt, arg in opts:
-        if opt in ('-h','--help'):
-            print "%s\n%s\n" % usage, desc
+    for opt, _arg in opts:
+        if opt in ('-h', '--help'):
+            print "%s\n%s\n" % (usage, main.__doc__)
             return 0
-        elif opt in ('-v','--verbose'):
+        elif opt in ('-v', '--verbose'):
             verbose = True
 
     announce = source_metainfo['announce']
@@ -45,12 +46,13 @@ def main(argv):
     if verbose:
         print 'new announce: ' + announce
         if announce_list:
-            print 'new announce-list: ' +
+            print 'new announce-list: ' + \
                 '|'.join(','.join(tier) for tier in announce_list)
-
 
     for fname in args[1:]:
         reannounce(fname, announce, announce_list, verbose)
+
+    return 0
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

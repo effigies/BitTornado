@@ -3,7 +3,7 @@
 # Replace the suggested filename for the target of a .torrent file
 #
 # 2012 Chris Johnson
-# 
+#
 # Original written by Henry 'Pi' James
 # see LICENSE.txt for license information
 
@@ -14,7 +14,8 @@ from BitTornado.bencode import bencode, bdecode
 
 VERSION = '20120601'
 
-def rename(fname, newname, verbose = False):
+
+def rename(fname, newname, verbose=False):
     with open(fname, 'rb') as metainfo_file:
         metainfo = bdecode(metainfo_file.read())
 
@@ -26,10 +27,11 @@ def rename(fname, newname, verbose = False):
     with open(fname, 'wb') as metainfo_file:
         metainfo_file.write(bencode(metainfo))
 
+
 def main(argv):
-    prog, ext = os.path.splitext(os.path.basename(argv[0]))
-    help = """Usage: %s [-v] TORRENT NAME
-       %s [-m] TORRENT [...]
+    prog, _ext = os.path.splitext(os.path.basename(argv[0]))
+    helpmsg = """Usage: {0} [-v] TORRENT NAME
+       {0} [-m] TORRENT [...]
 
 Change the suggested filename in a .torrent file
 
@@ -37,48 +39,45 @@ Change the suggested filename in a .torrent file
     --match     set suggested filename to match .torrent file name
     --verbose   print old and new file name
     --version   print program version
-    """ % (prog,prog)
+    """.format(prog)
 
     try:
         opts, args = getopt.getopt(argv[1:], "hmvV",
-                        ["help","match","verbose","version"])
+                        ["help", "match", "verbose", "version"])
     except getopt.error, msg:
         print msg
         return 0
 
-    verbose     = False
-    match       = False
+    verbose = False
+    match = False
 
-    for opt, arg in opts:
-        if opt in ('-h','--help'):
-            print help
+    for opt, _arg in opts:
+        if opt in ('-h', '--help'):
+            print helpmsg
             return 0
-        elif opt in ('-m','--match'):
+        elif opt in ('-m', '--match'):
             match = True
-        elif opt in ('-v','--verbose'):
+        elif opt in ('-v', '--verbose'):
             verbose = True
-        elif opt in ('-V','--version'):
-            print "%s %s" % (prog,VERSION)
+        elif opt in ('-V', '--version'):
+            print ' '.join((prog, VERSION))
             return 0
+
+    if match and not args or len(args) != 2:
+        print helpmsg
+        return 2        # common exit code for syntax error
 
     if match:
-        if len(args) == 0:
-            print help
-            return 2
         for fname in args:
             newname, torrent = os.path.splitext(fname)
             if torrent == '.torrent':
                 rename(fname, newname, verbose)
             else:
                 print "%s does not appear to be a .torrent file" % fname
-    else:
-        if len(args) != 2:
-            print help
-            return 2 # common exit code for syntax error
+        return 0
 
-        fname, newname = args
-
-        rename(fname, newname, verbose)
+    fname, newname = args
+    rename(fname, newname, verbose)
 
     return 0
 

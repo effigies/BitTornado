@@ -16,7 +16,8 @@ import traceback
 from binascii import hexlify
 from webbrowser import open_new
 from StringIO import StringIO
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
+from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
+                                    get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
 from BitTornado.ConnChoice import *
 from BitTornado.ConfigReader import configReader
@@ -28,7 +29,7 @@ from BitTornado import version, createPeerID, report_email
 try:
     from wxPython.wx import *
 except:
-    print 'wxPython is either not installed or has not been installed properly.'
+    print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
 PROFILER = False
@@ -40,6 +41,7 @@ except:
     wxFULL_REPAINT_ON_RESIZE = 0        # fix for wx pre-2.5
 
 # Note to packagers: edit OLDICONPATH in BitTornado/ConfigDir.py
+
 
 def hours(n):
     if n == 0:
@@ -56,32 +58,36 @@ def hours(n):
     else:
         return '%d min %02d sec' % (m, s)
 
+
 def size_format(s):
     if (s < 1024):
-        r = str(s) + 'B'
+        r = '{:d}B'.format(s)
     elif (s < 1048576):
-        r = str(int(s/1024)) + 'KiB'
+        r = '{:d}KiB'.format(s / 1024)
     elif (s < 1073741824L):
-        r = str(int(s/1048576)) + 'MiB'
+        r = '{:d}MiB'.format(s / (1 << 20))
     elif (s < 1099511627776L):
-        r = str(int((s/1073741824.0)*100.0)/100.0) + 'GiB'
+        r = '{:.2f}GiB'.format(float(s) / (1 << 30))
     else:
-        r = str(int((s/1099511627776.0)*100.0)/100.0) + 'TiB'
+        r = '{:.2f}TiB'.format(float(s) / (1 << 40))
     return(r)
+
 
 def comma_format(s):
     r = str(s)
-    for i in range(len(r)-3, 0, -3):
-        r = r[:i]+','+r[i:]
+    for i in range(len(r) - 3, 0, -3):
+        r = r[:i] + ',' + r[i:]
     return(r)
 
 wxEVT_INVOKE = wxNewEventType()
 
+
 def EVT_INVOKE(win, func):
     win.Connect(-1, -1, wxEVT_INVOKE, func)
 
+
 class InvokeEvent(wxPyEvent):
-    def __init__(self, func = None, args = None, kwargs = None):
+    def __init__(self, func=None, args=None, kwargs=None):
         wxPyEvent.__init__(self)
         self.SetEventType(wxEVT_INVOKE)
         self.func = func
@@ -94,9 +100,10 @@ class DownloadInfoFrame:
         self._errorwindow = None
         try:
             self.FONT = configfile.config['gui_font']
-            self.default_font = wxFont(self.FONT, wxDEFAULT, wxNORMAL, wxNORMAL, False)
+            self.default_font = wxFont(self.FONT, wxDEFAULT, wxNORMAL,
+                wxNORMAL, False)
             frame = wxFrame(None, -1, 'BitTorrent ' + version + ' download',
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+                style=(wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE))
             self.flag = flag
             self.configfile = configfile
             self.configfileargs = configfile.config
@@ -135,7 +142,7 @@ class DownloadInfoFrame:
             self.current_ratesetting = None
             self.gaugemode = None
             self.autorate = False
-            
+
             self.filename = None
             self.dow = None
             if sys.platform == 'win32':
@@ -144,23 +151,29 @@ class DownloadInfoFrame:
 
             wxInitAllImageHandlers()
             self.basepath = self.configfile.getIconDir()
-            self.icon = wxIcon(os.path.join(self.basepath,'icon_bt.ico'), wxBITMAP_TYPE_ICO)
-            self.finicon = wxIcon(os.path.join(self.basepath,'icon_done.ico'), wxBITMAP_TYPE_ICO)
-            self.statusIconFiles={
-                'startup':os.path.join(self.basepath,'white.ico'),
-                'disconnected':os.path.join(self.basepath,'black.ico'),
-                'noconnections':os.path.join(self.basepath,'red.ico'),
-                'nocompletes':os.path.join(self.basepath,'blue.ico'),
-                'noincoming':os.path.join(self.basepath,'yellow.ico'),
-                'allgood':os.path.join(self.basepath,'green.ico'),
+            self.icon = wxIcon(os.path.join(self.basepath, 'icon_bt.ico'),
+                wxBITMAP_TYPE_ICO)
+            self.finicon = wxIcon(os.path.join(self.basepath, 'icon_done.ico'),
+                wxBITMAP_TYPE_ICO)
+            self.statusIconFiles = {
+                'startup':          os.path.join(self.basepath, 'white.ico'),
+                'disconnected':     os.path.join(self.basepath, 'black.ico'),
+                'noconnections':    os.path.join(self.basepath, 'red.ico'),
+                'nocompletes':      os.path.join(self.basepath, 'blue.ico'),
+                'noincoming':       os.path.join(self.basepath, 'yellow.ico'),
+                'allgood':          os.path.join(self.basepath, 'green.ico'),
                 }
-            self.statusIcons={}
+            self.statusIcons = {}
             self.filestatusIcons = wxImageList(16, 16)
-            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,'black1.ico'),wxBITMAP_TYPE_ICO))
-            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,'yellow1.ico'), wxBITMAP_TYPE_ICO))
-            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,'green1.ico'), wxBITMAP_TYPE_ICO))
+            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
+                'black1.ico'), wxBITMAP_TYPE_ICO))
+            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
+                'yellow1.ico'), wxBITMAP_TYPE_ICO))
+            self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
+                'green1.ico'), wxBITMAP_TYPE_ICO))
 
-            self.allocbuttonBitmap = wxBitmap(os.path.join(self.basepath,'alloc.gif'), wxBITMAP_TYPE_GIF)
+            self.allocbuttonBitmap = wxBitmap(os.path.join(self.basepath,
+                'alloc.gif'), wxBITMAP_TYPE_GIF)
 
             self.starttime = clock()
 
@@ -173,40 +186,42 @@ class DownloadInfoFrame:
             panel = wxPanel(frame, -1)
             self.bgcolor = panel.GetBackgroundColour()
 
-            def StaticText(text, font = self.FONT-1, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_LEFT)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT - 1, underline=False,
+                            color=None, panel=panel):
+                x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                    underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            colSizer = wxFlexGridSizer(cols = 1, vgap = 3)
+            colSizer = wxFlexGridSizer(cols=1, vgap=3)
 
             border = wxBoxSizer(wxHORIZONTAL)
             border.Add(colSizer, 1, wxEXPAND | wxALL, 4)
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
 
-            topboxsizer = wxFlexGridSizer(cols = 3, vgap = 0)
-            topboxsizer.AddGrowableCol (0)
+            topboxsizer = wxFlexGridSizer(cols=3, vgap=0)
+            topboxsizer.AddGrowableCol(0)
 
-            fnsizer = wxFlexGridSizer(cols = 1, vgap = 0)
-            fnsizer.AddGrowableCol (0)
-            fnsizer.AddGrowableRow (1)
+            fnsizer = wxFlexGridSizer(cols=1, vgap=0)
+            fnsizer.AddGrowableCol(0)
+            fnsizer.AddGrowableRow(1)
 
-            fileNameText = StaticText('', self.FONT+4)
-            fnsizer.Add(fileNameText, 1, wxALIGN_BOTTOM|wxEXPAND)
+            fileNameText = StaticText('', self.FONT + 4)
+            fnsizer.Add(fileNameText, 1, wxALIGN_BOTTOM | wxEXPAND)
             self.fileNameText = fileNameText
 
-            fnsizer2 = wxFlexGridSizer(cols = 8, vgap = 0)
-            fnsizer2.AddGrowableCol (0)
+            fnsizer2 = wxFlexGridSizer(cols=8, vgap=0)
+            fnsizer2.AddGrowableCol(0)
 
             fileSizeText = StaticText('')
-            fnsizer2.Add(fileSizeText, 1, wxALIGN_BOTTOM|wxEXPAND)
+            fnsizer2.Add(fileSizeText, 1, wxALIGN_BOTTOM | wxEXPAND)
             self.fileSizeText = fileSizeText
 
             fileDetails = StaticText('Details', self.FONT, True, 'Blue')
-            fnsizer2.Add(fileDetails, 0, wxALIGN_BOTTOM)                                     
+            fnsizer2.Add(fileDetails, 0, wxALIGN_BOTTOM)
 
             fnsizer2.Add(StaticText('  '))
 
@@ -222,16 +237,16 @@ class DownloadInfoFrame:
             fnsizer2.Add(aboutText, 0, wxALIGN_BOTTOM)
 
             fnsizer2.Add(StaticText('  '))
-            fnsizer.Add(fnsizer2,0,wxEXPAND)
-            topboxsizer.Add(fnsizer,0,wxEXPAND)
+            fnsizer.Add(fnsizer2, 0, wxEXPAND)
+            topboxsizer.Add(fnsizer, 0, wxEXPAND)
             topboxsizer.Add(StaticText('  '))
 
-            self.statusIcon = wxEmptyBitmap(32,32)
+            self.statusIcon = wxEmptyBitmap(32, 32)
             statidata = wxMemoryDC()
             statidata.SelectObject(self.statusIcon)
             statidata.SetPen(wxTRANSPARENT_PEN)
-            statidata.SetBrush(wxBrush(self.bgcolor,wxSOLID))
-            statidata.DrawRectangle(0,0,32,32)
+            statidata.SetBrush(wxBrush(self.bgcolor, wxSOLID))
+            statidata.DrawRectangle(0, 0, 32, 32)
             self.statusIconPtr = wxStaticBitmap(panel, -1, self.statusIcon)
             topboxsizer.Add(self.statusIconPtr)
 
@@ -240,60 +255,60 @@ class DownloadInfoFrame:
             self.topboxsizer = topboxsizer
             colSizer.Add(topboxsizer, 0, wxEXPAND)
 
-            self.gauge = wxGauge(panel, -1, range = 1000, style = wxGA_SMOOTH)
+            self.gauge = wxGauge(panel, -1, range=1000, style=wxGA_SMOOTH)
             colSizer.Add(self.gauge, 0, wxEXPAND)
 
-            timeSizer = wxFlexGridSizer(cols = 2)
+            timeSizer = wxFlexGridSizer(cols=2)
             timeSizer.Add(StaticText('Time elapsed / estimated : '))
-            self.timeText = StaticText(self.activity+'                    ')
+            self.timeText = StaticText(self.activity + ' ' * 20)
             timeSizer.Add(self.timeText)
             timeSizer.AddGrowableCol(1)
             colSizer.Add(timeSizer)
 
-            destSizer = wxFlexGridSizer(cols = 2, hgap = 8)
+            destSizer = wxFlexGridSizer(cols=2, hgap=8)
             self.fileDestLabel = StaticText('Download to:')
             destSizer.Add(self.fileDestLabel)
             self.fileDestText = StaticText('')
-            destSizer.Add(self.fileDestText, flag = wxEXPAND)
+            destSizer.Add(self.fileDestText, flag=wxEXPAND)
             destSizer.AddGrowableCol(1)
-            colSizer.Add(destSizer, flag = wxEXPAND)
+            colSizer.Add(destSizer, flag=wxEXPAND)
             self.destSizer = destSizer
 
-            statSizer = wxFlexGridSizer(cols = 3, hgap = 8)
+            statSizer = wxFlexGridSizer(cols=3, hgap=8)
 
-            self.ratesSizer = wxFlexGridSizer(cols = 2)
-            self.infoSizer = wxFlexGridSizer(cols = 2)
+            self.ratesSizer = wxFlexGridSizer(cols=2)
+            self.infoSizer = wxFlexGridSizer(cols=2)
 
             self.ratesSizer.Add(StaticText('   Download rate: '))
             self.downRateText = StaticText('0 kB/s       ')
-            self.ratesSizer.Add(self.downRateText, flag = wxEXPAND)
+            self.ratesSizer.Add(self.downRateText, flag=wxEXPAND)
 
             self.downTextLabel = StaticText('Downloaded: ')
             self.infoSizer.Add(self.downTextLabel)
             self.downText = StaticText('0.00 MiB        ')
-            self.infoSizer.Add(self.downText, flag = wxEXPAND)
+            self.infoSizer.Add(self.downText, flag=wxEXPAND)
 
             self.ratesSizer.Add(StaticText('   Upload rate: '))
             self.upRateText = StaticText('0 kB/s       ')
-            self.ratesSizer.Add(self.upRateText, flag = wxEXPAND)
+            self.ratesSizer.Add(self.upRateText, flag=wxEXPAND)
 
             self.upTextLabel = StaticText('Uploaded: ')
             self.infoSizer.Add(self.upTextLabel)
             self.upText = StaticText('0.00 MiB        ')
-            self.infoSizer.Add(self.upText, flag = wxEXPAND)
+            self.infoSizer.Add(self.upText, flag=wxEXPAND)
 
-            shareSizer = wxFlexGridSizer(cols = 2, hgap = 8)
+            shareSizer = wxFlexGridSizer(cols=2, hgap=8)
             shareSizer.Add(StaticText('Share rating:'))
             self.shareRatingText = StaticText('')
             shareSizer.AddGrowableCol(1)
-            shareSizer.Add(self.shareRatingText, flag = wxEXPAND)
+            shareSizer.Add(self.shareRatingText, flag=wxEXPAND)
 
             statSizer.Add(self.ratesSizer)
             statSizer.Add(self.infoSizer)
-            statSizer.Add(shareSizer, flag = wxALIGN_CENTER_VERTICAL)
-            colSizer.Add (statSizer)
+            statSizer.Add(shareSizer, flag=wxALIGN_CENTER_VERTICAL)
+            colSizer.Add(statSizer)
 
-            torrentSizer = wxFlexGridSizer(cols = 1)
+            torrentSizer = wxFlexGridSizer(cols=1)
             self.peerStatusText = StaticText('')
             torrentSizer.Add(self.peerStatusText, 0, wxEXPAND)
             self.seedStatusText = StaticText('')
@@ -302,12 +317,12 @@ class DownloadInfoFrame:
             colSizer.Add(torrentSizer, 0, wxEXPAND)
             self.torrentSizer = torrentSizer
 
-            self.errorTextSizer = wxFlexGridSizer(cols = 1)
+            self.errorTextSizer = wxFlexGridSizer(cols=1)
             self.errorText = StaticText('', self.FONT, False, 'Red')
             self.errorTextSizer.Add(self.errorText, 0, wxEXPAND)
             colSizer.Add(self.errorTextSizer, 0, wxEXPAND)
 
-            cancelSizer=wxGridSizer(cols = 2, hgap = 40)
+            cancelSizer = wxGridSizer(cols=2, hgap=40)
             self.pauseButton = wxButton(panel, -1, 'Pause')
             cancelSizer.Add(self.pauseButton, 0, wxALIGN_CENTER)
 
@@ -317,12 +332,13 @@ class DownloadInfoFrame:
 
             # Setting options
 
-            slideSizer = wxFlexGridSizer(cols = 7, hgap = 0, vgap = 5)
+            slideSizer = wxFlexGridSizer(cols=7, hgap=0, vgap=5)
 
             # dropdown
 
             self.connChoiceLabel = StaticText('Settings for ')
-            slideSizer.Add (self.connChoiceLabel, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.connChoiceLabel, 0,
+                wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL)
             self.connChoice = wxChoice (panel, -1, (-1, -1), (self.FONT*12, -1),
                                         choices = connChoiceList)
             self.connChoice.SetFont(self.default_font)

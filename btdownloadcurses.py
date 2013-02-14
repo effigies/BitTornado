@@ -13,7 +13,8 @@ import signal
 import random
 import socket
 import threading
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
+from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
+                                    get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
@@ -36,6 +37,7 @@ except:
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
 
+
 def fmttime(n):
     if n == 0:
         return 'download complete!'
@@ -47,6 +49,7 @@ def fmttime(n):
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
     return 'finishing in %d:%02d:%02d' % (h, m, s)
+
 
 def fmtsize(n):
     s = str(n)
@@ -70,7 +73,7 @@ class CursesDisplayer:
         self.scrwin = scrwin
         self.errlist = errlist
         self.doneflag = doneflag
-        
+
         signal.signal(signal.SIGWINCH, self.winch_handler)
         self.changeflag = threading.Event()
 
@@ -108,8 +111,8 @@ class CursesDisplayer:
                                       self.labely, self.labelx)
         self.labelpan = curses.panel.new_panel(self.labelwin)
         self.fieldh, self.fieldw, self.fieldy, self.fieldx = (
-                            self.labelh, self.scrw-2 - self.labelw-3,
-                            1, self.labelw+3)
+                            self.labelh, (self.scrw - 2) - (self.labelw - 3),
+                            1, self.labelw + 3)
         self.fieldwin = curses.newwin(self.fieldh, self.fieldw,
                                       self.fieldy, self.fieldx)
         self.fieldwin.nodelay(1)
@@ -120,7 +123,7 @@ class CursesDisplayer:
                                      self.spewy, self.spewx)
         self.spewpan = curses.panel.new_panel(self.spewwin)
         try:
-            self.scrwin.border(ord('|'),ord('|'),ord('-'),ord('-'),ord(' '),ord(' '),ord(' '),ord(' '))
+            self.scrwin.border(*map(ord, '||--    '))
         except:
             pass
         self.labelwin.addstr(0, 0, 'file:')
@@ -137,12 +140,11 @@ class CursesDisplayer:
         curses.doupdate()
         self.changeflag.clear()
 
-
     def finished(self):
         self.done = 1
         self.activity = 'download succeeded!'
         self.downRate = '---'
-        self.display(fractionDone = 1)
+        self.display(fractionDone=1)
 
     def failed(self):
         self.done = 1
@@ -156,23 +158,24 @@ class CursesDisplayer:
         self.errlist.append(newerrmsg)
         self.display()
 
-    def display(self, dpflag = threading.Event(), fractionDone = None,
-            timeEst = None, downRate = None, upRate = None, activity = None,
-            statistics = None, spew = None, **kws):
+    def display(self, dpflag=threading.Event(), fractionDone=None,
+            timeEst=None, downRate=None, upRate=None, activity=None,
+            statistics=None, spew=None, **kws):
 
         inchar = self.fieldwin.getch()
-        if inchar == 12: # ^L
+        if inchar == 12:                    # ^L
             self._remake_window()
-        elif inchar in (ord('q'),ord('Q')):
+        elif inchar in (ord('q'), ord('Q')):
             self.doneflag.set()
 
         if activity is not None and not self.done:
             self.activity = activity
         elif timeEst is not None:
             self.activity = fmttime(timeEst)
-        if self.changeflag.isSet():
-            return
-        if self.last_update_time + 0.1 > clock() and fractionDone not in (0.0, 1.0) and activity is not None:
+        if self.changeflag.isSet() or \
+                self.last_update_time + 0.1 > clock() and \
+                fractionDone not in (0.0, 1.0) and \
+                activity is not None:
             return
         self.last_update_time = clock()
         if fractionDone is not None:
@@ -186,22 +189,34 @@ class CursesDisplayer:
         if upRate is not None:
             self.upRate = '%.1f KB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-           if (statistics.shareRating < 0) or (statistics.shareRating > 100):
-               self.shareRating = 'oo  (%.1f MB up / %.1f MB down)' % (float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
-           else:
-               self.shareRating = '%.3f  (%.1f MB up / %.1f MB down)' % (statistics.shareRating, float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
-           if not self.done:
-              self.seedStatus = '%d seen now, plus %.3f distributed copies' % (statistics.numSeeds,0.001*int(1000*statistics.numCopies2))
-           else:
-              self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
-           self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
+            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
+                shareRateString = "oo"
+            else:
+                shareRateString = '{:.3f}'.format(statistics.shareRating)
+            self.shareRating = '{}  ({:.1f} MB up / {:.1f} MB down)'.format(
+                shareRateString,
+                float(statistics.upTotal) / (1 << 20),
+                float(statistics.downTotal) / (1 << 20))
+            if self.done:
+                seeds = '{:d} seen recently, '.format(statistics.numOldSeeds)
+                copies = 'plus {:.3f} distributed copies'.format(
+                    round(statistics.numCopies, 3))
+            else:
+                seeds = '{:d} seen now, '.format(statistics.numSeeds)
+                copies = 'plus {:.3f} distributed copies'.format(
+                    round(statistics.numCopies2, 3))
+            self.seedStatus = seeds + copies
+            self.peerStatus = '{:d} seen now, {:.1f}% done at {:.1f} kB/s' \
+                ''.format(statistics.numPeers, statistics.percentDone,
+                float(statistics.torrentRate) / (1 << 10))
 
         self.fieldwin.erase()
         self.fieldwin.addnstr(0, 0, self.file, self.fieldw, curses.A_BOLD)
         self.fieldwin.addnstr(1, 0, self.fileSize, self.fieldw)
         self.fieldwin.addnstr(2, 0, self.downloadTo, self.fieldw)
         if self.progress:
-            self.fieldwin.addnstr(3, 0, self.progress, self.fieldw, curses.A_BOLD)
+            self.fieldwin.addnstr(3, 0, self.progress, self.fieldw,
+                curses.A_BOLD)
         self.fieldwin.addnstr(4, 0, self.status, self.fieldw)
         self.fieldwin.addnstr(5, 0, self.downRate, self.fieldw)
         self.fieldwin.addnstr(6, 0, self.upRate, self.fieldw)
@@ -214,64 +229,73 @@ class CursesDisplayer:
         if not spew:
             errsize = self.spewh
             if self.errors:
-                self.spewwin.addnstr(0, 0, "error(s):", self.speww, curses.A_BOLD)
+                self.spewwin.addnstr(0, 0, "error(s):", self.speww,
+                    curses.A_BOLD)
                 errsize = len(self.errors)
                 displaysize = min(errsize, self.spewh)
                 displaytop = errsize - displaysize
                 for i in range(displaysize):
-                    self.spewwin.addnstr(i, self.labelw, self.errors[displaytop + i],
-                                 self.speww-self.labelw-1, curses.A_BOLD)
+                    self.spewwin.addnstr(i, self.labelw,
+                        self.errors[displaytop + i],
+                        self.speww - self.labelw - 1, curses.A_BOLD)
         else:
             if self.errors:
                 self.spewwin.addnstr(0, 0, "error:", self.speww, curses.A_BOLD)
                 self.spewwin.addnstr(0, self.labelw, self.errors[-1],
-                                 self.speww-self.labelw-1, curses.A_BOLD)
-            self.spewwin.addnstr(2, 0, "  #     IP                 Upload           Download     Completed  Speed", self.speww, curses.A_BOLD)
-
+                                 self.speww - self.labelw - 1, curses.A_BOLD)
+            self.spewwin.addnstr(2, 0, "  #     IP                 Upload   " \
+                "        Download     Completed  Speed", self.speww,
+                curses.A_BOLD)
 
             if self.spew_scroll_time + SPEW_SCROLL_RATE < clock():
                 self.spew_scroll_time = clock()
-                if len(spew) > self.spewh-5 or self.spew_scroll_pos > 0:
+                if len(spew) > self.spewh - 5 or self.spew_scroll_pos > 0:
                     self.spew_scroll_pos += 1
             if self.spew_scroll_pos > len(spew):
                 self.spew_scroll_pos = 0
 
             for i in range(len(spew)):
-                spew[i]['lineno'] = i+1
+                spew[i]['lineno'] = i + 1
             spew.append({'lineno': None})
-            spew = spew[self.spew_scroll_pos:] + spew[:self.spew_scroll_pos]                
-            
+            spew = spew[self.spew_scroll_pos:] + spew[:self.spew_scroll_pos]
+
             for i in range(min(self.spewh - 5, len(spew))):
                 if not spew[i]['lineno']:
                     continue
-                self.spewwin.addnstr(i+3, 0, '%3d' % spew[i]['lineno'], 3)
-                self.spewwin.addnstr(i+3, 4, spew[i]['ip']+spew[i]['direction'], 16)
+                self.spewwin.addnstr(i + 3, 0, '%3d' % spew[i]['lineno'], 3)
+                self.spewwin.addnstr(i + 3, 4, spew[i]['ip'] + \
+                    spew[i]['direction'], 16)
                 if spew[i]['uprate'] > 100:
-                    self.spewwin.addnstr(i+3, 20, '%6.0f KB/s' % (float(spew[i]['uprate']) / 1000), 11)
-                self.spewwin.addnstr(i+3, 32, '-----', 5)
+                    self.spewwin.addnstr(i + 3, 20, '{:6.0f} KB/s'.format(
+                        float(spew[i]['uprate']) / 1000), 11)
+                self.spewwin.addnstr(i + 3, 32, '-----', 5)
                 if spew[i]['uinterested'] == 1:
-                    self.spewwin.addnstr(i+3, 33, 'I', 1)
+                    self.spewwin.addnstr(i + 3, 33, 'I', 1)
                 if spew[i]['uchoked'] == 1:
-                    self.spewwin.addnstr(i+3, 35, 'C', 1)
+                    self.spewwin.addnstr(i + 3, 35, 'C', 1)
                 if spew[i]['downrate'] > 100:
-                    self.spewwin.addnstr(i+3, 38, '%6.0f KB/s' % (float(spew[i]['downrate']) / 1000), 11)
-                self.spewwin.addnstr(i+3, 50, '-------', 7)
+                    self.spewwin.addnstr(i + 3, 38, '{:6.0f} KB/s'.format(
+                        float(spew[i]['downrate']) / 1000), 11)
+                self.spewwin.addnstr(i + 3, 50, '-------', 7)
                 if spew[i]['dinterested'] == 1:
-                    self.spewwin.addnstr(i+3, 51, 'I', 1)
+                    self.spewwin.addnstr(i + 3, 51, 'I', 1)
                 if spew[i]['dchoked'] == 1:
-                    self.spewwin.addnstr(i+3, 53, 'C', 1)
+                    self.spewwin.addnstr(i + 3, 53, 'C', 1)
                 if spew[i]['snubbed'] == 1:
-                    self.spewwin.addnstr(i+3, 55, 'S', 1)
-                self.spewwin.addnstr(i+3, 58, '%5.1f%%' % (float(int(spew[i]['completed']*1000))/10), 6)
+                    self.spewwin.addnstr(i + 3, 55, 'S', 1)
+                self.spewwin.addnstr(i + 3, 58, '{:6.1%}'.format(
+                    spew[i]['completed']), 6)
                 if spew[i]['speed'] is not None:
-                    self.spewwin.addnstr(i+3, 64, '%5.0f KB/s' % (float(spew[i]['speed'])/1000), 10)
+                    self.spewwin.addnstr(i + 3, 64, '{:5.0f} KB/s'.format(
+                        float(spew[i]['speed']) / 1000), 10)
 
             if statistics is not None:
-                self.spewwin.addnstr(self.spewh-1, 0,
-                        'downloading %d pieces, have %d fragments, %d of %d pieces completed'
-                        % ( statistics.storage_active, statistics.storage_dirty,
-                            statistics.storage_numcomplete,
-                            statistics.storage_totalpieces ), self.speww-1 )
+                self.spewwin.addnstr(self.spewh - 1, 0, 'downloading {:d} ' \
+                    'pieces, have %d fragments, %d of %d pieces completed' \
+                    ''.format(statistics.storage_active,
+                        statistics.storage_dirty,
+                        statistics.storage_numcomplete,
+                        statistics.storage_totalpieces), self.speww - 1)
 
         curses.panel.update_panels()
         curses.doupdate()
@@ -285,6 +309,7 @@ class CursesDisplayer:
         self.downloadTo = os.path.abspath(saveas)
         return saveas
 
+
 def run(scrwin, errlist, params):
     doneflag = threading.Event()
     d = CursesDisplayer(scrwin, errlist, doneflag)
@@ -292,15 +317,16 @@ def run(scrwin, errlist, params):
         while 1:
             configdir = ConfigDir('downloadcurses')
             defaultsToIgnore = ['responsefile', 'url', 'priority']
-            configdir.setDefaults(defaults,defaultsToIgnore)
+            configdir.setDefaults(defaults, defaultsToIgnore)
             configdefaults = configdir.loadConfig()
-            defaults.append(('save_options',0,
-             "whether to save the current options as the new default configuration " +
-             "(only for btdownloadcurses.py)"))
+            defaults.append(('save_options', 0, 'whether to save the current' \
+                ' options as the new default configuration (only for' \
+                ' btdownloadcurses.py)'))
             try:
                 config = parse_params(params, configdefaults)
             except ValueError, e:
-                d.error('error: ' + str(e) + '\nrun with no args for parameter explanations')
+                d.error('error: {}\nrun with no args for parameter ' \
+                        'explanations'.format(e))
                 break
             if not config:
                 d.error(get_usage(defaults, d.fieldw, configdefaults))
@@ -313,15 +339,16 @@ def run(scrwin, errlist, params):
             random.seed(myid)
 
             rawserver = RawServer(doneflag, config['timeout_check_interval'],
-                                  config['timeout'], ipv6_enable = config['ipv6_enabled'],
-                                  failfunc = d.failed, errorfunc = d.error)
+                config['timeout'], ipv6_enable=config['ipv6_enabled'],
+                failfunc=d.failed, errorfunc=d.error)
 
             upnp_type = UPnP_test(config['upnp_nat_access'])
             while True:
                 try:
-                    listen_port = rawserver.find_and_bind(config['minport'], config['maxport'],
-                                    config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
-                                    upnp = upnp_type, randomizer = config['random_port'])
+                    listen_port = rawserver.find_and_bind(config['minport'],
+                        config['maxport'], config['bind'],
+                        ipv6_socket_style=config['ipv6_binds_v4'],
+                        upnp=upnp_type, randomizer=config['random_port'])
                     break
                 except socket.error, e:
                     if upnp_type and e == UPnP_ERROR:
@@ -332,20 +359,21 @@ def run(scrwin, errlist, params):
                     d.failed()
                     return
 
-            response = get_response(config['responsefile'], config['url'], d.error)
+            response = get_response(config['responsefile'], config['url'],
+                d.error)
             if not response:
                 break
 
             infohash = sha.sha(bencode(response['info'])).digest()
-            
-            dow = BT1Download(d.display, d.finished, d.error, d.error, doneflag,
-                            config, response, infohash, myid, rawserver, listen_port,
-                            configdir)
-            
+
+            dow = BT1Download(d.display, d.finished, d.error, d.error,
+                doneflag, config, response, infohash, myid, rawserver,
+                listen_port, configdir)
+
             if not dow.saveAs(d.chooseFile):
                 break
 
-            if not dow.initFiles(old_style = True):
+            if not dow.initFiles(old_style=True):
                 break
             if not dow.startEngine():
                 dow.shutdown()
@@ -354,15 +382,15 @@ def run(scrwin, errlist, params):
             dow.autoStats()
 
             if not dow.am_I_finished():
-                d.display(activity = 'connecting to peers')
+                d.display(activity='connecting to peers')
             rawserver.listen_forever(dow.getPortHandler())
-            d.display(activity = 'shutting down')
+            d.display(activity='shutting down')
             dow.shutdown()
             break
 
     except KeyboardInterrupt:
-        # ^C to exit.. 
-        pass 
+        # ^C to exit...
+        pass
     try:
         rawserver.shutdown()
     except:
@@ -384,6 +412,6 @@ if __name__ == '__main__':
     curses_wrapper(run, errlist, sys.argv[1:])
 
     if errlist:
-       print "These errors occurred during execution:"
-       for error in errlist:
-          print error
+        print "These errors occurred during execution:"
+        for error in errlist:
+            print error

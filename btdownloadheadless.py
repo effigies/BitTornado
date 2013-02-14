@@ -10,7 +10,8 @@ import time
 import random
 import socket
 import threading
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, get_usage, get_response
+from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
+                                    get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
@@ -19,6 +20,7 @@ from BitTornado import createPeerID, version
 from BitTornado.ConfigDir import ConfigDir
 
 PROFILER = False
+
 
 def hours(n):
     if n == 0:
@@ -34,6 +36,7 @@ def hours(n):
         return '%d hour %02d min %02d sec' % (h, m, s)
     else:
         return '%d min %02d sec' % (m, s)
+
 
 class HeadlessDisplayer:
     def __init__(self):
@@ -68,12 +71,13 @@ class HeadlessDisplayer:
         self.errors.append(errormsg)
         self.display()
 
-    def display(self, dpflag = threading.Event(), fractionDone = None,
-            timeEst = None, downRate = None, upRate = None, activity = None,
-            statistics = None,  **kws):
-        if self.last_update_time + 0.1 > clock() and fractionDone not in (0.0, 1.0) and activity is not None:
+    def display(self, dpflag=threading.Event(), fractionDone=None,
+            timeEst=None, downRate=None, upRate=None, activity=None,
+            statistics=None, **kws):
+        if self.last_update_time + 0.1 > clock() and \
+                fractionDone not in (0.0, 1.0) and activity is not None:
             return
-        self.last_update_time = clock()        
+        self.last_update_time = clock()
         if fractionDone is not None:
             self.percentDone = str(float(int(fractionDone * 1000)) / 10)
         if timeEst is not None:
@@ -85,15 +89,15 @@ class HeadlessDisplayer:
         if upRate is not None:
             self.upRate = '%.1f kB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-           if (statistics.shareRating < 0) or (statistics.shareRating > 100):
-               self.shareRating = 'oo  (%.1f MB up / %.1f MB down)' % (float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
-           else:
-               self.shareRating = '%.3f  (%.1f MB up / %.1f MB down)' % (statistics.shareRating, float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
-           if not self.done:
-              self.seedStatus = '%d seen now, plus %.3f distributed copies' % (statistics.numSeeds,0.001*int(1000*statistics.numCopies))
-           else:
-              self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
-           self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
+            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
+                self.shareRating = 'oo  (%.1f MB up / %.1f MB down)' % (float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
+            else:
+                self.shareRating = '%.3f  (%.1f MB up / %.1f MB down)' % (statistics.shareRating, float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
+            if not self.done:
+                self.seedStatus = '%d seen now, plus %.3f distributed copies' % (statistics.numSeeds,0.001*int(1000*statistics.numCopies))
+            else:
+                self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
+            self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
         print '\n\n\n\n'
         for err in self.errors:
             print 'ERROR:\n' + err + '\n'

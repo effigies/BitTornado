@@ -6,11 +6,14 @@
 
 import sys
 import os
-from BitTornado.BT1.makemetafile import make_meta_file, defaults, announcelist_details
+from BitTornado.BT1.makemetafile import make_meta_file, defaults, \
+                                        announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions
+
 
 def prog(amount):
     print '%.1f%% complete\r' % (amount * 100),
+
 
 def main(argv):
     program, ext = os.path.splitext(os.path.basename(argv[0]))
@@ -25,7 +28,7 @@ def main(argv):
     try:
         config, args = parseargs(argv[1:], defaults, 2, None)
         for file in args[1:]:
-            make_meta_file(file, args[0], config.copy(), progress = prog)
+            make_meta_file(file, args[0], config.copy(), progress=prog)
     except ValueError, e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'

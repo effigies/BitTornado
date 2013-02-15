@@ -1,103 +1,107 @@
 """Encode/decode data structures for use in BitTorrent applications
 """
 
-from types import IntType, LongType, StringType, ListType, TupleType, DictType, BooleanType
+from types import IntType, LongType, StringType, ListType, TupleType, \
+    DictType, BooleanType
 try:
     from types import UnicodeType
 except ImportError:
     UnicodeType = None
 
+
 class BTDecoder(object):
-    def __call__(self, x, sloppy = 0):
+    """Stateless object that decodes bencoded strings into data structures"""
+    def __call__(self, ctext, sloppy=0):
         """Decode a string encoded with bencode, such as the contents of a
         .torrent file"""
         try:
-            r, l = self.decode_func[x[0]](self, x, 0)
+            data, length = self.decode_func[ctext[0]](self, ctext, 0)
         except (IndexError, KeyError, ValueError):
-            raise ValueError, "bad bencoded data"
-        if not sloppy and l != len(x):
-            raise ValueError, "bad bencoded data"
-        return r
+            raise ValueError("bad bencoded data")
+        if not sloppy and length != len(ctext):
+            raise ValueError("bad bencoded data")
+        return data
 
-    def decode_int(self, x, f):
-        """Decode integer in string x at position f
-    
+    def decode_int(self, ctext, pos):
+        """Decode integer in ciphertext at a given position
+
         An integer with ASCII representation X will be encoded as "iXe". A
         ValueError will be thrown if X begins with 0 but is not simply '0',
         or if X begins with '-0'.
-        
+
         Returns (parsed integer, next token start position)
         """
-        f += 1
-        newf = x.index('e', f)
-        n = int(x[f:newf])
-    
+        pos += 1
+        newpos = ctext.index('e', pos)
+        data = int(ctext[pos:newpos])
+
         # '-0' is invalid and strings beginning with '0' must be == '0'
-        if x[f:f+2] == '-0' or (x[f] == '0' and newf != f+1):
+        if ctext[pos:pos + 2] == '-0' or \
+                ctext[pos] == '0' and newpos != pos + 1:
             raise ValueError
-    
-        return (n, newf+1)
-      
-    def decode_string(self, x, f):
-        """Decode string in string x at position f
-    
+
+        return (data, newpos + 1)
+
+    def decode_string(self, ctext, pos):
+        """Decode string in ciphertext at a given position
+
         A string is encoded as an integer length, followed by a colon and a
         string of the length given. A ValueError is thrown if length begins
         with '0' but is not '0'.
-        
+
         Returns (parsed string, next token start position)
         """
-        colon = x.index(':', f)
-        n = int(x[f:colon])
-    
+        colon = ctext.index(':', pos)
+        length = int(ctext[pos:colon])
+
         # '0:' is the only valid string beginning with '0'
-        if x[f] == '0' and colon != f+1:
+        if ctext[pos] == '0' and colon != pos + 1:
             raise ValueError
-    
+
         colon += 1
-        return (x[colon:colon+n], colon+n)
-    
-    def decode_unicode(self, x, f):
-        """Decode unicode string in string x at position f
-    
+        return (ctext[colon:colon + length], colon + length)
+
+    def decode_unicode(self, ctext, pos):
+        """Decode unicode string in ciphertext at a given position
+
         A unicode string is simply a string encoding preceded by a u.
         """
-        s, f = self.decode_string(x, f+1)
-        return (s.decode('UTF-8'),f)
-    
-    def decode_list(self, x, f):
-        """Decode list in string x at position f
-        
+        data, pos = self.decode_string(ctext, pos + 1)
+        return (data.decode('UTF-8'), pos)
+
+    def decode_list(self, ctext, pos):
+        """Decode list in ciphertext at a given position
+
         A list takes the form lXe where X is the concatenation of the
         encodings of all elements in the list.
-        
+
         Returns (parsed list, next token start position)
         """
-        r, f = [], f+1
-        while x[f] != 'e':
-            v, f = self.decode_func[x[f]](self, x, f)
-            r.append(v)
-        return (r, f + 1)
-    
-    def decode_dict(self, x, f):
-        """Decode dictionary in string x at position f
-    
+        data, pos = [], pos + 1
+        while ctext[pos] != 'e':
+            element, pos = self.decode_func[ctext[pos]](self, ctext, pos)
+            data.append(element)
+        return (data, pos + 1)
+
+    def decode_dict(self, ctext, pos):
+        """Decode dictionary in ciphertext at a given position
+
         A dictionary is encoded as dXe where X is the concatenation of the
         encodings of all key,value pairs in the dictionary, sorted by key.
         Key, value paris are themselves concatenations of the encodings of
         keys and values, where keys are assumed to be strings.
-        
+
         Returns (parsed dictionary, next token start position)
         """
-        r, f = {}, f+1
+        data, pos = {}, pos + 1
         lastkey = None
-        while x[f] != 'e':
-            k, f = self.decode_string(x, f)
-            if lastkey >= k:
+        while ctext[pos] != 'e':
+            key, pos = self.decode_string(ctext, pos)
+            if lastkey >= key:
                 raise ValueError
-            lastkey = k
-            r[k], f = self.decode_func[x[f]](self, x, f)
-        return (r, f + 1)
+            lastkey = key
+            data[key], pos = self.decode_func[ctext[pos]](self, ctext, pos)
+        return (data, pos + 1)
 
     decode_func = {
         'l':    decode_list,
@@ -115,259 +119,168 @@ class BTDecoder(object):
         '9':    decode_string,
         'u':    decode_unicode
     }
-  
+
 bdecode = BTDecoder().__call__
 
+
+def _test_exception(func, data, exc):
+    """Validate that func(data) raises exc"""
+    try:
+        func(data)
+    except exc:
+        return True
+    except:
+        pass
+    return False
+
+
 def test_bdecode():
-    try:
-        bdecode('0:0:')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('ie')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('i341foo382e')
-        assert 0
-    except ValueError:
-        pass
+    """Test decoding of valid and erroneous sample strings"""
+    assert _test_exception(bdecode, '0:0:', ValueError)
+    assert _test_exception(bdecode, 'ie', ValueError)
+    assert _test_exception(bdecode, 'i341foo382e', ValueError)
     assert bdecode('i4e') == 4L
     assert bdecode('i0e') == 0L
     assert bdecode('i123456789e') == 123456789L
     assert bdecode('i-10e') == -10L
-    try:
-        bdecode('i-0e')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('i123')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('i6easd')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('35208734823ljdahflajhdf')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('2:abfdjslhfld')
-        assert 0
-    except ValueError:
-        pass
+    assert _test_exception(bdecode, 'i-0e', ValueError)
+    assert _test_exception(bdecode, 'i123', ValueError)
+    assert _test_exception(bdecode, '', ValueError)
+    assert _test_exception(bdecode, 'i6easd', ValueError)
+    assert _test_exception(bdecode, '35208734823ljdahflajhdf', ValueError)
+    assert _test_exception(bdecode, '2:abfdjslhfld', ValueError)
     assert bdecode('0:') == ''
     assert bdecode('3:abc') == 'abc'
     assert bdecode('10:1234567890') == '1234567890'
-    try:
-        bdecode('02:xy')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('l')
-        assert 0
-    except ValueError:
-        pass
+    assert _test_exception(bdecode, '02:xy', ValueError)
+    assert _test_exception(bdecode, 'l', ValueError)
     assert bdecode('le') == []
-    try:
-        bdecode('leanfdldjfh')
-        assert 0
-    except ValueError:
-        pass
+    assert _test_exception(bdecode, 'leanfdldjfh', ValueError)
     assert bdecode('l0:0:0:e') == ['', '', '']
-    try:
-        bdecode('relwjhrlewjh')
-        assert 0
-    except ValueError:
-        pass
+    assert _test_exception(bdecode, 'relwjhrlewjh', ValueError)
     assert bdecode('li1ei2ei3ee') == [1, 2, 3]
     assert bdecode('l3:asd2:xye') == ['asd', 'xy']
     assert bdecode('ll5:Alice3:Bobeli2ei3eee') == [['Alice', 'Bob'], [2, 3]]
-    try:
-        bdecode('d')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('defoobar')
-        assert 0
-    except ValueError:
-        pass
+    assert _test_exception(bdecode, 'd', ValueError)
+    assert _test_exception(bdecode, 'defoobar', ValueError)
     assert bdecode('de') == {}
     assert bdecode('d3:agei25e4:eyes4:bluee') == {'age': 25, 'eyes': 'blue'}
-    assert bdecode('d8:spam.mp3d6:author5:Alice6:lengthi100000eee') == {'spam.mp3': {'author': 'Alice', 'length': 100000}}
-    try:
-        bdecode('d3:fooe')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('di1e0:e')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('d1:b0:1:a0:e')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('d1:a0:1:a0:e')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('i03e')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('l01:ae')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('9999:x')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('l0:')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('d0:0:')
-        assert 0
-    except ValueError:
-        pass
-    try:
-        bdecode('d0:')
-        assert 0
-    except ValueError:
-        pass
+    assert bdecode('d8:spam.mp3d6:author5:Alice6:lengthi100000eee') == \
+        {'spam.mp3': {'author': 'Alice', 'length': 100000}}
+    assert _test_exception(bdecode, 'd3:fooe', ValueError)
+    assert _test_exception(bdecode, 'di1e0:e', ValueError)
+    assert _test_exception(bdecode, 'd1:b0:1:a0:e', ValueError)
+    assert _test_exception(bdecode, 'd1:a0:1:a0:e', ValueError)
+    assert _test_exception(bdecode, 'i03e', ValueError)
+    assert _test_exception(bdecode, 'l01:ae', ValueError)
+    assert _test_exception(bdecode, '9999:x', ValueError)
+    assert _test_exception(bdecode, 'l0:', ValueError)
+    assert _test_exception(bdecode, 'd0:0:', ValueError)
+    assert _test_exception(bdecode, 'd0:', ValueError)
 
-bencached_marker = []
+BENCACHED_MARKER = []
+
 
 class Bencached:
-    def __init__(self, s):
-        self.marker = bencached_marker
-        self.bencoded = s
+    """Store the ciphertext of repeatedly encoded data structures"""
+    def __init__(self, ctext):
+        self.marker = BENCACHED_MARKER
+        self.bencoded = ctext
 
-BencachedType = type(Bencached('')) # insufficient, but good as a filter
+    @classmethod
+    def get(cls, _encoder, data, ctext):
+        """Get cached ciphertext from Bencached object
+
+        Called with an encoder, so use class method to rearrange parameters
+        """
+        assert data.marker == BENCACHED_MARKER
+        ctext.append(data.bencoded)
+
+BencachedType = type(Bencached(''))     # insufficient, but good as a filter
+
 
 class BTEncoder(object):
     """Encode a data structure into a string for use in BitTorrent applications
     """
-    def __call__(self, x):
+
+    def __call__(self, data):
         """Encode a data structure into a string.
-        
+
         Creates a list in which to collect string segments and returns the
         joined result.
-        
+
         See encode_* for details.
         """
-        r = []
-        self.encode_func[type(x)](self, x, r)
-        return ''.join(r)
+        ctext = []
+        self.encode_func[type(data)](self, data, ctext)
+        return ''.join(ctext)
 
-    def encode_bencached(self, x, r):
-        """Encode a cached value x.
+    def encode_unicode(self, string, ctext):
+        """Encode unicode string into string segments appended to
+        ciphertext list
 
-        Appends pre-encoded string segment to r.
-        """
-        assert x.marker == bencached_marker
-        r.append(x.bencoded)
-    
-    def encode_int(self, x, r):
-        """Encode integer x into string segments appended to list r
-    
-        An integer with ASCII representation X will be encoded as "iXe".
-        """
-        r.extend(('i',str(x),'e'))
-    
-    def encode_bool(self, x, r):
-        """Encode boolean x into string segments appended to list r
-    
-        A boolean is treated as an integer (0 or 1).
-        """
-        encode_int(int(x),r)
-    
-    def encode_string(self, x, r):
-        """Encode string x into string segments appended to list r
-    
-        A string is encoded as an integer length, followed by a colon and a
-        string of the length given.
-        """
-        r.extend((str(len(x)),':',x))
-    
-    def encode_unicode(self, x, r):
-        """Encode unicode string x into string segments appended to
-        list r
-    
         A unicode string is converted into UTF-8 and encoded as any other
         string.
         """
-        #r.append('u')
-        encode_string(x.encode('UTF-8'),r)
-    
-    def encode_list(self, x, r):
-        """Encode list x into string segments appended to list r
-        
+        #ctext.append('u')
+        self.encode_func[str](self, string.encode('UTF-8'), ctext)
+
+    def encode_list(self, data, ctext):
+        """Encode list into string segments appended to ciphertext list
+
         A list takes the form lXe where X is the concatenation of the
         encodings of all elements in the list.
         """
-        r.append('l')
-        for e in x:
-            self.encode_func[type(e)](self, e, r)
-        r.append('e')
-    
-    def encode_dict(self, x, r):
-        """Encode dictionary x into string segments appended to
-        list r
-    
+        ctext.append('l')
+        for element in data:
+            self.encode_func[type(element)](self, element, ctext)
+        ctext.append('e')
+
+    def encode_dict(self, data, ctext):
+        """Encode dictionary into string segments appended to
+        ciphertext list
+
         A dictionary is encoded as dXe where X is the concatenation of the
         encodings of all key,value pairs in the dictionary, sorted by key.
         Key, value pairs are themselves concatenations of the encodings of
         keys and values, where keys are assumed to be strings.
         """
-        r.append('d')
-        ilist = x.items()
+        ctext.append('d')
+        ilist = data.items()
         ilist.sort()
-        for k,v in ilist:
-            r.extend((str(len(k)),':',k))
-            self.encode_func[type(v)](self, v, r)
-        r.append('e')
-    
+        for key, value in ilist:
+            ctext.extend((str(len(key)), ':', key))
+            self.encode_func[type(value)](self, value, ctext)
+        ctext.append('e')
+
     encode_func = {
-        BencachedType:  encode_bencached,
-        IntType:        encode_int,
-        LongType:       encode_int,
-        StringType:     encode_string,
+        # Cached values are retrieved directly from the cache object
+        BencachedType:  Bencached.get,
+
+        # An integer with decimal representation X is encoded as "iXe"
+        IntType:        lambda _s, i, c: c.extend(('i', str(i), 'e')),
+        LongType:       lambda _s, i, c: c.extend(('i', str(i), 'e')),
+
+        # Booleans are encoded as integers of value 0 or 1
+        BooleanType:    lambda _s, b, c: c.extend(('i', str(int(b)), 'e')),
+
+        # Strings are encoded with decimal length, followed by a colon and
+        # the string itself
+        StringType:     lambda _s, s, c: c.extend((str(len(s)), ':', s)),
+
+        # Types that are slightly less simple to encode
+        UnicodeType:    encode_unicode,
         ListType:       encode_list,
         TupleType:      encode_list,
-        DictType:       encode_dict,
-        BooleanType:    encode_bool,
-        UnicodeType:    encode_unicode
+        DictType:       encode_dict
     }
 
 
 bencode = BTEncoder().__call__
 
+
 def test_bencode():
+    """Test encoding of encodable and unencodable data structures"""
     assert bencode(4) == 'i4e'
     assert bencode(0) == 'i0e'
     assert bencode(-10) == 'i-10e'
@@ -380,14 +293,12 @@ def test_bencode():
     assert bencode([['Alice', 'Bob'], [2, 3]]) == 'll5:Alice3:Bobeli2ei3eee'
     assert bencode({}) == 'de'
     assert bencode({'age': 25, 'eyes': 'blue'}) == 'd3:agei25e4:eyes4:bluee'
-    assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == 'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
-    try:
-        bencode({1: 'foo'})
-        assert 0
-    except TypeError:
-        pass
-    try:
-        bencode({'foo': 1.0})
-        assert 0
-    except KeyError:
-        pass
+    assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == \
+        'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
+    assert _test_exception(bencode, {1: 'foo'}, TypeError)
+    assert _test_exception(bencode, {'foo': 1.0}, KeyError)
+
+    cached = Bencached(bencode({'age': 25}))
+    assert bencode(cached) == cached.bencoded
+
+    assert bencode(u'') == bencode('')

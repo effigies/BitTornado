@@ -123,10 +123,10 @@ class BTDecoder(object):
 bdecode = BTDecoder().__call__
 
 
-def _test_exception(func, data, exc):
+def _test_exception(exc, func, *data):
     """Validate that func(data) raises exc"""
     try:
-        func(data)
+        func(*data)
     except exc:
         return True
     except:
@@ -136,47 +136,47 @@ def _test_exception(func, data, exc):
 
 def test_bdecode():
     """Test decoding of valid and erroneous sample strings"""
-    assert _test_exception(bdecode, '0:0:', ValueError)
-    assert _test_exception(bdecode, 'ie', ValueError)
-    assert _test_exception(bdecode, 'i341foo382e', ValueError)
+    assert _test_exception(ValueError, bdecode, '0:0:')
+    assert _test_exception(ValueError, bdecode, 'ie')
+    assert _test_exception(ValueError, bdecode, 'i341foo382e')
     assert bdecode('i4e') == 4L
     assert bdecode('i0e') == 0L
     assert bdecode('i123456789e') == 123456789L
     assert bdecode('i-10e') == -10L
-    assert _test_exception(bdecode, 'i-0e', ValueError)
-    assert _test_exception(bdecode, 'i123', ValueError)
-    assert _test_exception(bdecode, '', ValueError)
-    assert _test_exception(bdecode, 'i6easd', ValueError)
-    assert _test_exception(bdecode, '35208734823ljdahflajhdf', ValueError)
-    assert _test_exception(bdecode, '2:abfdjslhfld', ValueError)
+    assert _test_exception(ValueError, bdecode, 'i-0e')
+    assert _test_exception(ValueError, bdecode, 'i123')
+    assert _test_exception(ValueError, bdecode, '')
+    assert _test_exception(ValueError, bdecode, 'i6easd')
+    assert _test_exception(ValueError, bdecode, '35208734823ljdahflajhdf')
+    assert _test_exception(ValueError, bdecode, '2:abfdjslhfld')
     assert bdecode('0:') == ''
     assert bdecode('3:abc') == 'abc'
     assert bdecode('10:1234567890') == '1234567890'
-    assert _test_exception(bdecode, '02:xy', ValueError)
-    assert _test_exception(bdecode, 'l', ValueError)
+    assert _test_exception(ValueError, bdecode, '02:xy')
+    assert _test_exception(ValueError, bdecode, 'l')
     assert bdecode('le') == []
-    assert _test_exception(bdecode, 'leanfdldjfh', ValueError)
+    assert _test_exception(ValueError, bdecode, 'leanfdldjfh')
     assert bdecode('l0:0:0:e') == ['', '', '']
-    assert _test_exception(bdecode, 'relwjhrlewjh', ValueError)
+    assert _test_exception(ValueError, bdecode, 'relwjhrlewjh')
     assert bdecode('li1ei2ei3ee') == [1, 2, 3]
     assert bdecode('l3:asd2:xye') == ['asd', 'xy']
     assert bdecode('ll5:Alice3:Bobeli2ei3eee') == [['Alice', 'Bob'], [2, 3]]
-    assert _test_exception(bdecode, 'd', ValueError)
-    assert _test_exception(bdecode, 'defoobar', ValueError)
+    assert _test_exception(ValueError, bdecode, 'd')
+    assert _test_exception(ValueError, bdecode, 'defoobar')
     assert bdecode('de') == {}
     assert bdecode('d3:agei25e4:eyes4:bluee') == {'age': 25, 'eyes': 'blue'}
     assert bdecode('d8:spam.mp3d6:author5:Alice6:lengthi100000eee') == \
         {'spam.mp3': {'author': 'Alice', 'length': 100000}}
-    assert _test_exception(bdecode, 'd3:fooe', ValueError)
-    assert _test_exception(bdecode, 'di1e0:e', ValueError)
-    assert _test_exception(bdecode, 'd1:b0:1:a0:e', ValueError)
-    assert _test_exception(bdecode, 'd1:a0:1:a0:e', ValueError)
-    assert _test_exception(bdecode, 'i03e', ValueError)
-    assert _test_exception(bdecode, 'l01:ae', ValueError)
-    assert _test_exception(bdecode, '9999:x', ValueError)
-    assert _test_exception(bdecode, 'l0:', ValueError)
-    assert _test_exception(bdecode, 'd0:0:', ValueError)
-    assert _test_exception(bdecode, 'd0:', ValueError)
+    assert _test_exception(ValueError, bdecode, 'd3:fooe')
+    assert _test_exception(ValueError, bdecode, 'di1e0:e')
+    assert _test_exception(ValueError, bdecode, 'd1:b0:1:a0:e')
+    assert _test_exception(ValueError, bdecode, 'd1:a0:1:a0:e')
+    assert _test_exception(ValueError, bdecode, 'i03e')
+    assert _test_exception(ValueError, bdecode, 'l01:ae')
+    assert _test_exception(ValueError, bdecode, '9999:x')
+    assert _test_exception(ValueError, bdecode, 'l0:')
+    assert _test_exception(ValueError, bdecode, 'd0:0:')
+    assert _test_exception(ValueError, bdecode, 'd0:')
 
 BENCACHED_MARKER = []
 
@@ -295,8 +295,8 @@ def test_bencode():
     assert bencode({'age': 25, 'eyes': 'blue'}) == 'd3:agei25e4:eyes4:bluee'
     assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == \
         'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
-    assert _test_exception(bencode, {1: 'foo'}, TypeError)
-    assert _test_exception(bencode, {'foo': 1.0}, KeyError)
+    assert _test_exception(TypeError, bencode, {1: 'foo'})
+    assert _test_exception(KeyError, bencode, {'foo': 1.0})
 
     cached = Bencached(bencode({'age': 25}))
     assert bencode(cached) == cached.bencoded

@@ -24,9 +24,9 @@ except:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
-       '"curses", which is unfortunately not available for the native ' \
-       'Windows port of Python. It is however available for the Cygwin ' \
-       'port of Python, running on all Win32 systems (www.cygwin.com).'
+          '"curses", which is unfortunately not available for the native ' \
+          'Windows port of Python. It is however available for the Cygwin ' \
+          'port of Python, running on all Win32 systems (www.cygwin.com).'
     print
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
@@ -46,6 +46,7 @@ def fmttime(n):
     h, m = divmod(m, 60)
     return 'ETA in %d:%02d:%02d' % (h, m, s)
 
+
 def fmtsize(n):
     n = long(n)
     unit = [' B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
@@ -62,9 +63,11 @@ def fmtsize(n):
         size = '%.0f' % n + '%s' % unit[i]
     return size
 
+
 def ljust(s, size):
     s = s[:size]
     return s + (' '*(size-len(s)))
+
 
 def rjust(s, size):
     s = s[:size]
@@ -76,7 +79,7 @@ class CursesDisplayer:
         self.messages = []
         self.scroll_pos = 0
         self.scroll_time = 0
-        
+
         self.scrwin = scrwin
         signal.signal(signal.SIGWINCH, self.winch_handler)
         self.changeflag = threading.Event()
@@ -122,24 +125,27 @@ class CursesDisplayer:
         self.statuswin.scrollok(0)
 
         try:
-            self.scrwin.border(ord('|'),ord('|'),ord('-'),ord('-'),ord(' '),ord(' '),ord(' '),ord(' '))
+            self.scrwin.border(*map(ord, '||--    '))
         except:
             pass
         self.headerwin.addnstr(0, 2, '#', self.mainwinw - 25, curses.A_BOLD)
-        self.headerwin.addnstr(0, 4, 'Filename', self.mainwinw - 25, curses.A_BOLD)
+        self.headerwin.addnstr(0, 4, 'Filename', self.mainwinw - 25,
+                               curses.A_BOLD)
         self.headerwin.addnstr(0, self.mainwinw - 24, 'Size', 4, curses.A_BOLD)
-        self.headerwin.addnstr(0, self.mainwinw - 18, 'Download', 8, curses.A_BOLD)
-        self.headerwin.addnstr(0, self.mainwinw -  6, 'Upload', 6, curses.A_BOLD)
-        self.totalwin.addnstr(0, self.mainwinw - 27, 'Totals:', 7, curses.A_BOLD)
+        self.headerwin.addnstr(0, self.mainwinw - 18, 'Download', 8,
+                               curses.A_BOLD)
+        self.headerwin.addnstr(0, self.mainwinw - 6, 'Upload', 6,
+                               curses.A_BOLD)
+        self.totalwin.addnstr(0, self.mainwinw - 27, 'Totals:', 7,
+                              curses.A_BOLD)
 
         self._display_messages()
-        
+
         curses.panel.update_panels()
         curses.doupdate()
         self.changeflag.clear()
 
-
-    def _display_line(self, s, bold = False):
+    def _display_line(self, s, bold=False):
         if self.disp_end:
             return True
         line = self.disp_line
@@ -154,7 +160,7 @@ class CursesDisplayer:
             self.disp_end = True
         return self.disp_end
 
-    def _display_data(self, data):    
+    def _display_data(self, data):
         if 3*len(data) <= self.mainwinh:
             self.scroll_pos = 0
             self.scrolling = False
@@ -177,28 +183,27 @@ class CursesDisplayer:
                 self._display_line('')
                 if self._display_line(''):
                     break
-            ( name, status, progress, peers, seeds, seedsmsg, dist,
-              uprate, dnrate, upamt, dnamt, size, t, msg ) = data[ii]
+            (name, status, progress, peers, seeds, seedsmsg, dist,
+             uprate, dnrate, upamt, dnamt, size, t, msg) = data[ii]
             t = time.fmttime(t)
             if t:
                 status = t
-            name = ljust(name,self.mainwinw-32)
-            size = rjust(fmtsize(size),8)
-            uprate = rjust('%s/s' % fmtsize(uprate),10)
-            dnrate = rjust('%s/s' % fmtsize(dnrate),10)
-            line = "%3d %s%s%s%s" % (ii+1, name, size, dnrate, uprate)
+            name = ljust(name, self.mainwinw - 32)
+            size = rjust(fmtsize(size), 8)
+            uprate = rjust('%s/s' % fmtsize(uprate), 10)
+            dnrate = rjust('%s/s' % fmtsize(dnrate), 10)
+            line = "%3d %s%s%s%s" % (ii + 1, name, size, dnrate, uprate)
             self._display_line(line, True)
             if peers + seeds:
-                datastr = '    (%s) %s - %s up %s dn - %s peers %s seeds %.3f dist copies' % (
-                                progress, status,
-                                fmtsize(upamt), fmtsize(dnamt),
-                                peers, seeds, dist )
+                datastr = '    ({}) {} - {} up {} dn - {} peers {} seeds ' \
+                    '{:.3f} dist copies'.format(
+                        progress, status, fmtsize(upamt), fmtsize(dnamt),
+                        peers, seeds, dist)
             else:
-                datastr = '    (%s) %s - %s up %s dn' % (
-                                progress, status,
-                                fmtsize(upamt), fmtsize(dnamt) )
+                datastr = '    ({}) {} - {} up {} dn'.format(
+                    progress, status, fmtsize(upamt), fmtsize(dnamt))
             self._display_line(datastr)
-            self._display_line('    '+ljust(msg,self.mainwinw-4))
+            self._display_line('    ' + ljust(msg, self.mainwinw - 4))
             i += 1
 
     def display(self, data):
@@ -206,25 +211,25 @@ class CursesDisplayer:
             return
 
         inchar = self.mainwin.getch()
-        if inchar == 12: # ^L
+        if inchar == 12:  # ^L
             self._remake_window()
 
         self.mainwin.erase()
         if data:
             self._display_data(data)
         else:
-            self.mainwin.addnstr( 1, int(self.mainwinw/2)-5,
-                                  'no torrents', 12, curses.A_BOLD )
+            self.mainwin.addnstr(1, int(self.mainwinw / 2) - 5,
+                                 'no torrents', 12, curses.A_BOLD)
         totalup = 0
         totaldn = 0
-        for ( name, status, progress, peers, seeds, seedsmsg, dist,
-              uprate, dnrate, upamt, dnamt, size, t, msg ) in data:
+        for (name, status, progress, peers, seeds, seedsmsg, dist,
+             uprate, dnrate, upamt, dnamt, size, t, msg) in data:
             totalup += uprate
             totaldn += dnrate
-        
+
         totalup = '%s/s' % fmtsize(totalup)
         totaldn = '%s/s' % fmtsize(totaldn)
-        
+
         self.totalwin.erase()
         self.totalwin.addnstr(0, self.mainwinw-27, 'Totals:', 7, curses.A_BOLD)
         self.totalwin.addnstr(0, self.mainwinw-20 + (10-len(totaldn)),
@@ -235,10 +240,10 @@ class CursesDisplayer:
         curses.panel.update_panels()
         curses.doupdate()
 
-        return inchar in (ord('q'),ord('Q'))
+        return inchar in (ord('q'), ord('Q'))
 
     def message(self, s):
-        self.messages.append(time.strftime('%x %X - ',time.localtime())+s)
+        self.messages.append(time.strftime('%x %X - ', time.localtime()) + s)
         self._display_messages()
 
     def _display_messages(self):
@@ -255,7 +260,6 @@ class CursesDisplayer:
         self.message('SYSTEM ERROR - EXCEPTION GENERATED')
 
 
-
 def LaunchManyWrapper(scrwin, config):
     LaunchMany(config, CursesDisplayer(scrwin))
 
@@ -264,26 +268,27 @@ if __name__ == '__main__':
     if sys.argv[1:] == ['--version']:
         print version
         sys.exit(0)
-    defaults.extend( [
-        ( 'parse_dir_interval', 60,
-          "how often to rescan the torrent directory, in seconds" ),
-        ( 'saveas_style', 2,
-          "How to name torrent downloads (1 = rename to torrent name, " +
-          "2 = save under name in torrent, 3 = save in directory under torrent name)" ),
-        ( 'display_path', 0,
-          "whether to display the full path or the torrent contents for each torrent" ),
-    ] )
+    defaults.extend([
+        ('parse_dir_interval', 60,
+         'how often to rescan the torrent directory, in seconds'),
+        ('saveas_style', 2, 'How to name torrent downloads (1 = rename to '
+         'torrent name, 2 = save under name in torrent, 3 = save in directory '
+         'under torrent name)'),
+        ('display_path', 0, 'whether to display the full path or the torrent '
+         'contents for each torrent'),
+    ])
     try:
         configdir = ConfigDir('launchmanycurses')
         defaultsToIgnore = ['responsefile', 'url', 'priority']
-        configdir.setDefaults(defaults,defaultsToIgnore)
+        configdir.setDefaults(defaults, defaultsToIgnore)
         configdefaults = configdir.loadConfig()
-        defaults.append(('save_options',0,
-         "whether to save the current options as the new default configuration " +
-         "(only for btlaunchmanycurses.py)"))
+        defaults.append(('save_options', 0, 'whether to save the current '
+                         'options as the new default configuration (only for '
+                         'btlaunchmanycurses.py)'))
         if len(sys.argv) < 2:
             print "Usage: btlaunchmanycurses.py <directory> <global options>\n"
-            print "<directory> - directory to look for .torrent files (semi-recursive)"
+            print "<directory> - directory to look for .torrent files " \
+                "(semi-recursive)"
             print get_usage(defaults, 80, configdefaults)
             sys.exit(1)
         config, args = parseargs(sys.argv[1:], defaults, 1, 1, configdefaults)
@@ -294,7 +299,8 @@ if __name__ == '__main__':
             raise ValueError("Warning: "+args[0]+" is not a directory")
         config['torrent_dir'] = args[0]
     except ValueError, e:
-        print 'error: ' + str(e) + '\nrun with no args for parameter explanations'
+        print 'error: {}\nrun with no args for parameter explanations' \
+            ''.format(e)
         sys.exit(1)
 
     curses_wrapper(LaunchManyWrapper, config)

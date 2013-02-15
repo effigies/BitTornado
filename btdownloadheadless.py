@@ -11,7 +11,7 @@ import random
 import socket
 import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
-                                    get_usage, get_response
+    get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
@@ -72,8 +72,8 @@ class HeadlessDisplayer:
         self.display()
 
     def display(self, dpflag=threading.Event(), fractionDone=None,
-            timeEst=None, downRate=None, upRate=None, activity=None,
-            statistics=None, **kws):
+                timeEst=None, downRate=None, upRate=None, activity=None,
+                statistics=None, **kws):
         if self.last_update_time + 0.1 > clock() and \
                 fractionDone not in (0.0, 1.0) and activity is not None:
             return
@@ -90,14 +90,26 @@ class HeadlessDisplayer:
             self.upRate = '%.1f kB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
             if (statistics.shareRating < 0) or (statistics.shareRating > 100):
-                self.shareRating = 'oo  (%.1f MB up / %.1f MB down)' % (float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
+                self.shareRating = 'oo  ({:.1f} MB up / {:.1f} MB down)' \
+                    ''.format(float(statistics.upTotal) / (1 << 20),
+                              float(statistics.downTotal) / (1 << 20))
             else:
-                self.shareRating = '%.3f  (%.1f MB up / %.1f MB down)' % (statistics.shareRating, float(statistics.upTotal) / (1<<20), float(statistics.downTotal) / (1<<20))
+                self.shareRating = '{:.3f}  ({:.1f} MB up / {:.1f} MB down)' \
+                    ''.format(statistics.shareRating,
+                              float(statistics.upTotal) / (1 << 20),
+                              float(statistics.downTotal) / (1 << 20))
             if not self.done:
-                self.seedStatus = '%d seen now, plus %.3f distributed copies' % (statistics.numSeeds,0.001*int(1000*statistics.numCopies))
+                self.seedStatus = '{:d} seen now, plus {:.3f} distributed ' \
+                    'copies'.format(statistics.numSeeds,
+                                    statistics.numCopies)
             else:
-                self.seedStatus = '%d seen recently, plus %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies))
-            self.peerStatus = '%d seen now, %.1f%% done at %.1f kB/s' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1 << 10))
+                self.seedStatus = '{:d} seen recently, plus {:.3f} ' \
+                    'distributed copies'.format(statistics.numOldSeeds,
+                                                statistics.numCopies)
+            self.peerStatus = '{:d} seen now, {:.1%} done at {:.1f} kB/s' \
+                ''.format(statistics.numPeers,
+                          statistics.percentDone / 100,
+                          float(statistics.torrentRate) / (1 << 10))
         print '\n\n\n\n'
         for err in self.errors:
             print 'ERROR:\n' + err + '\n'
@@ -111,7 +123,7 @@ class HeadlessDisplayer:
         print 'seed status:   ', self.seedStatus
         print 'peer status:   ', self.peerStatus
         sys.stdout.flush()
-        dpflag.set()        
+        dpflag.set()
 
     def chooseFile(self, default, size, saveas, dir):
         self.file = '%s (%.1f MB)' % (default, float(size) / (1 << 20))
@@ -122,6 +134,7 @@ class HeadlessDisplayer:
 
     def newpath(self, path):
         self.downloadTo = path
+
 
 def run(params):
     try:
@@ -136,15 +149,16 @@ def run(params):
     while 1:
         configdir = ConfigDir('downloadheadless')
         defaultsToIgnore = ['responsefile', 'url', 'priority']
-        configdir.setDefaults(defaults,defaultsToIgnore)
+        configdir.setDefaults(defaults, defaultsToIgnore)
         configdefaults = configdir.loadConfig()
-        defaults.append(('save_options',0,
-         "whether to save the current options as the new default configuration " +
-         "(only for btdownloadheadless.py)"))
+        defaults.append(
+            ('save_options', 0, 'whether to save the current options as the '
+             'new default configuration (only for btdownloadheadless.py)'))
         try:
             config = parse_params(params, configdefaults)
         except ValueError, e:
-            print 'error: ' + str(e) + '\nrun with no args for parameter explanations'
+            print 'error: {}\nrun with no args for parameter explanations' \
+                ''.format(e)
             break
         if not config:
             print get_usage(defaults, 80, configdefaults)
@@ -155,19 +169,22 @@ def run(params):
 
         myid = createPeerID()
         random.seed(myid)
-        
+
         doneflag = threading.Event()
+
         def disp_exception(text):
             print text
-        rawserver = RawServer(doneflag, config['timeout_check_interval'],
-                              config['timeout'], ipv6_enable = config['ipv6_enabled'],
-                              failfunc = h.failed, errorfunc = disp_exception)
+        rawserver = RawServer(
+            doneflag, config['timeout_check_interval'], config['timeout'],
+            ipv6_enable=config['ipv6_enabled'], failfunc=h.failed,
+            errorfunc=disp_exception)
         upnp_type = UPnP_test(config['upnp_nat_access'])
         while True:
             try:
-                listen_port = rawserver.find_and_bind(config['minport'], config['maxport'],
-                                config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
-                                upnp = upnp_type, randomizer = config['random_port'])
+                listen_port = rawserver.find_and_bind(
+                    config['minport'], config['maxport'], config['bind'],
+                    ipv6_socket_style=config['ipv6_binds_v4'],
+                    upnp=upnp_type, randomizer=config['random_port'])
                 break
             except socket.error, e:
                 if upnp_type and e == UPnP_ERROR:
@@ -184,14 +201,14 @@ def run(params):
 
         infohash = sha.sha(bencode(response['info'])).digest()
 
-        dow = BT1Download(h.display, h.finished, h.error, disp_exception, doneflag,
-                        config, response, infohash, myid, rawserver, listen_port,
-                        configdir)
-        
+        dow = BT1Download(
+            h.display, h.finished, h.error, disp_exception, doneflag, config,
+            response, infohash, myid, rawserver, listen_port, configdir)
+
         if not dow.saveAs(h.chooseFile, h.newpath):
             break
 
-        if not dow.initFiles(old_style = True):
+        if not dow.initFiles(old_style=True):
             break
         if not dow.startEngine():
             dow.shutdown()
@@ -200,9 +217,9 @@ def run(params):
         dow.autoStats()
 
         if not dow.am_I_finished():
-            h.display(activity = 'connecting to peers')
+            h.display(activity='connecting to peers')
         rawserver.listen_forever(dow.getPortHandler())
-        h.display(activity = 'shutting down')
+        h.display(activity='shutting down')
         dow.shutdown()
         break
     try:
@@ -218,11 +235,12 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if PROFILER:
-        import profile, pstats
+        import profile
+        import pstats
         p = profile.Profile()
         p.runcall(run, sys.argv[1:])
-        log_fname = 'profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt'
-        with open(log_fname,'a') as log:
+        log_fname = 'profile_data.' + time.strftime('%y%m%d%H%M%S') + '.txt'
+        with open(log_fname, 'a') as log:
             normalstdout, sys.stdout = sys.stdout, log
             pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
             sys.stdout = normalstdout

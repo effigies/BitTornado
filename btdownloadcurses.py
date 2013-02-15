@@ -14,7 +14,7 @@ import random
 import socket
 import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
-                                    get_usage, get_response
+    get_usage, get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
@@ -30,9 +30,9 @@ except:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
-       '"curses", which is unfortunately not available for the native ' \
-       'Windows port of Python. It is however available for the Cygwin ' \
-       'port of Python, running on all Win32 systems (www.cygwin.com).'
+          '"curses", which is unfortunately not available for the native ' \
+          'Windows port of Python. It is however available for the Cygwin ' \
+          'port of Python, running on all Win32 systems (www.cygwin.com).'
     print
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
@@ -111,8 +111,8 @@ class CursesDisplayer:
                                       self.labely, self.labelx)
         self.labelpan = curses.panel.new_panel(self.labelwin)
         self.fieldh, self.fieldw, self.fieldy, self.fieldx = (
-                            self.labelh, (self.scrw - 2) - (self.labelw - 3),
-                            1, self.labelw + 3)
+            self.labelh, (self.scrw - 2) - (self.labelw - 3), 1,
+            self.labelw + 3)
         self.fieldwin = curses.newwin(self.fieldh, self.fieldw,
                                       self.fieldy, self.fieldx)
         self.fieldwin.nodelay(1)
@@ -159,8 +159,8 @@ class CursesDisplayer:
         self.display()
 
     def display(self, dpflag=threading.Event(), fractionDone=None,
-            timeEst=None, downRate=None, upRate=None, activity=None,
-            statistics=None, spew=None, **kws):
+                timeEst=None, downRate=None, upRate=None, activity=None,
+                statistics=None, spew=None, **kws):
 
         inchar = self.fieldwin.getch()
         if inchar == 12:                    # ^L
@@ -216,7 +216,7 @@ class CursesDisplayer:
         self.fieldwin.addnstr(2, 0, self.downloadTo, self.fieldw)
         if self.progress:
             self.fieldwin.addnstr(3, 0, self.progress, self.fieldw,
-                curses.A_BOLD)
+                                  curses.A_BOLD)
         self.fieldwin.addnstr(4, 0, self.status, self.fieldw)
         self.fieldwin.addnstr(5, 0, self.downRate, self.fieldw)
         self.fieldwin.addnstr(6, 0, self.upRate, self.fieldw)
@@ -230,22 +230,23 @@ class CursesDisplayer:
             errsize = self.spewh
             if self.errors:
                 self.spewwin.addnstr(0, 0, "error(s):", self.speww,
-                    curses.A_BOLD)
+                                     curses.A_BOLD)
                 errsize = len(self.errors)
                 displaysize = min(errsize, self.spewh)
                 displaytop = errsize - displaysize
                 for i in range(displaysize):
-                    self.spewwin.addnstr(i, self.labelw,
-                        self.errors[displaytop + i],
+                    self.spewwin.addnstr(
+                        i, self.labelw, self.errors[displaytop + i],
                         self.speww - self.labelw - 1, curses.A_BOLD)
         else:
             if self.errors:
                 self.spewwin.addnstr(0, 0, "error:", self.speww, curses.A_BOLD)
-                self.spewwin.addnstr(0, self.labelw, self.errors[-1],
-                                 self.speww - self.labelw - 1, curses.A_BOLD)
-            self.spewwin.addnstr(2, 0, "  #     IP                 Upload   " \
-                "        Download     Completed  Speed", self.speww,
-                curses.A_BOLD)
+                self.spewwin.addnstr(
+                    0, self.labelw, self.errors[-1],
+                    self.speww - self.labelw - 1, curses.A_BOLD)
+            self.spewwin.addnstr(
+                2, 0, '  #     IP                 Upload           Download  '
+                '   Completed  Speed', self.speww, curses.A_BOLD)
 
             if self.spew_scroll_time + SPEW_SCROLL_RATE < clock():
                 self.spew_scroll_time = clock()
@@ -263,8 +264,8 @@ class CursesDisplayer:
                 if not spew[i]['lineno']:
                     continue
                 self.spewwin.addnstr(i + 3, 0, '%3d' % spew[i]['lineno'], 3)
-                self.spewwin.addnstr(i + 3, 4, spew[i]['ip'] + \
-                    spew[i]['direction'], 16)
+                self.spewwin.addnstr(i + 3, 4,
+                                     spew[i]['ip'] + spew[i]['direction'], 16)
                 if spew[i]['uprate'] > 100:
                     self.spewwin.addnstr(i + 3, 20, '{:6.0f} KB/s'.format(
                         float(spew[i]['uprate']) / 1000), 11)
@@ -290,12 +291,14 @@ class CursesDisplayer:
                         float(spew[i]['speed']) / 1000), 10)
 
             if statistics is not None:
-                self.spewwin.addnstr(self.spewh - 1, 0, 'downloading {:d} ' \
-                    'pieces, have %d fragments, %d of %d pieces completed' \
-                    ''.format(statistics.storage_active,
+                self.spewwin.addnstr(
+                    self.spewh - 1, 0, 'downloading {:d} pieces, have %d '
+                    'fragments, %d of %d pieces completed'.format(
+                        statistics.storage_active,
                         statistics.storage_dirty,
                         statistics.storage_numcomplete,
-                        statistics.storage_totalpieces), self.speww - 1)
+                        statistics.storage_totalpieces),
+                    self.speww - 1)
 
         curses.panel.update_panels()
         curses.doupdate()
@@ -319,13 +322,14 @@ def run(scrwin, errlist, params):
             defaultsToIgnore = ['responsefile', 'url', 'priority']
             configdir.setDefaults(defaults, defaultsToIgnore)
             configdefaults = configdir.loadConfig()
-            defaults.append(('save_options', 0, 'whether to save the current' \
-                ' options as the new default configuration (only for' \
-                ' btdownloadcurses.py)'))
+            defaults.append(
+                ('save_options', 0, 'whether to save the current options as '
+                 'the new default configuration (only for btdownloadcurses.py)'
+                 ))
             try:
                 config = parse_params(params, configdefaults)
             except ValueError, e:
-                d.error('error: {}\nrun with no args for parameter ' \
+                d.error('error: {}\nrun with no args for parameter '
                         'explanations'.format(e))
                 break
             if not config:
@@ -338,15 +342,16 @@ def run(scrwin, errlist, params):
             myid = createPeerID()
             random.seed(myid)
 
-            rawserver = RawServer(doneflag, config['timeout_check_interval'],
-                config['timeout'], ipv6_enable=config['ipv6_enabled'],
-                failfunc=d.failed, errorfunc=d.error)
+            rawserver = RawServer(
+                doneflag, config['timeout_check_interval'], config['timeout'],
+                ipv6_enable=config['ipv6_enabled'], failfunc=d.failed,
+                errorfunc=d.error)
 
             upnp_type = UPnP_test(config['upnp_nat_access'])
             while True:
                 try:
-                    listen_port = rawserver.find_and_bind(config['minport'],
-                        config['maxport'], config['bind'],
+                    listen_port = rawserver.find_and_bind(
+                        config['minport'], config['maxport'], config['bind'],
                         ipv6_socket_style=config['ipv6_binds_v4'],
                         upnp=upnp_type, randomizer=config['random_port'])
                     break
@@ -360,15 +365,15 @@ def run(scrwin, errlist, params):
                     return
 
             response = get_response(config['responsefile'], config['url'],
-                d.error)
+                                    d.error)
             if not response:
                 break
 
             infohash = sha.sha(bencode(response['info'])).digest()
 
-            dow = BT1Download(d.display, d.finished, d.error, d.error,
-                doneflag, config, response, infohash, myid, rawserver,
-                listen_port, configdir)
+            dow = BT1Download(
+                d.display, d.finished, d.error, d.error, doneflag, config,
+                response, infohash, myid, rawserver, listen_port, configdir)
 
             if not dow.saveAs(d.chooseFile):
                 break

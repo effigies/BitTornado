@@ -56,8 +56,9 @@ class DownloadInfo:
         gridSizer.Add(self.annCtl, 0, wxEXPAND)
 
         gridSizer.Add(wxStaticText(panel, -1, 'piece size:'))
-        self.piece_length = wxChoice(panel, -1, choices=['2 ** 21', '2 ** 20',
-            '2 ** 19', '2 ** 18', '2 ** 17', '2 ** 16', '2 ** 15'])
+        self.piece_length = wxChoice(
+            panel, -1, choices=['2 ** 21', '2 ** 20', '2 ** 19', '2 ** 18',
+                                '2 ** 17', '2 ** 16', '2 ** 15'])
         self.piece_length.SetSelection(3)
         gridSizer.Add(self.piece_length)
 
@@ -74,16 +75,15 @@ class DownloadInfo:
 
     def select(self, x):
         dl = wxDirDialog(self.frame,
-                style=(wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON))
+                         style=(wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON))
         if dl.ShowModal() == wxID_OK:
             self.dirCtl.SetValue(dl.GetPath())
 
     def complete(self, x):
         if self.dirCtl.GetValue() == '':
-            dlg = wxMessageDialog(self.frame,
-                message='You must select a directory',
-                caption='Error',
-                style=(wxOK | wxICON_ERROR))
+            dlg = wxMessageDialog(
+                self.frame, message='You must select a directory',
+                caption='Error', style=(wxOK | wxICON_ERROR))
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -103,7 +103,7 @@ class CompleteDir:
         self.pl = pl
         self.flag = threading.Event()
         frame = wxFrame(None, -1, 'BitTorrent make directory',
-            size=wxSize(550, 250))
+                        size=wxSize(550, 250))
         self.frame = frame
 
         panel = wxPanel(frame, -1)
@@ -136,7 +136,7 @@ class CompleteDir:
         params = {'piece_size_pow2': self.pl}
         try:
             completedir(self.d, self.a, params, self.flag, self.valcallback,
-                self.filecallback)
+                        self.filecallback)
             if not self.flag.isSet():
                 self.currentLabel.SetLabel('Done!')
                 self.gauge.SetValue(1000)
@@ -145,7 +145,7 @@ class CompleteDir:
             self.currentLabel.SetLabel('Error!')
             self.button.SetLabel('Close')
             dlg = wxMessageDialog(self.frame, message='Error - ' + str(e),
-                caption='Error', style=(wxOK | wxICON_ERROR))
+                                  caption='Error', style=(wxOK | wxICON_ERROR))
             dlg.ShowModal()
             dlg.Destroy()
 

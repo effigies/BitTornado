@@ -21,12 +21,12 @@ def main(argv):
     program, _ext = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <announce> [--announce_list <arg>] " \
             "file1.torrent [file2.torrent...]" % program
-    helpmsg = "%s\n%s\n%s" % (usage, announce_details, '\n'.join(' ' * 4 + l
-            for l in announcelist_details.split('\n')[:-2]))
+    helpmsg = '\n'.join((usage, announce_details, '\n'.join(' ' * 4 + l
+                        for l in announcelist_details.split('\n')[:-2])))
 
     try:
         opts, args = getopt.getopt(argv[1:], "hav",
-                        ("help", "announce_list", "verbose"))
+                                   ("help", "announce_list", "verbose"))
     except getopt.error, msg:
         print msg
         return 1

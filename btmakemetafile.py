@@ -7,7 +7,7 @@
 import sys
 import os
 from BitTornado.BT1.makemetafile import make_meta_file, defaults, \
-                                        announcelist_details
+    announcelist_details
 from BitTornado.parseargs import parseargs, formatDefinitions
 
 
@@ -20,9 +20,8 @@ def main(argv):
     usage = "Usage: %s <trackerurl> <file> [file...] [params...]" % program
 
     if len(argv) < 3:
-        print "%s\n\n%s%s" % (usage,
-                            formatDefinitions(defaults, 80),
-                            announcelist_details)
+        print "{}\n\n{}{}".format(usage, formatDefinitions(defaults, 80),
+                                  announcelist_details)
         return 2
 
     try:

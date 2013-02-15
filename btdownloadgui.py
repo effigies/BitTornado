@@ -16,12 +16,12 @@ import traceback
 from binascii import hexlify
 from webbrowser import open_new
 from StringIO import StringIO
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
-                                    get_usage, get_response
+from BitTornado.download_bt1 import BT1Download, parse_params, get_usage, \
+    get_response
 from BitTornado.RawServer import RawServer, UPnP_ERROR
-from BitTornado.ConnChoice import *
+from BitTornado.ConnChoice import connChoices, connChoiceList
 from BitTornado.ConfigReader import configReader
-from BitTornado.bencode import bencode, bdecode
+from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import version, createPeerID, report_email
@@ -101,9 +101,10 @@ class DownloadInfoFrame:
         try:
             self.FONT = configfile.config['gui_font']
             self.default_font = wxFont(self.FONT, wxDEFAULT, wxNORMAL,
-                wxNORMAL, False)
+                                       wxNORMAL, False)
             frame = wxFrame(None, -1, 'BitTorrent ' + version + ' download',
-                style=(wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE))
+                            style=(wxDEFAULT_FRAME_STYLE |
+                            wxFULL_REPAINT_ON_RESIZE))
             self.flag = flag
             self.configfile = configfile
             self.configfileargs = configfile.config
@@ -152,9 +153,9 @@ class DownloadInfoFrame:
             wxInitAllImageHandlers()
             self.basepath = self.configfile.getIconDir()
             self.icon = wxIcon(os.path.join(self.basepath, 'icon_bt.ico'),
-                wxBITMAP_TYPE_ICO)
+                               wxBITMAP_TYPE_ICO)
             self.finicon = wxIcon(os.path.join(self.basepath, 'icon_done.ico'),
-                wxBITMAP_TYPE_ICO)
+                                  wxBITMAP_TYPE_ICO)
             self.statusIconFiles = {
                 'startup':          os.path.join(self.basepath, 'white.ico'),
                 'disconnected':     os.path.join(self.basepath, 'black.ico'),
@@ -162,18 +163,18 @@ class DownloadInfoFrame:
                 'nocompletes':      os.path.join(self.basepath, 'blue.ico'),
                 'noincoming':       os.path.join(self.basepath, 'yellow.ico'),
                 'allgood':          os.path.join(self.basepath, 'green.ico'),
-                }
+            }
             self.statusIcons = {}
             self.filestatusIcons = wxImageList(16, 16)
             self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
-                'black1.ico'), wxBITMAP_TYPE_ICO))
+                                     'black1.ico'), wxBITMAP_TYPE_ICO))
             self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
-                'yellow1.ico'), wxBITMAP_TYPE_ICO))
+                                     'yellow1.ico'), wxBITMAP_TYPE_ICO))
             self.filestatusIcons.Add(wxBitmap(os.path.join(self.basepath,
-                'green1.ico'), wxBITMAP_TYPE_ICO))
+                                     'green1.ico'), wxBITMAP_TYPE_ICO))
 
             self.allocbuttonBitmap = wxBitmap(os.path.join(self.basepath,
-                'alloc.gif'), wxBITMAP_TYPE_GIF)
+                                              'alloc.gif'), wxBITMAP_TYPE_GIF)
 
             self.starttime = clock()
 
@@ -187,10 +188,10 @@ class DownloadInfoFrame:
             self.bgcolor = panel.GetBackgroundColour()
 
             def StaticText(text, font=self.FONT - 1, underline=False,
-                            color=None, panel=panel):
+                           color=None, panel=panel):
                 x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
                 x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
-                    underline))
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
@@ -338,69 +339,83 @@ class DownloadInfoFrame:
 
             self.connChoiceLabel = StaticText('Settings for ')
             slideSizer.Add(self.connChoiceLabel, 0,
-                wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL)
-            self.connChoice = wxChoice (panel, -1, (-1, -1), (self.FONT*12, -1),
-                                        choices = connChoiceList)
+                           wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL)
+            self.connChoice = wxChoice(panel, -1, (-1, -1),
+                                       (self.FONT * 12, -1),
+                                       choices=connChoiceList)
             self.connChoice.SetFont(self.default_font)
             self.connChoice.SetSelection(0)
-            slideSizer.Add (self.connChoice, 0, wxALIGN_CENTER)
+            slideSizer.Add(self.connChoice, 0, wxALIGN_CENTER)
             self.rateSpinnerLabel = StaticText(' Upload rate (kB/s) ')
-            slideSizer.Add (self.rateSpinnerLabel, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.rateSpinnerLabel, 0,
+                           wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL)
 
             # max upload rate
 
-            self.rateSpinner = wxSpinCtrl (panel, -1, "", (-1,-1), (50, -1))
+            self.rateSpinner = wxSpinCtrl(panel, -1, "", (-1, -1), (50, -1))
             self.rateSpinner.SetFont(self.default_font)
-            self.rateSpinner.SetRange(0,5000)
+            self.rateSpinner.SetRange(0, 5000)
             self.rateSpinner.SetValue(0)
-            slideSizer.Add (self.rateSpinner, 0, wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.rateSpinner, 0,
+                           wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL)
 
-            self.rateLowerText = StaticText('  %5d' % (0))
-            self.rateUpperText = StaticText('%5d' % (5000))
-            self.rateslider = wxSlider(panel, -1, 0, 0, 5000, (-1, -1), (80, -1))
+            self.rateLowerText = StaticText('%7d' % 0)
+            self.rateUpperText = StaticText('%5d' % 5000)
+            self.rateslider = wxSlider(panel, -1, 0, 0, 5000, (-1, -1),
+                                       (80, -1))
 
-            slideSizer.Add(self.rateLowerText, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL)
-            slideSizer.Add(self.rateslider,    0, wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL)
-            slideSizer.Add(self.rateUpperText, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.rateLowerText, 0,
+                           wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.rateslider, 0,
+                           wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.rateUpperText, 0,
+                           wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL)
 
             slideSizer.Add(StaticText(''), 0, wxALIGN_LEFT)
 
-            self.bgallocText = StaticText('', self.FONT+2, False, 'Red')
+            self.bgallocText = StaticText('', self.FONT + 2, False, 'Red')
             slideSizer.Add(self.bgallocText, 0, wxALIGN_LEFT)
 
             # max uploads
 
             self.connSpinnerLabel = StaticText(' Max uploads ')
-            slideSizer.Add (self.connSpinnerLabel, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL)
-            self.connSpinner = wxSpinCtrl (panel, -1, "", (-1,-1), (50, -1))
+            slideSizer.Add(self.connSpinnerLabel, 0,
+                           wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL)
+            self.connSpinner = wxSpinCtrl(panel, -1, "", (-1, -1), (50, -1))
             self.connSpinner.SetFont(self.default_font)
-            self.connSpinner.SetRange(4,100)
+            self.connSpinner.SetRange(4, 100)
             self.connSpinner.SetValue(4)
-            slideSizer.Add (self.connSpinner, 0, wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.connSpinner, 0,
+                           wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL)
 
-            self.connLowerText = StaticText('  %5d' % (4))
-            self.connUpperText = StaticText('%5d' % (100))
-            self.connslider = wxSlider(panel, -1, 4, 4, 100, (-1, -1), (80, -1))
+            self.connLowerText = StaticText('%7d' % 4)
+            self.connUpperText = StaticText('%5d' % 100)
+            self.connslider = wxSlider(panel, -1, 4, 4, 100, (-1, -1),
+                                       (80, -1))
 
-            slideSizer.Add(self.connLowerText, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL)
-            slideSizer.Add(self.connslider,    0, wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL)
-            slideSizer.Add(self.connUpperText, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.connLowerText, 0,
+                           wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.connslider, 0,
+                           wxALIGN_CENTER | wxALIGN_CENTER_VERTICAL)
+            slideSizer.Add(self.connUpperText, 0,
+                           wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL)
 
-            colSizer.Add(slideSizer, 1, wxALL|wxALIGN_CENTER|wxEXPAND, 0)
+            colSizer.Add(slideSizer, 1, wxALL | wxALIGN_CENTER | wxEXPAND, 0)
 
-            self.unlimitedLabel = StaticText('0 kB/s means unlimited. Tip: your download rate is proportional to your upload rate', self.FONT-2)
+            self.unlimitedLabel = StaticText('0 kB/s means unlimited. Tip: '
+                                             'your download rate is '
+                                             'proportional to your upload '
+                                             'rate', self.FONT - 2)
             colSizer.Add(self.unlimitedLabel, 0, wxALIGN_CENTER)
 
-            self.priorityIDs = [wxNewId(),wxNewId(),wxNewId(),wxNewId()]
-            self.prioritycolors = [ wxColour(160,160,160),
-                                    wxColour(255,64,0),
-                                    wxColour(0,0,0),
-                                    wxColour(64,64,255) ]
-
+            self.priorityIDs = [wxNewId() for i in xrange(4)]
+            self.prioritycolors = [wxColour(160, 160, 160),
+                                   wxColour(255, 64, 0), wxColour(0, 0, 0),
+                                   wxColour(64, 64, 255)]
 
             EVT_LEFT_DOWN(aboutText, self.about)
             EVT_LEFT_DOWN(fileDetails, self.details)
-            EVT_LEFT_DOWN(self.statusIconPtr,self.statusIconHelp)
+            EVT_LEFT_DOWN(self.statusIconPtr, self.statusIconHelp)
             EVT_LEFT_DOWN(advText, self.advanced)
             EVT_LEFT_DOWN(prefsText, self.openConfigMenu)
             EVT_CLOSE(frame, self.done)
@@ -415,24 +430,27 @@ class DownloadInfoFrame:
             if (sys.platform == 'win32'):
                 self.frame.tbicon = wxTaskBarIcon()
                 EVT_ICONIZE(self.frame, self.onIconify)
-                EVT_TASKBAR_LEFT_DCLICK(self.frame.tbicon, self.onTaskBarActivate)
+                EVT_TASKBAR_LEFT_DCLICK(self.frame.tbicon,
+                                        self.onTaskBarActivate)
                 EVT_TASKBAR_RIGHT_UP(self.frame.tbicon, self.onTaskBarMenu)
-                EVT_MENU(self.frame.tbicon, self.TBMENU_RESTORE, self.onTaskBarActivate)
+                EVT_MENU(self.frame.tbicon, self.TBMENU_RESTORE,
+                         self.onTaskBarActivate)
                 EVT_MENU(self.frame.tbicon, self.TBMENU_CLOSE, self.done)
-            colSizer.AddGrowableCol (0)
-            colSizer.AddGrowableRow (6)
+            colSizer.AddGrowableCol(0)
+            colSizer.AddGrowableRow(6)
             self.frame.Show()
             border.Fit(panel)
             self.frame.Fit()
             self.panel = panel
             self.border = border
-            self.addwidth = aboutText.GetBestSize().GetWidth() + fileDetails.GetBestSize().GetWidth() + (self.FONT*16)
+            self.addwidth = aboutText.GetBestSize().GetWidth() + \
+                fileDetails.GetBestSize().GetWidth() + (self.FONT * 16)
             self.fnsizer = fnsizer
             self.colSizer = colSizer
             minsize = self.colSizer.GetSize()
-            minsize.SetWidth (minsize.GetWidth())
-            minsize.SetHeight (minsize.GetHeight())
-            self.colSizer.SetMinSize (minsize)
+            minsize.SetWidth(minsize.GetWidth())
+            minsize.SetHeight(minsize.GetHeight())
+            self.colSizer.SetMinSize(minsize)
             self.colSizer.Fit(self.frame)
             colSizer.Fit(frame)
         except:
@@ -441,18 +459,18 @@ class DownloadInfoFrame:
     if sys.platform == 'win32':     # windows-only optimization
         def onInvoke(self, event):
             while self.invokeLaterList:
-                func,args,kwargs = self.invokeLaterList[0]
+                func, args, kwargs = self.invokeLaterList[0]
                 if self.uiflag.isSet():
                     return
                 try:
-                    apply(func,args,kwargs)
+                    apply(func, args, kwargs)
                 except:
                     self.exception()
                 del self.invokeLaterList[0]
 
-        def invokeLater(self, func, args = [], kwargs = {}):
+        def invokeLater(self, func, args=[], kwargs={}):
             if not self.uiflag.isSet():
-                self.invokeLaterList.append((func,args,kwargs))
+                self.invokeLaterList.append((func, args, kwargs))
                 if len(self.invokeLaterList) == 1:
                     wxPostEvent(self.frame, self.invokeLaterEvent)
     else:
@@ -463,15 +481,14 @@ class DownloadInfoFrame:
                 except:
                     self.exception()
 
-        def invokeLater(self, func, args = [], kwargs = {}):
+        def invokeLater(self, func, args=[], kwargs={}):
             if not self.uiflag.isSet():
                 wxPostEvent(self.frame, InvokeEvent(func, args, kwargs))
-
 
     def getStatusIcon(self, name, bitmap=False):
         if name in self.statusIcons:
             i = self.statusIcons[name]
-            if type(i)  == type(self.icon) and not bitmap:
+            if type(i) == type(self.icon) and not bitmap:
                 return i
         if bitmap:
             i = wxBitmap(self.statusIconFiles[name], wxBITMAP_TYPE_ICO)
@@ -479,7 +496,6 @@ class DownloadInfoFrame:
             i = wxIcon(self.statusIconFiles[name], wxBITMAP_TYPE_ICO)
         self.statusIcons[name] = i
         return i
-
 
     def setStatusIcon(self, name):
         if name == self.statusIconValue:
@@ -489,27 +505,25 @@ class DownloadInfoFrame:
         statidata.SelectObject(self.statusIcon)
         statidata.BeginDrawing()
         try:
-            statidata.DrawIcon(self.getStatusIcon(name),0,0)
+            statidata.DrawIcon(self.getStatusIcon(name), 0, 0)
         except:
-            statidata.DrawBitmap(self.getStatusIcon(name,True),0,0,True)
+            statidata.DrawBitmap(self.getStatusIcon(name, True), 0, 0, True)
         statidata.EndDrawing()
         statidata.SelectObject(wxNullBitmap)
         self.statusIconPtr.Refresh()
 
-
     def createStatusIcon(self, name):
-        iconbuffer = wxEmptyBitmap(32,32)
+        iconbuffer = wxEmptyBitmap(32, 32)
         bbdata = wxMemoryDC()
         bbdata.SelectObject(iconbuffer)
         bbdata.SetPen(wxTRANSPARENT_PEN)
-        bbdata.SetBrush(wxBrush(self.bgcolor,wxSOLID))
-        bbdata.DrawRectangle(0,0,32,32)
+        bbdata.SetBrush(wxBrush(self.bgcolor, wxSOLID))
+        bbdata.DrawRectangle(0, 0, 32, 32)
         try:
-            bbdata.DrawIcon(self.getStatusIcon(name),0,0)
+            bbdata.DrawIcon(self.getStatusIcon(name), 0, 0)
         except:
-            bbdata.DrawBitmap(self.getStatusIcon(name,True),0,0,True)
+            bbdata.DrawBitmap(self.getStatusIcon(name, True), 0, 0, True)
         return iconbuffer
-
 
     def setgaugemode(self, selection):
         if selection is None:
@@ -520,14 +534,15 @@ class DownloadInfoFrame:
             self.gaugemode = selection
         if selection < 0:
             self.gauge.SetForegroundColour(self.configfile.getcheckingcolor())
-            self.gauge.SetBackgroundColour(wxSystemSettings_GetColour(wxSYS_COLOUR_MENU))
+            self.gauge.SetBackgroundColour(
+                wxSystemSettings_GetColour(wxSYS_COLOUR_MENU))
         elif selection == 0:
             self.gauge.SetForegroundColour(self.configfile.getdownloadcolor())
-            self.gauge.SetBackgroundColour(wxSystemSettings_GetColour(wxSYS_COLOUR_MENU))
+            self.gauge.SetBackgroundColour(
+                wxSystemSettings_GetColour(wxSYS_COLOUR_MENU))
         else:
             self.gauge.SetForegroundColour(self.configfile.getseedingcolor())
             self.gauge.SetBackgroundColour(self.configfile.getdownloadcolor())
-
 
     def onIconify(self, evt):
         try:
@@ -542,7 +557,6 @@ class DownloadInfoFrame:
                 return
         except:
             self.exception()
-
 
     def onTaskBarActivate(self, evt):
         try:
@@ -559,7 +573,7 @@ class DownloadInfoFrame:
             self.exception()
 
     TBMENU_RESTORE = 1000
-    TBMENU_CLOSE   = 1001
+    TBMENU_CLOSE = 1001
 
     def onTaskBarMenu(self, evt):
         menu = wxMenu()
@@ -568,14 +582,13 @@ class DownloadInfoFrame:
         self.frame.tbicon.PopupMenu(menu)
         menu.Destroy()
 
-
     def _try_get_config(self):
         if self.config is None:
             try:
                 self.config = self.dow.getConfig()
             except:
                 pass
-        return self.config != None
+        return self.config is not None
 
     def onRateScroll(self, event):
         try:
@@ -586,8 +599,10 @@ class DownloadInfoFrame:
             if (self.scrollock == 0):
                 self.scrollock = 1
                 self.updateSpinnerFlag = 1
-                self.dow.setUploadRate(self.rateslider.GetValue()
-                            * connChoices[self.connChoice.GetSelection()]['rate'].get('div',1))
+                self.dow.setUploadRate(self.rateslider.GetValue() *
+                                       connChoices[
+                                           self.connChoice.GetSelection()
+                                       ]['rate'].get('div', 1))
                 self.scrollock = 0
         except:
             self.exception()
@@ -598,12 +613,12 @@ class DownloadInfoFrame:
                 return
             if not self._try_get_config():
                 return
-            self.connSpinner.SetValue (self.connslider.GetValue ())
+            self.connSpinner.SetValue(self.connslider.GetValue())
             self.dow.setConns(self.connslider.GetValue())
         except:
             self.exception()
 
-    def onRateSpinner(self, event = None):
+    def onRateSpinner(self, event=None):
         try:
             if self.autorate:
                 return
@@ -612,7 +627,8 @@ class DownloadInfoFrame:
             if (self.spinlock == 0):
                 self.spinlock = 1
                 spinnerValue = self.rateSpinner.GetValue()
-                div = connChoices[self.connChoice.GetSelection()]['rate'].get('div',1)
+                div = connChoices[self.connChoice.GetSelection()]['rate'].get(
+                    'div', 1)
                 if div > 1:
                     if spinnerValue > (self.config['max_upload_rate']):
                         round_up = div - 1
@@ -633,18 +649,17 @@ class DownloadInfoFrame:
         try:
             if not self._try_get_config():
                 return
-            spinnerValue = self.downrateSpinner.GetValue()
             self.dow.setDownloadRate(self.downrateSpinner.GetValue())
         except:
             self.exception()
 
-    def onConnSpinner(self, event = None):
+    def onConnSpinner(self, event=None):
         try:
             if self.autorate:
                 return
             if not self._try_get_config():
                 return
-            self.connslider.SetValue (self.connSpinner.GetValue())
+            self.connslider.SetValue(self.connSpinner.GetValue())
             self.dow.setConns(self.connslider.GetValue())
         except:
             self.exception()
@@ -663,27 +678,27 @@ class DownloadInfoFrame:
             self.current_ratesetting = self.connChoice.GetStringSelection()
             if rate is None:
                 rate = choice['rate']['def']
-            self.rateSpinner.SetRange (choice['rate']['min'],
-                                   choice['rate']['max'])
+            self.rateSpinner.SetRange(choice['rate']['min'],
+                                      choice['rate']['max'])
             self.rateSpinner.SetValue(rate)
             self.rateslider.SetRange(
-                choice['rate']['min']/choice['rate'].get('div',1),
-                choice['rate']['max']/choice['rate'].get('div',1))
-            self.rateslider.SetValue (rate/choice['rate'].get('div',1))
-            self.rateLowerText.SetLabel ('  %d' % (choice['rate']['min']))
-            self.rateUpperText.SetLabel ('%d' % (choice['rate']['max']))
+                choice['rate']['min'] / choice['rate'].get('div', 1),
+                choice['rate']['max'] / choice['rate'].get('div', 1))
+            self.rateslider.SetValue(rate / choice['rate'].get('div', 1))
+            self.rateLowerText.SetLabel('  %d' % choice['rate']['min'])
+            self.rateUpperText.SetLabel('%d' % choice['rate']['max'])
             if cons is None:
                 cons = choice['conn']['def']
-            self.connSpinner.SetRange (choice['conn']['min'],
-                                       choice['conn']['max'])
-            self.connSpinner.SetValue (cons)
-            self.connslider.SetRange (choice['conn']['min'],
+            self.connSpinner.SetRange(choice['conn']['min'],
                                       choice['conn']['max'])
-            self.connslider.SetValue (cons)
-            self.connLowerText.SetLabel ('  %d' % (choice['conn']['min']))
-            self.connUpperText.SetLabel ('%d' % (choice['conn']['max']))
-            self.onConnScroll (0)
-            self.onRateScroll (0)
+            self.connSpinner.SetValue(cons)
+            self.connslider.SetRange(choice['conn']['min'],
+                                     choice['conn']['max'])
+            self.connslider.SetValue(cons)
+            self.connLowerText.SetLabel('  %d' % choice['conn']['min'])
+            self.connUpperText.SetLabel('%d' % choice['conn']['max'])
+            self.onConnScroll(0)
+            self.onRateScroll(0)
             self.dow.setInitiate(choice.get('initiate', 40))
             if 'automatic' in choice:
                 if not self.autorate:
@@ -701,17 +716,17 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
     def about(self, event):
         try:
             if (self.aboutBox is not None):
                 try:
-                    self.aboutBox.Close ()
-                except wxPyDeadObjectError, e:
+                    self.aboutBox.Close()
+                except wxPyDeadObjectError:
                     self.aboutBox = None
 
-            self.aboutBox = wxFrame(None, -1, 'About BitTorrent', size = (1,1),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            self.aboutBox = wxFrame(None, -1, 'About BitTorrent', size=(1, 1),
+                                    style=wxDEFAULT_FRAME_STYLE |
+                                    wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.aboutBox.SetIcon(self.icon)
             except:
@@ -719,45 +734,55 @@ class DownloadInfoFrame:
 
             panel = wxPanel(self.aboutBox, -1)
 
-            def StaticText(text, font = self.FONT, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_LEFT)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT, underline=False, color=None,
+                           panel=panel):
+                x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            colSizer = wxFlexGridSizer(cols = 1, vgap = 3)
+            colSizer = wxFlexGridSizer(cols=1, vgap=3)
 
             titleSizer = wxBoxSizer(wxHORIZONTAL)
-            aboutTitle = StaticText('BitTorrent ' + version + '  ', self.FONT+4)
-            titleSizer.Add (aboutTitle)
+            aboutTitle = StaticText('BitTorrent {}  '.format(version),
+                                    self.FONT + 4)
+            titleSizer.Add(aboutTitle)
             linkDonate = StaticText('Donate to Bram', self.FONT, True, 'Blue')
-            titleSizer.Add (linkDonate, 1, wxALIGN_BOTTOM&wxEXPAND)
+            titleSizer.Add(linkDonate, 1, wxALIGN_BOTTOM & wxEXPAND)
             colSizer.Add(titleSizer, 0, wxEXPAND)
 
-            colSizer.Add(StaticText('created by Bram Cohen, Copyright 2001-2003,'))
-            colSizer.Add(StaticText('experimental version maintained by John Hoffman 2003'))
-            colSizer.Add(StaticText('modified from experimental version by Eike Frost 2003'))
+            colSizer.Add(StaticText('created by Bram Cohen, Copyright '
+                         '2001-2003,'))
+            colSizer.Add(StaticText('experimental version maintained by John'
+                         ' Hoffman 2003'))
+            colSizer.Add(StaticText('modified from experimental version by '
+                         'Eike Frost 2003'))
             credits = StaticText('full credits\n', self.FONT, True, 'Blue')
-            colSizer.Add(credits);
+            colSizer.Add(credits)
 
-            si = ( 'exact Version String: ' + version + '\n' +
-                   'Python version: ' + sys.version + '\n' +
-                   'wxPython version: ' + wxVERSION_STRING + '\n' )
+            si = '\n'.join(('exact Version String: ' + version,
+                           'Python version: ' + sys.version,
+                           'wxPython version: ' + wxVERSION_STRING))
             colSizer.Add(StaticText(si))
 
             babble1 = StaticText(
-             'This is an experimental, unofficial build of BitTorrent.\n' +
-             'It is Free Software under an MIT-Style license.')
-            babble2 = StaticText('BitTorrent Homepage (link)', self.FONT, True, 'Blue')
-            babble3 = StaticText("TheSHAD0W's Client Homepage (link)", self.FONT, True, 'Blue')
-            babble4 = StaticText("Eike Frost's Client Homepage (link)", self.FONT, True, 'Blue')
-            babble6 = StaticText('License Terms (link)', self.FONT, True, 'Blue')
-            colSizer.Add (babble1)
-            colSizer.Add (babble2)
-            colSizer.Add (babble3)
-            colSizer.Add (babble4)
-            colSizer.Add (babble6)
+                'This is an experimental, unofficial build of BitTorrent.\n' +
+                'It is Free Software under an MIT-Style license.')
+            babble2 = StaticText('BitTorrent Homepage (link)', self.FONT, True,
+                                 'Blue')
+            babble3 = StaticText("TheSHAD0W's Client Homepage (link)",
+                                 self.FONT, True, 'Blue')
+            babble4 = StaticText("Eike Frost's Client Homepage (link)",
+                                 self.FONT, True, 'Blue')
+            babble6 = StaticText('License Terms (link)', self.FONT, True,
+                                 'Blue')
+            colSizer.Add(babble1)
+            colSizer.Add(babble2)
+            colSizer.Add(babble3)
+            colSizer.Add(babble4)
+            colSizer.Add(babble6)
 
             okButton = wxButton(panel, -1, 'Ok')
             colSizer.Add(okButton, 0, wxALIGN_RIGHT)
@@ -769,27 +794,43 @@ class DownloadInfoFrame:
             panel.SetAutoLayout(True)
 
             def donatelink(self):
-                threading.Thread(target = open_new('https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=bram@bitconjurer.org&item_name=BitTorrent&amount=5.00&submit=donate')).start()
+                threading.Thread(
+                    target=open_new('https://www.paypal.com/cgi-bin/webscr?'
+                                    'cmd=_xclick&business=bram@bitconjurer.'
+                                    'org&item_name=BitTorrent&amount=5.00&'
+                                    'submit=donate')).start()
             EVT_LEFT_DOWN(linkDonate, donatelink)
+
             def aboutlink(self):
-                threading.Thread(target = open_new('http://bitconjurer.org/BitTorrent/')).start()
+                threading.Thread(
+                    target=open_new('http://bitconjurer.org/BitTorrent/')
+                ).start()
             EVT_LEFT_DOWN(babble2, aboutlink)
+
             def shadlink(self):
-                threading.Thread(target = open_new('http://www.bittornado.com/')).start()
+                threading.Thread(
+                    target=open_new('http://www.bittornado.com/')).start()
             EVT_LEFT_DOWN(babble3, shadlink)
+
             def explink(self):
-                threading.Thread(target = open_new('http://ei.kefro.st/projects/btclient/')).start()
+                threading.Thread(
+                    target=open_new('http://ei.kefro.st/projects/btclient/')
+                ).start()
             EVT_LEFT_DOWN(babble4, explink)
+
             def licenselink(self):
-                threading.Thread(target = open_new('http://ei.kefro.st/projects/btclient/LICENSE.TXT')).start()
+                threading.Thread(
+                    target=open_new('http://ei.kefro.st/projects/btclient/'
+                                    'LICENSE.TXT')).start()
             EVT_LEFT_DOWN(babble6, licenselink)
             EVT_LEFT_DOWN(credits, self.credits)
 
-            def closeAbout(e, self = self):
+            def closeAbout(e, self=self):
                 if self.aboutBox:
                     self.aboutBox.Close()
             EVT_BUTTON(self.aboutBox, okButton.GetId(), closeAbout)
-            def kill(e, self = self):
+
+            def kill(e, self=self):
                 try:
                     self.aboutBox.RemoveIcon()
                 except:
@@ -803,7 +844,6 @@ class DownloadInfoFrame:
             self.aboutBox.Fit()
         except:
             self.exception()
-
 
     def details(self, event):
         try:
@@ -823,35 +863,40 @@ class DownloadInfoFrame:
             if (self.detailBox is not None):
                 try:
                     self.detailBox.Close()
-                except wxPyDeadObjectError, e:
+                except wxPyDeadObjectError:
                     self.detailBox = None
 
-            self.detailBox = wxFrame(None, -1, 'Torrent Details ', size = wxSize(405,230),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            self.detailBox = wxFrame(
+                None, -1, 'Torrent Details ', size=wxSize(405, 230),
+                style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.detailBox.SetIcon(self.icon)
             except:
                 pass
 
-            panel = wxPanel(self.detailBox, -1, size = wxSize (400,220))
+            panel = wxPanel(self.detailBox, -1, size=wxSize(400, 220))
 
-            def StaticText(text, font = self.FONT-1, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_CENTER_VERTICAL)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT - 1, underline=False,
+                           color=None, panel=panel):
+                x = wxStaticText(panel, -1, text,
+                                 style=wxALIGN_CENTER_VERTICAL)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            colSizer = wxFlexGridSizer(cols = 1, vgap = 3)
+            colSizer = wxFlexGridSizer(cols=1, vgap=3)
             colSizer.AddGrowableCol(0)
 
             titleSizer = wxBoxSizer(wxHORIZONTAL)
-            aboutTitle = StaticText('Details about ' + self.filename, self.FONT+4)
+            aboutTitle = StaticText('Details about ' + self.filename,
+                                    self.FONT + 4)
 
-            titleSizer.Add (aboutTitle)
-            colSizer.Add (titleSizer)
+            titleSizer.Add(aboutTitle)
+            colSizer.Add(titleSizer)
 
-            detailSizer = wxFlexGridSizer(cols = 2, vgap = 6)
+            detailSizer = wxFlexGridSizer(cols=2, vgap=6)
 
             if 'length' in info:
                 fileListID = None
@@ -863,18 +908,24 @@ class DownloadInfoFrame:
                 file_length = info['length']
                 name = "file size"
             else:
-                detail1Sizer = wxFlexGridSizer(cols = 1, vgap = 6)
-                detail1Sizer.Add(StaticText('directory name : ' + info['name']))
-                colSizer.Add (detail1Sizer)
-                bgallocButton = wxBitmapButton(panel, -1, self.allocbuttonBitmap, size = (52,20))
-                def bgalloc(self, frame = self):
+                detail1Sizer = wxFlexGridSizer(cols=1, vgap=6)
+                detail1Sizer.Add(StaticText('directory name : {}'.format(
+                    info['name'])))
+                colSizer.Add(detail1Sizer)
+                bgallocButton = wxBitmapButton(
+                    panel, -1, self.allocbuttonBitmap, size=(52, 20))
+
+                def bgalloc(self, frame=self):
                     if frame.dow.storagewrapper is not None:
                         frame.dow.storagewrapper.bgalloc()
                 EVT_BUTTON(self.detailBox, bgallocButton.GetId(), bgalloc)
 
-                bgallocbuttonSizer = wxFlexGridSizer(cols = 4, hgap = 4, vgap = 0)
-                bgallocbuttonSizer.Add(StaticText('(right-click to set priority)',self.FONT-1),0,wxALIGN_BOTTOM)
-                bgallocbuttonSizer.Add(StaticText('(finish allocation)'), -1, wxALIGN_CENTER_VERTICAL)
+                bgallocbuttonSizer = wxFlexGridSizer(cols=4, hgap=4, vgap=0)
+                bgallocbuttonSizer.Add(
+                    StaticText('(right-click to set priority)', self.FONT - 1),
+                    0, wxALIGN_BOTTOM)
+                bgallocbuttonSizer.Add(StaticText('(finish allocation)'), -1,
+                                       wxALIGN_CENTER_VERTICAL)
                 bgallocbuttonSizer.Add(bgallocButton, -1, wxALIGN_CENTER)
                 bgallocbuttonSizer.AddGrowableCol(0)
                 colSizer.Add(bgallocbuttonSizer, -1, wxEXPAND)
@@ -882,17 +933,18 @@ class DownloadInfoFrame:
                 file_length = 0
 
                 fileListID = wxNewId()
-                fileList = wxListCtrl(panel, fileListID,
-                                      wxPoint(-1,-1), (325,100), wxLC_REPORT)
+                fileList = wxListCtrl(panel, fileListID, wxPoint(-1, -1),
+                                      (325, 100), wxLC_REPORT)
                 self.fileList = fileList
                 fileList.SetImageList(self.filestatusIcons, wxIMAGE_LIST_SMALL)
 
-                fileList.SetAutoLayout (True)
+                fileList.SetAutoLayout(True)
                 fileList.InsertColumn(0, "file")
-                fileList.InsertColumn(1, "", format=wxLIST_FORMAT_RIGHT, width=55)
+                fileList.InsertColumn(1, "", format=wxLIST_FORMAT_RIGHT,
+                                      width=55)
                 fileList.InsertColumn(2, "")
 
-                for i in range(len(info['files'])):
+                for i in xrange(len(info['files'])):
                     x = wxListItem()
                     fileList.InsertItem(x)
 
@@ -906,39 +958,47 @@ class DownloadInfoFrame:
                     path += ' (' + str(file['length']) + ')'
                     fileList.SetStringItem(x, 0, path)
                     if 'md5sum' in file:
-                        fileList.SetStringItem(x, 2, '    [' + str(file['md5sum']) + ']')
+                        fileList.SetStringItem(x, 2, '    [{:s}]'.format(
+                            file['md5sum']))
                     if fileselector:
                         p = fileselector[x]
                         item = self.fileList.GetItem(x)
-                        item.SetTextColour(self.prioritycolors[p+1])
+                        item.SetTextColour(self.prioritycolors[p + 1])
                         fileList.SetItem(item)
                     x += 1
                     file_length += file['length']
-                fileList.SetColumnWidth(0,wxLIST_AUTOSIZE)
-                fileList.SetColumnWidth(2,wxLIST_AUTOSIZE)
+                fileList.SetColumnWidth(0, wxLIST_AUTOSIZE)
+                fileList.SetColumnWidth(2, wxLIST_AUTOSIZE)
 
                 name = 'archive size'
                 colSizer.Add(fileList, 1, wxEXPAND)
                 colSizer.AddGrowableRow(3)
 
-            detailSizer.Add(StaticText('info_hash :'),0,wxALIGN_CENTER_VERTICAL)
-            detailSizer.Add(wxTextCtrl(panel, -1, hexlify(info_hash), size = (325, -1), style = wxTE_READONLY))
+            detailSizer.Add(StaticText('info_hash :'), 0,
+                            wxALIGN_CENTER_VERTICAL)
+            detailSizer.Add(wxTextCtrl(panel, -1, hexlify(info_hash),
+                            size=(325, -1), style=wxTE_READONLY))
             num_pieces = int((file_length+piece_length-1)/piece_length)
             detailSizer.Add(StaticText(name + ' : '))
-            detailSizer.Add(StaticText('%s (%s bytes)' % (size_format(file_length), comma_format(file_length))))
+            detailSizer.Add(StaticText('{} ({} bytes)'.format(
+                size_format(file_length), comma_format(file_length))))
             detailSizer.Add(StaticText('pieces : '))
             if num_pieces > 1:
-                detailSizer.Add(StaticText('%i (%s bytes each)' % (num_pieces, comma_format(piece_length))))
+                detailSizer.Add(StaticText('{:i} ({} bytes each)'.format(
+                    num_pieces, comma_format(piece_length))))
             else:
                 detailSizer.Add(StaticText('1'))
 
             if announce_list is None:
-                detailSizer.Add(StaticText('announce url : '),0,wxALIGN_CENTER_VERTICAL)
-                detailSizer.Add(wxTextCtrl(panel, -1, announce, size = (325, -1), style = wxTE_READONLY))
+                detailSizer.Add(StaticText('announce url : '), 0,
+                                wxALIGN_CENTER_VERTICAL)
+                detailSizer.Add(wxTextCtrl(panel, -1, announce,
+                                size=(325, -1), style=wxTE_READONLY))
             else:
                 detailSizer.Add(StaticText(''))
-                trackerList = wxListCtrl(panel, -1, wxPoint(-1,-1), (325,75), wxLC_REPORT)
-                trackerList.SetAutoLayout (True)
+                trackerList = wxListCtrl(panel, -1, wxPoint(-1, -1), (325, 75),
+                                         wxLC_REPORT)
+                trackerList.SetAutoLayout(True)
                 trackerList.InsertColumn(0, "")
                 trackerList.InsertColumn(1, "announce urls")
 
@@ -947,7 +1007,7 @@ class DownloadInfoFrame:
                         i = wxListItem()
                         trackerList.InsertItem(i)
                 if announce is not None:
-                    for l in [1,2]:
+                    for l in [1, 2]:
                         i = wxListItem()
                         trackerList.InsertItem(i)
 
@@ -955,22 +1015,23 @@ class DownloadInfoFrame:
                 for tier in range(len(announce_list)):
                     for t in range(len(announce_list[tier])):
                         if t == 0:
-                            trackerList.SetStringItem(x, 0, 'tier '+str(tier)+':')
+                            trackerList.SetStringItem(x, 0, 'tier {}:'.format(
+                                tier))
                         trackerList.SetStringItem(x, 1, announce_list[tier][t])
                         x += 1
                 if announce is not None:
-                    trackerList.SetStringItem(x+1, 0, 'single:')
-                    trackerList.SetStringItem(x+1, 1, announce)
-                trackerList.SetColumnWidth(0,wxLIST_AUTOSIZE)
-                trackerList.SetColumnWidth(1,wxLIST_AUTOSIZE)
+                    trackerList.SetStringItem(x + 1, 0, 'single:')
+                    trackerList.SetStringItem(x + 1, 1, announce)
+                trackerList.SetColumnWidth(0, wxLIST_AUTOSIZE)
+                trackerList.SetColumnWidth(1, wxLIST_AUTOSIZE)
                 detailSizer.Add(trackerList)
 
             if announce is None and announce_list is not None:
                 announce = announce_list[0][0]
             if announce is not None:
                 detailSizer.Add(StaticText('likely tracker :'))
-                p = re.compile( '(.*/)[^/]+')
-                turl = p.sub (r'\1', announce)
+                p = re.compile('(.*/)[^/]+')
+                turl = p.sub(r'\1', announce)
                 trackerUrl = StaticText(turl, self.FONT, True, 'Blue')
                 detailSizer.Add(trackerUrl)
             if 'comment' in metainfo:
@@ -979,8 +1040,8 @@ class DownloadInfoFrame:
             if 'creation date' in metainfo:
                 detailSizer.Add(StaticText('creation date :'))
                 try:
-                    detailSizer.Add(StaticText(
-                        time.strftime('%x %X',time.localtime(metainfo['creation date']))))
+                    detailSizer.Add(StaticText(time.strftime(
+                        '%x %X', time.localtime(metainfo['creation date']))))
                 except:
                     try:
                         detailSizer.Add(StaticText(metainfo['creation date']))
@@ -988,14 +1049,14 @@ class DownloadInfoFrame:
                         detailSizer.Add(StaticText('<cannot read date>'))
 
             detailSizer.AddGrowableCol(1)
-            colSizer.Add (detailSizer, 1, wxEXPAND)
+            colSizer.Add(detailSizer, 1, wxEXPAND)
 
             okButton = wxButton(panel, -1, 'Ok')
             colSizer.Add(okButton, 0, wxALIGN_RIGHT)
             colSizer.AddGrowableCol(0)
 
             if not self.configfileargs['gui_stretchwindow']:
-                aboutTitle.SetSize((400,-1))
+                aboutTitle.SetSize((400, -1))
             else:
                 panel.SetAutoLayout(True)
 
@@ -1005,32 +1066,38 @@ class DownloadInfoFrame:
             panel.SetAutoLayout(True)
 
             if fileselector and fileListID:
-                def onRightClick(evt, self = self):
+                def onRightClick(evt, self=self):
                     s = []
                     i = -1
                     while True:
-                        i = self.fileList.GetNextItem(i,state=wxLIST_STATE_SELECTED)
+                        i = self.fileList.GetNextItem(
+                            i, state=wxLIST_STATE_SELECTED)
                         if i == -1:
                             break
                         s.append(i)
                     if not s:   # just in case
                         return
                     oldstate = self.dow.fileselector[s[0]]
-                    kind=wxITEM_RADIO
+                    kind = wxITEM_RADIO
                     for i in s[1:]:
                         if self.dow.fileselector[i] != oldstate:
                             oldstate = None
                             kind = wxITEM_NORMAL
                             break
                     menu = wxMenu()
-                    menu.Append(self.priorityIDs[1], "download first", kind=kind)
-                    menu.Append(self.priorityIDs[2], "download normally", kind=kind)
-                    menu.Append(self.priorityIDs[3], "download later", kind=kind)
-                    menu.Append(self.priorityIDs[0], "download never (deletes)", kind=kind)
+                    menu.Append(self.priorityIDs[1], "download first",
+                                kind=kind)
+                    menu.Append(self.priorityIDs[2], "download normally",
+                                kind=kind)
+                    menu.Append(self.priorityIDs[3], "download later",
+                                kind=kind)
+                    menu.Append(
+                        self.priorityIDs[0], "download never (deletes)",
+                        kind=kind)
                     if oldstate is not None:
-                        menu.Check(self.priorityIDs[oldstate+1], True)
+                        menu.Check(self.priorityIDs[oldstate + 1], True)
 
-                    def onSelection(evt, self = self, s = s):
+                    def onSelection(evt, self=self, s=s):
                         p = evt.GetId()
                         priorities = self.dow.fileselector.get_priorities()
                         for i in xrange(len(self.priorityIDs)):
@@ -1040,23 +1107,26 @@ class DownloadInfoFrame:
                                     item = self.fileList.GetItem(ss)
                                     item.SetTextColour(self.prioritycolors[i])
                                     self.fileList.SetItem(item)
-                                self.dow.fileselector.set_priorities(priorities)
+                                self.dow.fileselector.set_priorities(
+                                    priorities)
                                 self.fileList.Refresh()
                                 self.refresh_details = True
                                 break
-                        
+
                     for id in self.priorityIDs:
                         EVT_MENU(self.detailBox, id, onSelection)
 
                     self.detailBox.PopupMenu(menu, evt.GetPoint())
-                        
-                EVT_LIST_ITEM_RIGHT_CLICK(self.detailBox, fileListID, onRightClick)
 
-            def closeDetail(evt, self = self):
+                EVT_LIST_ITEM_RIGHT_CLICK(self.detailBox, fileListID,
+                                          onRightClick)
+
+            def closeDetail(evt, self=self):
                 if self.detailBox:
                     self.detailBox.Close()
             EVT_BUTTON(self.detailBox, okButton.GetId(), closeDetail)
-            def kill(evt, self = self):
+
+            def kill(evt, self=self):
                 try:
                     self.detailBox.RemoveIcon()
                 except:
@@ -1067,14 +1137,14 @@ class DownloadInfoFrame:
                 self.dow.filedatflag.clear()
             EVT_CLOSE(self.detailBox, kill)
 
-            def trackerurl(self, turl = turl):
+            def trackerurl(self, turl=turl):
                 try:
-                    threading.Thread(target = open_new(turl)).start()
+                    threading.Thread(target=open_new(turl)).start()
                 except:
                     pass
             EVT_LEFT_DOWN(trackerUrl, trackerurl)
 
-            self.detailBox.Show ()
+            self.detailBox.Show()
             border.Fit(panel)
             self.detailBox.Fit()
 
@@ -1083,79 +1153,81 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
     def credits(self, event):
         try:
             if (self.creditsBox is not None):
                 try:
                     self.creditsBox.Close()
-                except wxPyDeadObjectError, e:
+                except wxPyDeadObjectError:
                     self.creditsBox = None
 
-            self.creditsBox = wxFrame(None, -1, 'Credits', size = (1,1),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            self.creditsBox = wxFrame(
+                None, -1, 'Credits', size=(1, 1),
+                style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.creditsBox.SetIcon(self.icon)
             except:
                 pass
 
-            panel = wxPanel(self.creditsBox, -1)        
+            panel = wxPanel(self.creditsBox, -1)
 
-            def StaticText(text, font = self.FONT, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_LEFT)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT, underline=False, color=None,
+                           panel=panel):
+                x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            colSizer = wxFlexGridSizer(cols = 1, vgap = 3)
+            colSizer = wxFlexGridSizer(cols=1, vgap=3)
 
             titleSizer = wxBoxSizer(wxHORIZONTAL)
-            aboutTitle = StaticText('Credits', self.FONT+4)
-            titleSizer.Add (aboutTitle)
-            colSizer.Add (titleSizer)
-            colSizer.Add (StaticText(
-              'The following people have all helped with this\n' +
-              'version of BitTorrent in some way (in no particular order) -\n'));
-            creditSizer = wxFlexGridSizer(cols = 3)
+            aboutTitle = StaticText('Credits', self.FONT + 4)
+            titleSizer.Add(aboutTitle)
+            colSizer.Add(titleSizer)
+            colSizer.Add(StaticText(
+                'The following people have all helped with this\nversion of'
+                'BitTorrent in some way (in no particular order) -\n'))
+            creditSizer = wxFlexGridSizer(cols=3)
             creditSizer.Add(StaticText(
-              'Bill Bumgarner\n' +
-              'David Creswick\n' +
-              'Andrew Loewenstern\n' +
-              'Ross Cohen\n' +
-              'Jeremy Avnet\n' +
-              'Greg Broiles\n' +
-              'Barry Cohen\n' +
-              'Bram Cohen\n' +
-              'sayke\n' +
-              'Steve Jenson\n' +
-              'Myers Carpenter\n' +
-              'Francis Crick\n' +
-              'Petru Paler\n' +
-              'Jeff Darcy\n' +
-              'John Gilmore\n' +
-              'Xavier Bassery\n' +
-              'Pav Lucistnik'))
+                'Bill Bumgarner\n'
+                'David Creswick\n'
+                'Andrew Loewenstern\n'
+                'Ross Cohen\n'
+                'Jeremy Avnet\n'
+                'Greg Broiles\n'
+                'Barry Cohen\n'
+                'Bram Cohen\n'
+                'sayke\n'
+                'Steve Jenson\n'
+                'Myers Carpenter\n'
+                'Francis Crick\n'
+                'Petru Paler\n'
+                'Jeff Darcy\n'
+                'John Gilmore\n'
+                'Xavier Bassery\n'
+                'Pav Lucistnik'))
             creditSizer.Add(StaticText('  '))
             creditSizer.Add(StaticText(
-              'Yann Vernier\n' +
-              'Pat Mahoney\n' +
-              'Boris Zbarsky\n' +
-              'Eric Tiedemann\n' +
-              'Henry "Pi" James\n' +
-              'Loring Holden\n' +
-              'Robert Stone\n' +
-              'Michael Janssen\n' +
-              'Eike Frost\n' +
-              'Andrew Todd\n' +
-              'otaku\n' +
-              'Edward Keyes\n' +
-              'John Hoffman\n' +
-              'Uoti Urpala\n' +
-              'Jon Wolf\n' +
-              'Christoph Hohmann\n' +
-              'Micah Anderson'))
-            colSizer.Add (creditSizer, flag = wxALIGN_CENTER_HORIZONTAL)
+                'Yann Vernier\n'
+                'Pat Mahoney\n'
+                'Boris Zbarsky\n'
+                'Eric Tiedemann\n'
+                'Henry "Pi" James\n'
+                'Loring Holden\n'
+                'Robert Stone\n'
+                'Michael Janssen\n'
+                'Eike Frost\n'
+                'Andrew Todd\n'
+                'otaku\n'
+                'Edward Keyes\n'
+                'John Hoffman\n'
+                'Uoti Urpala\n'
+                'Jon Wolf\n'
+                'Christoph Hohmann\n'
+                'Micah Anderson'))
+            colSizer.Add(creditSizer, flag=wxALIGN_CENTER_HORIZONTAL)
             okButton = wxButton(panel, -1, 'Ok')
             colSizer.Add(okButton, 0, wxALIGN_RIGHT)
             colSizer.AddGrowableCol(0)
@@ -1165,11 +1237,12 @@ class DownloadInfoFrame:
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
 
-            def closeCredits(e, self = self):
+            def closeCredits(e, self=self):
                 if self.creditsBox:
                     self.creditsBox.Close()
             EVT_BUTTON(self.creditsBox, okButton.GetId(), closeCredits)
-            def kill(e, self = self):
+
+            def kill(e, self=self):
                 try:
                     self.creditsBox.RemoveIcon()
                 except:
@@ -1184,17 +1257,17 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
     def statusIconHelp(self, event):
         try:
             if (self.statusIconHelpBox is not None):
                 try:
                     self.statusIconHelpBox.Close()
-                except wxPyDeadObjectError, e:
+                except wxPyDeadObjectError:
                     self.statusIconHelpBox = None
 
-            self.statusIconHelpBox = wxFrame(None, -1, 'Help with the BitTorrent Status Light', size = (1,1),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            self.statusIconHelpBox = wxFrame(
+                None, -1, 'Help with the BitTorrent Status Light', size=(1, 1),
+                style = wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.statusIconHelpBox.SetIcon(self.icon)
             except:
@@ -1202,43 +1275,48 @@ class DownloadInfoFrame:
 
             panel = wxPanel(self.statusIconHelpBox, -1)
 
-            def StaticText(text, font = self.FONT, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_LEFT)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT, underline=False, color=None,
+                           panel=panel):
+                x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            fullsizer = wxFlexGridSizer(cols = 1, vgap = 13)
-            colsizer = wxFlexGridSizer(cols = 2, hgap = 13, vgap = 13)
+            fullsizer = wxFlexGridSizer(cols=1, vgap=13)
+            colsizer = wxFlexGridSizer(cols=2, hgap=13, vgap=13)
 
-            disconnectedicon=self.createStatusIcon('disconnected')
+            disconnectedicon = self.createStatusIcon('disconnected')
             colsizer.Add(wxStaticBitmap(panel, -1, disconnectedicon))
             colsizer.Add(StaticText(
-                'Waiting to connect to the tracker.\n' +
-                'If the status light stays black for a long time the tracker\n' +
-                'you are trying to connect to may not be working.  Unless you\n' +
-                'are receiving a message telling you otherwise, please wait,\n' +
-                'and BitTorrent will automatically try to reconnect for you.'), 1, wxALIGN_CENTER_VERTICAL)
+                'Waiting to connect to the tracker.\n'
+                'If the status light stays black for a long time the tracker\n'
+                'you are trying to connect to may not be working. Unless you\n'
+                'are receiving a message telling you otherwise, please wait,\n'
+                'and BitTorrent will automatically try to reconnect for you.'),
+                1, wxALIGN_CENTER_VERTICAL)
 
-            noconnectionsicon=self.createStatusIcon('noconnections')
+            noconnectionsicon = self.createStatusIcon('noconnections')
             colsizer.Add(wxStaticBitmap(panel, -1, noconnectionsicon))
             colsizer.Add(StaticText(
-                'You have no connections with other clients.\n' +
-                'Please be patient.  If after several minutes the status\n' +
-                'light remains red, this torrent may be old and abandoned.'), 1, wxALIGN_CENTER_VERTICAL)
+                'You have no connections with other clients.\n'
+                'Please be patient.  If after several minutes the status\n'
+                'light remains red, this torrent may be old and abandoned.'),
+                1, wxALIGN_CENTER_VERTICAL)
 
-            noincomingicon=self.createStatusIcon('noincoming')
+            noincomingicon = self.createStatusIcon('noincoming')
             colsizer.Add(wxStaticBitmap(panel, -1, noincomingicon))
             colsizer.Add(StaticText(
-                'You have not received any incoming connections from others.\n' +
-                'It may only be because no one has tried.  If you never see\n' +
-                'the status light turn green, it may indicate your system\n' +
-                'is behind a firewall or proxy server.  Please look into\n' +
-                'routing BitTorrent through your firewall in order to receive\n' +
-                'the best possible download rate.'), 1, wxALIGN_CENTER_VERTICAL)
+                'You have not received any incoming connections from others.\n'
+                'It may only be because no one has tried.  If you never see\n'
+                'the status light turn green, it may indicate your system\n'
+                'is behind a firewall or proxy server.  Please look into\n'
+                'routing BitTorrent through your firewall in order to '
+                'receive\nthe best possible download rate.'), 1,
+                wxALIGN_CENTER_VERTICAL)
 
-            nocompletesicon=self.createStatusIcon('nocompletes')
+            nocompletesicon = self.createStatusIcon('nocompletes')
             colsizer.Add(wxStaticBitmap(panel, -1, nocompletesicon))
             colsizer.Add(StaticText(
                 'There are no complete copies among the clients you are\n' +
@@ -1247,19 +1325,20 @@ class DownloadInfoFrame:
                 'If the status light remains blue, you may have problems\n' +
                 'completing your download.'), 1, wxALIGN_CENTER_VERTICAL)
 
-            allgoodicon=self.createStatusIcon('allgood')
+            allgoodicon = self.createStatusIcon('allgood')
             colsizer.Add(wxStaticBitmap(panel, -1, allgoodicon))
-            colsizer.Add(StaticText(
-                'The torrent is operating properly.'), 1, wxALIGN_CENTER_VERTICAL)
+            colsizer.Add(StaticText('The torrent is operating properly.'), 1,
+                         wxALIGN_CENTER_VERTICAL)
 
             fullsizer.Add(colsizer, 0, wxALIGN_CENTER)
-            colsizer2 = wxFlexGridSizer(cols = 1, hgap = 13)
+            colsizer2 = wxFlexGridSizer(cols=1, hgap=13)
 
             colsizer2.Add(StaticText(
-                'Please note that the status light is not omniscient, and that it may\n' +
-                'be wrong in many instances.  A torrent with a blue light may complete\n' +
-                "normally, and an occasional yellow light doesn't mean your computer\n" +
-                'has suddenly become firewalled.'), 1, wxALIGN_CENTER_VERTICAL)
+                'Please note that the status light is not omniscient, and that'
+                'it may\nbe wrong in many instances.  A torrent with a blue '
+                'light may complete\nnormally, and an occasional yellow light '
+                "doesn't mean your computer\nhas suddenly become firewalled."),
+                1, wxALIGN_CENTER_VERTICAL)
 
             colspacer = StaticText('  ')
             colsizer2.Add(colspacer)
@@ -1274,17 +1353,15 @@ class DownloadInfoFrame:
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
 
-
-            def closeHelp(self, frame = self):
+            def closeHelp(self, frame=self):
                 frame.statusIconHelpBox.Close()
             EVT_BUTTON(self.statusIconHelpBox, okButton.GetId(), closeHelp)
 
-            self.statusIconHelpBox.Show ()
+            self.statusIconHelpBox.Show()
             border.Fit(panel)
             self.statusIconHelpBox.Fit()
         except:
             self.exception()
-
 
     def openConfigMenu(self, event):
         try:
@@ -1292,44 +1369,52 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
     def advanced(self, event):
         try:
             if not self.dow or not self.filename:
                 return
             if (self.advBox is not None):
                 try:
-                    self.advBox.Close ()
-                except wxPyDeadObjectError, e:
+                    self.advBox.Close()
+                except wxPyDeadObjectError:
                     self.advBox = None
 
-            self.advBox = wxFrame(None, -1, 'BitTorrent Advanced', size = wxSize(200,200),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            self.advBox = wxFrame(
+                None, -1, 'BitTorrent Advanced', size=wxSize(200, 200),
+                style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.advBox.SetIcon(self.icon)
             except:
                 pass
 
-            panel = wxPanel(self.advBox, -1, size = wxSize (200,200))
+            panel = wxPanel(self.advBox, -1, size=wxSize(200, 200))
 
-            def StaticText(text, font = self.FONT-1, underline = False, color = None, panel = panel):
-                x = wxStaticText(panel, -1, text, style = wxALIGN_LEFT)
-                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL, underline))
+            def StaticText(text, font=self.FONT - 1, underline=False,
+                           color=None, panel=panel):
+                x = wxStaticText(panel, -1, text, style=wxALIGN_LEFT)
+                x.SetFont(wxFont(font, wxDEFAULT, wxNORMAL, wxNORMAL,
+                          underline))
                 if color is not None:
                     x.SetForegroundColour(color)
                 return x
 
-            colSizer = wxFlexGridSizer (cols = 1, vgap = 1)
-            colSizer.Add (StaticText('Advanced Info for ' + self.filename, self.FONT+4))
+            colSizer = wxFlexGridSizer(cols=1, vgap=1)
+            colSizer.Add(StaticText('Advanced Info for ' + self.filename,
+                         self.FONT + 4))
 
             try:    # get system font width
-                fw = wxSystemSettings_GetFont(wxSYS_DEFAULT_GUI_FONT).GetPointSize()+1
+                fw = wxSystemSettings_GetFont(
+                    wxSYS_DEFAULT_GUI_FONT
+                ).GetPointSize() + 1
             except:
-                fw = wxSystemSettings_GetFont(wxSYS_SYSTEM_FONT).GetPointSize()+1
+                fw = wxSystemSettings_GetFont(
+                    wxSYS_SYSTEM_FONT
+                ).GetPointSize() + 1
 
-            spewList = wxListCtrl(panel, -1, wxPoint(-1,-1), (fw*66,350), wxLC_REPORT|wxLC_HRULES|wxLC_VRULES)
+            spewList = wxListCtrl(panel, -1, wxPoint(-1, -1), (fw * 66, 350),
+                                  wxLC_REPORT | wxLC_HRULES | wxLC_VRULES)
             self.spewList = spewList
-            spewList.SetAutoLayout (True)
+            spewList.SetAutoLayout(True)
 
             colSizer.Add(spewList, -1, wxEXPAND)
 
@@ -1338,82 +1423,101 @@ class DownloadInfoFrame:
             self.storagestats2 = StaticText('')
             colSizer.Add(self.storagestats1, -1, wxEXPAND)
             colSizer.Add(self.storagestats2, -1, wxEXPAND)
-            spinnerSizer = wxFlexGridSizer(cols=4,vgap=0,hgap=0)
+            spinnerSizer = wxFlexGridSizer(cols=4, vgap=0, hgap=0)
             cstats = '          Listening on '
             if self.connection_stats['interfaces']:
-                cstats += ', '.join(self.connection_stats['interfaces']) + ' on '
+                cstats += ', '.join(self.connection_stats['interfaces']) + \
+                          ' on '
             cstats += 'port ' + str(self.connection_stats['port'])
             if self.connection_stats['upnp']:
                 cstats += ', UPnP port forwarded'
             spinnerSizer.Add(StaticText(cstats), -1, wxEXPAND)
             spinnerSizer.AddGrowableCol(0)
-            spinnerSizer.Add(StaticText('Max download rate (kB/s) '),0,wxALIGN_CENTER_VERTICAL)
-            self.downrateSpinner = wxSpinCtrl (panel, -1, "", (-1,-1), (50, -1))
+            spinnerSizer.Add(StaticText('Max download rate (kB/s) '), 0,
+                             wxALIGN_CENTER_VERTICAL)
+            self.downrateSpinner = wxSpinCtrl(panel, -1, "", (-1, -1)
+                                              (50, -1))
             self.downrateSpinner.SetFont(self.default_font)
-            self.downrateSpinner.SetRange(0,5000)
+            self.downrateSpinner.SetRange(0, 5000)
             self.downrateSpinner.SetValue(self.config['max_download_rate'])
-            spinnerSizer.Add (self.downrateSpinner, 0)
+            spinnerSizer.Add(self.downrateSpinner, 0)
             EVT_SPINCTRL(self.downrateSpinner, -1, self.onDownRateSpinner)
-            spinnerSizer.Add(StaticText(' (0 = unlimited)  '),0,wxALIGN_CENTER_VERTICAL)
-            colSizer.Add(spinnerSizer,0,wxEXPAND)
+            spinnerSizer.Add(StaticText(' (0 = unlimited)  '), 0,
+                             wxALIGN_CENTER_VERTICAL)
+            colSizer.Add(spinnerSizer, 0, wxEXPAND)
 
             colSizer.Add(StaticText(''))
 
-            buttonSizer = wxFlexGridSizer (cols = 5, hgap = 20)
+            buttonSizer = wxFlexGridSizer(cols=5, hgap=20)
 
             reannounceButton = wxButton(panel, -1, 'Manual Announce')
-            buttonSizer.Add (reannounceButton)
+            buttonSizer.Add(reannounceButton)
 
             extannounceButton = wxButton(panel, -1, 'External Announce')
-            buttonSizer.Add (extannounceButton)
+            buttonSizer.Add(extannounceButton)
 
             bgallocButton = wxButton(panel, -1, 'Finish Allocation')
-            buttonSizer.Add (bgallocButton)
+            buttonSizer.Add(bgallocButton)
 
             buttonSizer.Add(StaticText(''))
 
             okButton = wxButton(panel, -1, 'Ok')
-            buttonSizer.Add (okButton)
+            buttonSizer.Add(okButton)
 
-            colSizer.Add (buttonSizer, 0, wxALIGN_CENTER)
+            colSizer.Add(buttonSizer, 0, wxALIGN_CENTER)
             colSizer.AddGrowableCol(0)
             colSizer.AddGrowableRow(1)
 
             panel.SetSizer(colSizer)
             panel.SetAutoLayout(True)
 
-            spewList.InsertColumn(0, "Optimistic Unchoke", format=wxLIST_FORMAT_CENTER, width=fw*2)
+            spewList.InsertColumn(0, "Optimistic Unchoke",
+                                  format=wxLIST_FORMAT_CENTER, width=fw * 2)
             spewList.InsertColumn(1, "Peer ID", width=0)
             spewList.InsertColumn(2, "IP", width=fw*11)
-            spewList.InsertColumn(3, "Local/Remote", format=wxLIST_FORMAT_CENTER, width=fw*3)
-            spewList.InsertColumn(4, "Up", format=wxLIST_FORMAT_RIGHT, width=fw*6)
-            spewList.InsertColumn(5, "Interested", format=wxLIST_FORMAT_CENTER, width=fw*2)
-            spewList.InsertColumn(6, "Choking", format=wxLIST_FORMAT_CENTER, width=fw*2)
-            spewList.InsertColumn(7, "Down", format=wxLIST_FORMAT_RIGHT, width=fw*6)
-            spewList.InsertColumn(8, "Interesting", format=wxLIST_FORMAT_CENTER, width=fw*2)
-            spewList.InsertColumn(9, "Choked", format=wxLIST_FORMAT_CENTER, width=fw*2)
-            spewList.InsertColumn(10, "Snubbed", format=wxLIST_FORMAT_CENTER, width=fw*2)
-            spewList.InsertColumn(11, "Downloaded", format=wxLIST_FORMAT_RIGHT, width=fw*7)
-            spewList.InsertColumn(12, "Uploaded", format=wxLIST_FORMAT_RIGHT, width=fw*7)
-            spewList.InsertColumn(13, "Completed", format=wxLIST_FORMAT_RIGHT, width=fw*6)
-            spewList.InsertColumn(14, "Peer Download Speed", format=wxLIST_FORMAT_RIGHT, width=fw*6)
+            spewList.InsertColumn(3, "Local/Remote",
+                                  format=wxLIST_FORMAT_CENTER, width=fw * 3)
+            spewList.InsertColumn(4, "Up", format=wxLIST_FORMAT_RIGHT,
+                                  width=fw * 6)
+            spewList.InsertColumn(5, "Interested", format=wxLIST_FORMAT_CENTER,
+                                  width=fw * 2)
+            spewList.InsertColumn(6, "Choking", format=wxLIST_FORMAT_CENTER,
+                                  width=fw * 2)
+            spewList.InsertColumn(7, "Down", format=wxLIST_FORMAT_RIGHT,
+                                  width=fw * 6)
+            spewList.InsertColumn(8, "Interesting",
+                                  format=wxLIST_FORMAT_CENTER, width=fw * 2)
+            spewList.InsertColumn(9, "Choked", format=wxLIST_FORMAT_CENTER,
+                                  width=fw * 2)
+            spewList.InsertColumn(10, "Snubbed", format=wxLIST_FORMAT_CENTER,
+                                  width=fw * 2)
+            spewList.InsertColumn(11, "Downloaded", format=wxLIST_FORMAT_RIGHT,
+                                  width=fw * 7)
+            spewList.InsertColumn(12, "Uploaded", format=wxLIST_FORMAT_RIGHT,
+                                  width=fw * 7)
+            spewList.InsertColumn(13, "Completed", format=wxLIST_FORMAT_RIGHT,
+                                  width=fw * 6)
+            spewList.InsertColumn(14, "Peer Download Speed",
+                                  format=wxLIST_FORMAT_RIGHT, width=fw * 6)
 
-            def reannounce(self, frame = self):
+            def reannounce(self, frame=self):
                 if (clock() - frame.reannouncelast > 60):
                     frame.reannouncelast = clock()
                     frame.dow.reannounce()
             EVT_BUTTON(self.advBox, reannounceButton.GetId(), reannounce)
 
             self.advextannouncebox = None
-            def reannounce_external(self, frame = self):
+
+            def reannounce_external(self, frame=self):
                 if (frame.advextannouncebox is not None):
                     try:
-                        frame.advextannouncebox.Close ()
-                    except wxPyDeadObjectError, e:
+                        frame.advextannouncebox.Close()
+                    except wxPyDeadObjectError:
                         frame.advextannouncebox = None
 
-                frame.advextannouncebox = wxFrame(None, -1, 'External Announce', size = (1,1),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+                frame.advextannouncebox = wxFrame(
+                    None, -1, 'External Announce', size=(1, 1),
+                    style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
                 try:
                     frame.advextannouncebox.SetIcon(frame.icon)
                 except:
@@ -1421,26 +1525,27 @@ class DownloadInfoFrame:
 
                 panel = wxPanel(frame.advextannouncebox, -1)
 
-                fullsizer = wxFlexGridSizer(cols = 1, vgap = 13)
+                fullsizer = wxFlexGridSizer(cols=1, vgap=13)
                 msg = wxStaticText(panel, -1, "Enter tracker anounce URL:")
                 msg.SetFont(frame.default_font)
                 fullsizer.Add(msg)
 
-                frame.advexturl = wxTextCtrl(parent = panel, id = -1, value = '',
-                                    size = (255, 20), style = wxTE_PROCESS_TAB)
+                frame.advexturl = wxTextCtrl(
+                    parent=panel, id=-1, value='', size=(255, 20),
+                    style=wxTE_PROCESS_TAB)
                 frame.advexturl.SetFont(frame.default_font)
                 frame.advexturl.SetValue(frame.lastexternalannounce)
                 fullsizer.Add(frame.advexturl)
 
-                buttonSizer = wxFlexGridSizer (cols = 2, hgap = 10)
+                buttonSizer = wxFlexGridSizer(cols=2, hgap=10)
 
                 okButton = wxButton(panel, -1, 'OK')
-                buttonSizer.Add (okButton)
+                buttonSizer.Add(okButton)
 
                 cancelButton = wxButton(panel, -1, 'Cancel')
-                buttonSizer.Add (cancelButton)
+                buttonSizer.Add(cancelButton)
 
-                fullsizer.Add (buttonSizer, 0, wxALIGN_CENTER)
+                fullsizer.Add(buttonSizer, 0, wxALIGN_CENTER)
 
                 border = wxBoxSizer(wxHORIZONTAL)
                 border.Add(fullsizer, 1, wxEXPAND | wxALL, 4)
@@ -1448,7 +1553,7 @@ class DownloadInfoFrame:
                 panel.SetSizer(border)
                 panel.SetAutoLayout(True)
 
-                def ok(self, frame = frame):
+                def ok(self, frame=frame):
                     special = frame.advexturl.GetValue()
                     if special:
                         frame.lastexternalannounce = special
@@ -1458,24 +1563,27 @@ class DownloadInfoFrame:
                     frame.advextannouncebox.Close()
                 EVT_BUTTON(frame.advextannouncebox, okButton.GetId(), ok)
 
-                def cancel(self, frame = frame):
+                def cancel(self, frame=frame):
                     frame.advextannouncebox.Close()
-                EVT_BUTTON(frame.advextannouncebox, cancelButton.GetId(), cancel)
+                EVT_BUTTON(frame.advextannouncebox, cancelButton.GetId(),
+                           cancel)
 
-                frame.advextannouncebox.Show ()
+                frame.advextannouncebox.Show()
                 fullsizer.Fit(panel)
                 frame.advextannouncebox.Fit()
 
-            EVT_BUTTON(self.advBox, extannounceButton.GetId(), reannounce_external)
+            EVT_BUTTON(self.advBox, extannounceButton.GetId(),
+                       reannounce_external)
 
-            def bgalloc(self, frame = self):
+            def bgalloc(self, frame=self):
                 if frame.dow.storagewrapper is not None:
                     frame.dow.storagewrapper.bgalloc()
             EVT_BUTTON(self.advBox, bgallocButton.GetId(), bgalloc)
 
-            def closeAdv(evt, self = self):
+            def closeAdv(evt, self=self):
                 self.advBox.Close()
-            def killAdv(evt, self = self):
+
+            def killAdv(evt, self=self):
                 try:
                     self.advBox.RemoveIcon()
                 except:
@@ -1487,13 +1595,13 @@ class DownloadInfoFrame:
                 if (self.advextannouncebox is not None):
                     try:
                         self.advextannouncebox.Close()
-                    except wxPyDeadObjectError, e:
+                    except wxPyDeadObjectError:
                         pass
                     self.advextannouncebox = None
             EVT_BUTTON(self.advBox, okButton.GetId(), closeAdv)
             EVT_CLOSE(self.advBox, killAdv)
 
-            self.advBox.Show ()
+            self.advBox.Show()
             colSizer.Fit(panel)
             self.advBox.Fit()
             if self.dow:
@@ -1501,25 +1609,25 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
     def displayUsage(self, text):
         self.invokeLater(self.onDisplayUsage, [text])
 
-    def onDisplayUsage(self, text):        
+    def onDisplayUsage(self, text):
         try:
             self.done(None)
             w = wxFrame(None, -1, 'BITTORRENT USAGE',
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+                        style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             panel = wxPanel(w, -1)
-            sizer = wxFlexGridSizer(cols = 1)
-            sizer.Add(wxTextCtrl(panel, -1, text,
-                        size = (500,300), style = wxTE_READONLY|wxTE_MULTILINE))
+            sizer = wxFlexGridSizer(cols=1)
+            sizer.Add(wxTextCtrl(panel, -1, text, size=(500, 300),
+                      style=wxTE_READONLY | wxTE_MULTILINE))
             okButton = wxButton(panel, -1, 'Ok')
 
-            def closeUsage(self, frame = self):
+            def closeUsage(self, frame=self):
                 frame.usageBox.Close()
             EVT_BUTTON(w, okButton.GetId(), closeUsage)
-            def kill(self, frame = self):
+
+            def kill(self, frame=self):
                 frame.usageBox.Destroy()
                 frame.usageBox = None
             EVT_CLOSE(w, kill)
@@ -1538,48 +1646,50 @@ class DownloadInfoFrame:
         except:
             self.exception()
 
-
-    def updateStatus(self, dpflag = threading.Event(), fractionDone = None,
-            timeEst = None, downRate = None, upRate = None,
-            activity = None, statistics = None, spew = None, sizeDone = None,
-            **kws):
+    def updateStatus(self, dpflag=threading.Event(), fractionDone=None,
+                     timeEst=None, downRate=None, upRate=None, activity=None,
+                     statistics=None, spew=None, sizeDone=None, **kws):
         if activity is not None:
             self.activity = activity
         self.gui_fractiondone = fractionDone
-        self.invokeLater(self.onUpdateStatus,
-                 [dpflag, timeEst, downRate, upRate, statistics, spew, sizeDone])
+        self.invokeLater(
+            self.onUpdateStatus,
+            [dpflag, timeEst, downRate, upRate, statistics, spew, sizeDone])
 
-    def onUpdateStatus(self, dpflag, timeEst, downRate, upRate,
-                             statistics, spew, sizeDone):
+    def onUpdateStatus(self, dpflag, timeEst, downRate, upRate, statistics,
+                       spew, sizeDone):
         if self.firstupdate:
             if not self.old_ratesettings:
                 self.old_ratesettings = {}
-            self.connChoice.SetStringSelection(
-                self.old_ratesettings.get('rate setting',
-                                  self.configfileargs['gui_ratesettingsdefault']))
-            self.onConnChoice(0,
-                              self.old_ratesettings.get('uploads'),
-                              self.old_ratesettings.get('max upload rate'))
+            self.connChoice.SetStringSelection(self.old_ratesettings.get(
+                'rate setting',
+                self.configfileargs['gui_ratesettingsdefault']))
+            self.onConnChoice(
+                0, self.old_ratesettings.get('uploads'),
+                self.old_ratesettings.get('max upload rate'))
             if 'max download rate' in self.old_ratesettings:
-                self.dow.setDownloadRate(self.old_ratesettings['max download rate'])
+                self.dow.setDownloadRate(
+                    self.old_ratesettings['max download rate'])
                 if self.advBox:
-                    self.downrateSpinner.SetValue(self.old_ratesettings['max download rate'])
+                    self.downrateSpinner.SetValue(
+                        self.old_ratesettings['max download rate'])
             self.firstupdate = False
             if self.advBox:
                 self.dow.spewflag.set()
         if self.ispaused or statistics is None:
             self.setStatusIcon('startup')
-        elif statistics.numPeers + statistics.numSeeds + statistics.numOldSeeds == 0:
+        elif statistics.numPeers + statistics.numSeeds + \
+                statistics.numOldSeeds == 0:
             if statistics.last_failed:
                 self.setStatusIcon('disconnected')
             else:
                 self.setStatusIcon('noconnections')
-        elif ( not statistics.external_connection_made
-            and not self.configfileargs['gui_forcegreenonfirewall'] ):
+        elif not (statistics.external_connection_made or
+                  self.configfileargs['gui_forcegreenonfirewall']):
             self.setStatusIcon('noincoming')
-        elif ( (statistics.numSeeds + statistics.numOldSeeds == 0)
-               and ( (self.fin and statistics.numCopies < 1)
-                    or (not self.fin and statistics.numCopies2 < 1) ) ):
+        elif ((statistics.numSeeds + statistics.numOldSeeds == 0)
+              and (self.fin and statistics.numCopies < 1 or
+                   not self.fin and statistics.numCopies2 < 1)):
             self.setStatusIcon('nocompletes')
         elif timeEst == 0 and sizeDone < self.torrentsize:
             self.setStatusIcon('nocompletes')
@@ -1587,27 +1697,31 @@ class DownloadInfoFrame:
             self.setStatusIcon('allgood')
         if statistics is None:
             self.setgaugemode(-1)
-        elif self.gui_fractiondone == None or self.gui_fractiondone == 1.0:
+        elif self.gui_fractiondone is None or self.gui_fractiondone == 1.0:
             self.setgaugemode(1)
         else:
             self.setgaugemode(0)
 
         if self.updateSliderFlag == 1:
             self.updateSliderFlag = 0
-            newValue = (self.rateSpinner.GetValue()
-                         / connChoices[self.connChoice.GetSelection()]['rate'].get('div',1))
+            newValue = (self.rateSpinner.GetValue() /
+                        connChoices[
+                            self.connChoice.GetSelection()
+                        ]['rate'].get('div', 1))
             if self.rateslider.GetValue() != newValue:
                 self.rateslider.SetValue(newValue)
         if self.updateSpinnerFlag == 1:
             self.updateSpinnerFlag = 0
             cc = connChoices[self.connChoice.GetSelection()]
             if 'rate' in cc:
-                newValue = (self.rateslider.GetValue() * cc['rate'].get('div',1))
+                newValue = (self.rateslider.GetValue() *
+                            cc['rate'].get('div', 1))
                 if self.rateSpinner.GetValue() != newValue:
                     self.rateSpinner.SetValue(newValue)
 
         if self.fin:
-            if statistics is None or statistics.numOldSeeds > 0 or statistics.numCopies > 1:
+            if statistics is None or statistics.numOldSeeds > 0 or \
+                    statistics.numCopies > 1:
                 self.gauge.SetValue(1000)
             else:
                 self.gauge.SetValue(int(1000*statistics.numCopies))
@@ -1616,39 +1730,50 @@ class DownloadInfoFrame:
             self.gauge.SetValue(gaugelevel)
             if statistics is not None and statistics.downTotal is not None:
                 if self.configfileargs['gui_displaymiscstats']:
-                    self.frame.SetTitle('%.1f%% (%.2f MiB) %s - BitTorrent %s' % (float(gaugelevel)/10, float(sizeDone) / (1<<20), self.filename, version))
+                    self.frame.SetTitle(
+                        '{:.1%} ({:.2f} MiB) {} - BitTorrent {}'.format(
+                            float(gaugelevel) / 1000,
+                            float(sizeDone) / (1 << 20),
+                            self.filename, version))
                 else:
-                    self.frame.SetTitle('%.1f%% %s - BitTorrent %s' % (float(gaugelevel)/10, self.filename, version))
+                    self.frame.SetTitle('{:.1%} {} - BitTorrent {}'.format(
+                        float(gaugelevel) / 1000, self.filename, version))
             else:
-                self.frame.SetTitle('%.0f%% %s - BitTorrent %s' % (float(gaugelevel)/10, self.filename, version))
+                self.frame.SetTitle('{:.0%} {} - BitTorrent {}'.format(
+                    float(gaugelevel) / 1000, self.filename, version))
         if self.ispaused:
             self.timeText.SetLabel(hours(clock() - self.starttime) + ' /')
         elif timeEst is None:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' + self.activity)
+            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
+                                   self.activity)
         else:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' + hours(timeEst))
+            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
+                                   hours(timeEst))
         if not self.ispaused:
             if downRate is not None:
-                self.downRateText.SetLabel('%.0f kB/s' % (float(downRate) / 1000))
+                self.downRateText.SetLabel('{:.0f} kB/s'.format(
+                    float(downRate) / 1000))
             if upRate is not None:
                 self.upRateText.SetLabel('%.0f kB/s' % (float(upRate) / 1000))
         if self.taskbaricon:
-            icontext='BitTorrent '
+            icontext = 'BitTorrent '
             if self.gui_fractiondone is not None and not self.fin:
                 if statistics is not None and statistics.downTotal is not None:
-                    icontext=icontext+' %.1f%% (%.2f MiB)' % (self.gui_fractiondone*100, float(sizeDone) / (1<<20))
+                    icontext += ' {:.1%} ({:.2f} MiB)'.format(
+                        self.gui_fractiondone, float(sizeDone) / (1 << 20))
                 else:
-                    icontext=icontext+' %.0f%%' % (self.gui_fractiondone*100)
+                    icontext += '  {:.0%}'.format(self.gui_fractiondone)
             if upRate is not None:
-                icontext=icontext+' u:%.0f kB/s' % (float(upRate) / 1000)
+                icontext += ' u:{:.0f} kB/s'.format(float(upRate) / 1000)
             if downRate is not None:
-                icontext=icontext+' d:%.0f kB/s' % (float(downRate) / 1000)
-            icontext+=' %s' % self.filename
+                icontext += ' d:{:.0f} kB/s'.format(float(downRate) / 1000)
+            icontext += ' ' + self.filename
             try:
-                if self.gui_fractiondone == None or self.gui_fractiondone == 1.0:
-                    self.frame.tbicon.SetIcon(self.finicon,icontext)
+                if self.gui_fractiondone is None or \
+                        self.gui_fractiondone == 1.0:
+                    self.frame.tbicon.SetIcon(self.finicon, icontext)
                 else:
-                    self.frame.tbicon.SetIcon(self.icon,icontext)
+                    self.frame.tbicon.SetIcon(self.icon, icontext)
             except:
                 pass
         if statistics is not None:
@@ -1659,8 +1784,10 @@ class DownloadInfoFrame:
             downtotal = statistics.downTotal + self.old_download
             uptotal = statistics.upTotal + self.old_upload
             if self.configfileargs['gui_displaymiscstats']:
-                self.downText.SetLabel('%.2f MiB' % (float(downtotal) / (1 << 20)))
-                self.upText.SetLabel('%.2f MiB' % (float(uptotal) / (1 << 20)))
+                self.downText.SetLabel('{:.2f} MiB'.format(
+                    float(downtotal) / (1 << 20)))
+                self.upText.SetLabel('{:.2f} MiB'.format(
+                    float(uptotal) / (1 << 20)))
             if downtotal > 0:
                 sharerating = float(uptotal)/downtotal
                 if sharerating == 0:
@@ -1686,20 +1813,32 @@ class DownloadInfoFrame:
             if sharerating is None:
                 self.shareRatingText.SetLabel(shareSmiley)
             else:
-                self.shareRatingText.SetLabel('%.3f %s' % (sharerating, shareSmiley))
+                self.shareRatingText.SetLabel('{:.3f} {}'.format(
+                    sharerating, shareSmiley))
             self.shareRatingText.SetForegroundColour(color)
 
             if self.configfileargs['gui_displaystats']:
                 if not self.fin:
-                    self.seedStatusText.SetLabel('connected to %d seeds; also seeing %.3f distributed copies' % (statistics.numSeeds,0.001*int(1000*statistics.numCopies2)))
+                    self.seedStatusText.SetLabel(
+                        'connected to {:d} seeds; also seeing {:.3f} '
+                        'distributed copies'.format(
+                            statistics.numSeeds, statistics.numCopies2))
                 else:
-                    self.seedStatusText.SetLabel('%d seeds seen recently; also seeing %.3f distributed copies' % (statistics.numOldSeeds,0.001*int(1000*statistics.numCopies)))
-                self.peerStatusText.SetLabel('connected to %d peers with an average of %.1f%% completed (total speed %.0f kB/s)' % (statistics.numPeers,statistics.percentDone,float(statistics.torrentRate) / (1000)))
+                    self.seedStatusText.SetLabel(
+                        '{:d} seeds seen recently; also seeing {:.3f} '
+                        'distributed copies'.format(
+                            statistics.numOldSeeds, statistics.numCopies))
+                self.peerStatusText.SetLabel(
+                    'connected to {:d} peers with an average of {:.1%} '
+                    'completed (total speed {:.0f} kB/s)'.format(
+                        statistics.numPeers,
+                        statistics.percentDone / 100,
+                        float(statistics.torrentRate) / 1000))
         if ((clock() - self.lastError) > 300):
             self.errorText.SetLabel('')
 
-        if ( self.configfileargs['gui_displaymiscstats']
-            and statistics is not None and statistics.backgroundallocating ):
+        if (self.configfileargs['gui_displaymiscstats'] and
+                statistics is not None and statistics.backgroundallocating):
             self.bgalloc_periods += 1
             if self.bgalloc_periods > 3:
                 self.bgalloc_periods = 0
@@ -1709,14 +1848,14 @@ class DownloadInfoFrame:
         else:
             self.bgallocText.SetLabel('')
 
-
-        if spew is not None and (clock()-self.spewwait>1):
-            if (self.advBox is not None):
+        if spew is not None and (clock() - self.spewwait > 1):
+            if self.advBox is not None:
                 self.spewwait = clock()
                 spewList = self.spewList
-                spewlen = len(spew)+2
+                spewlen = len(spew) + 2
                 if statistics is not None:
-                    kickbanlen = len(statistics.peers_kicked)+len(statistics.peers_banned)
+                    kickbanlen = len(statistics.peers_kicked) + \
+                        len(statistics.peers_banned)
                     if kickbanlen:
                         spewlen += kickbanlen+1
                 else:
@@ -1724,8 +1863,8 @@ class DownloadInfoFrame:
                 for x in range(spewlen-spewList.GetItemCount()):
                     i = wxListItem()
                     spewList.InsertItem(i)
-                for x in range(spewlen,spewList.GetItemCount()):
-                    spewList.DeleteItem(len(spew)+1)
+                for x in range(spewlen, spewList.GetItemCount()):
+                    spewList.DeleteItem(len(spew) + 1)
 
                 tot_uprate = 0.0
                 tot_downrate = 0.0
@@ -1739,7 +1878,8 @@ class DownloadInfoFrame:
                     spewList.SetStringItem(x, 2, spew[x]['ip'])
                     spewList.SetStringItem(x, 3, spew[x]['direction'])
                     if spew[x]['uprate'] > 100:
-                        spewList.SetStringItem(x, 4, '%.0f kB/s' % (float(spew[x]['uprate']) / 1000))
+                        spewList.SetStringItem(x, 4, '{:.0f} kB/s'.format(
+                            float(spew[x]['uprate']) / 1000))
                     else:
                         spewList.SetStringItem(x, 4, ' ')
                     tot_uprate += spew[x]['uprate']
@@ -1755,7 +1895,8 @@ class DownloadInfoFrame:
                     spewList.SetStringItem(x, 6, a)
 
                     if spew[x]['downrate'] > 100:
-                        spewList.SetStringItem(x, 7, '%.0f kB/s' % (float(spew[x]['downrate']) / 1000))
+                        spewList.SetStringItem(x, 7, '{:.0f} kB/s'.format(
+                            float(spew[x]['downrate']) / 1000))
                     else:
                         spewList.SetStringItem(x, 7, ' ')
                     tot_downrate += spew[x]['downrate']
@@ -1775,13 +1916,16 @@ class DownloadInfoFrame:
                     else:
                         a = ' '
                     spewList.SetStringItem(x, 10, a)
-                    spewList.SetStringItem(x, 11, '%.2f MiB' % (float(spew[x]['dtotal']) / (1 << 20)))
+                    spewList.SetStringItem(x, 11, '{:.2f} MiB'.format(
+                        float(spew[x]['dtotal']) / (1 << 20)))
                     if spew[x]['utotal'] is not None:
-                        a = '%.2f MiB' % (float(spew[x]['utotal']) / (1 << 20))
+                        a = '{:.2f} MiB'.format(
+                            float(spew[x]['utotal']) / (1 << 20))
                     else:
                         a = ''
                     spewList.SetStringItem(x, 12, a)
-                    spewList.SetStringItem(x, 13, '%.1f%%' % (float(int(spew[x]['completed']*1000))/10))
+                    spewList.SetStringItem(
+                        x, 13, '{:.1%}'.format(spew[x]['completed']))
                     if spew[x]['speed'] is not None:
                         a = '%.0f kB/s' % (float(spew[x]['speed']) / 1000)
                     else:
@@ -1794,15 +1938,19 @@ class DownloadInfoFrame:
 
                 x += 1
                 spewList.SetStringItem(x, 2, '         TOTALS:')
-                spewList.SetStringItem(x, 4, '%.0f kB/s' % (float(tot_uprate) / 1000))
-                spewList.SetStringItem(x, 7, '%.0f kB/s' % (float(tot_downrate) / 1000))
+                spewList.SetStringItem(x, 4, '{:.0f} kB/s'.format(
+                    float(tot_uprate) / 1000))
+                spewList.SetStringItem(x, 7, '{:.0f} kB/s'.format(
+                    float(tot_downrate) / 1000))
                 if statistics is not None:
-                    spewList.SetStringItem(x, 11, '%.2f MiB' % (float(statistics.downTotal) / (1 << 20)))
-                    spewList.SetStringItem(x, 12, '%.2f MiB' % (float(statistics.upTotal) / (1 << 20)))
+                    spewList.SetStringItem(x, 11, '{:.2f} MiB'.format(
+                        float(statistics.downTotal) / (1 << 20)))
+                    spewList.SetStringItem(x, 12, '{:.2f} MiB'.format(
+                        float(statistics.upTotal) / (1 << 20)))
                 else:
                     spewList.SetStringItem(x, 11, '')
                     spewList.SetStringItem(x, 12, '')
-                for i in [0,1,3,5,6,8,9,10,13,14]:
+                for i in (0, 1, 3, 5, 6, 8, 9, 10, 13, 14):
                     spewList.SetStringItem(x, i, '')
 
                 if kickbanlen:
@@ -1815,7 +1963,7 @@ class DownloadInfoFrame:
                         spewList.SetStringItem(x, 2, peer[0])
                         spewList.SetStringItem(x, 1, peer[1])
                         spewList.SetStringItem(x, 4, 'KICKED')
-                        for i in [0,3,5,6,7,8,9,10,11,12,13,14]:
+                        for i in (0, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
                             spewList.SetStringItem(x, i, '')
 
                     for peer in statistics.peers_banned:
@@ -1823,50 +1971,52 @@ class DownloadInfoFrame:
                         spewList.SetStringItem(x, 2, peer[0])
                         spewList.SetStringItem(x, 1, peer[1])
                         spewList.SetStringItem(x, 4, 'BANNED')
-                        for i in [0,3,5,6,7,8,9,10,11,12,13,14]:
+                        for i in (0, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
                             spewList.SetStringItem(x, i, '')
 
                 if statistics is not None:
-                    l1 = (
-                        '          currently downloading %d pieces (%d just started), %d pieces partially retrieved'
-                                        % ( statistics.storage_active,
-                                            statistics.storage_new,
-                                            statistics.storage_dirty ) )
+                    l1 = '{} currently downloading {:d} pieces ({:d} just ' \
+                        'started), {:d} pieces partially retrieved'.format(
+                            ' ' * 9, statistics.storage_active,
+                            statistics.storage_new, statistics.storage_dirty)
                     if statistics.storage_isendgame:
                         l1 += ', endgame mode'
                     self.storagestats2.SetLabel(l1)
                     self.storagestats1.SetLabel(
-                        '          %d of %d pieces complete (%d just downloaded), %d failed hash check, %sKiB redundant data discarded'
-                                        % ( statistics.storage_numcomplete,
-                                            statistics.storage_totalpieces,
-                                            statistics.storage_justdownloaded,
-                                            statistics.storage_numflunked,
-                                            comma_format(int(statistics.discarded/1024)) ) )
+                        '{} {:d} of {:d} pieces complete ({:d} just '
+                        'downloaded), {:d} failed hash check, {}KiB redundant '
+                        'data discarded'.format(
+                            ' ' * 9, statistics.storage_numcomplete,
+                            statistics.storage_totalpieces,
+                            statistics.storage_justdownloaded,
+                            statistics.storage_numflunked,
+                            comma_format(int(statistics.discarded/1024))))
 
-        if ( self.fileList is not None and statistics is not None
-                and (statistics.filelistupdated.isSet() or self.refresh_details) ):
+        if (self.fileList is not None and statistics is not None and
+                (statistics.filelistupdated.isSet() or self.refresh_details)):
             for i in range(len(statistics.filecomplete)):
                 if self.dow.fileselector[i] == -1:
-                    self.fileList.SetItemImage(i,0,0)
-                    self.fileList.SetStringItem(i,1,'')
+                    self.fileList.SetItemImage(i, 0, 0)
+                    self.fileList.SetStringItem(i, 1, '')
                 elif statistics.fileinplace[i]:
-                    self.fileList.SetItemImage(i,2,2)
-                    self.fileList.SetStringItem(i,1,"done")
+                    self.fileList.SetItemImage(i, 2, 2)
+                    self.fileList.SetStringItem(i, 1, "done")
                 elif statistics.filecomplete[i]:
-                    self.fileList.SetItemImage(i,1,1)
-                    self.fileList.SetStringItem(i,1,"100%")
+                    self.fileList.SetItemImage(i, 1, 1)
+                    self.fileList.SetStringItem(i, 1, "100%")
                 else:
-                    self.fileList.SetItemImage(i,0,0)
+                    self.fileList.SetItemImage(i, 0, 0)
                     frac = statistics.fileamtdone[i]
                     if frac:
-                        self.fileList.SetStringItem(i,1,'%d%%' % (frac*100))
+                        self.fileList.SetStringItem(
+                            i, 1, '{:.0%}'.format(frac))
                     else:
-                        self.fileList.SetStringItem(i,1,'')
+                        self.fileList.SetStringItem(i, 1, '')
 
             statistics.filelistupdated.clear()
             self.refresh_details = False
 
-        if self.configfile.configReset():     # whoopee!  Set everything invisible! :-)
+        if self.configfile.configReset():     # Set everything invisible!
 
             self.dow.config['security'] = self.configfileargs['security']
 
@@ -1883,8 +2033,8 @@ class DownloadInfoFrame:
             self.peerStatusText.SetLabel('')
 
             ratesettingsmode = self.configfileargs['gui_ratesettingsmode']
-            ratesettingsflag1 = True    #\ settings
-            ratesettingsflag2 = False   #/ for 'basic'
+            ratesettingsflag1 = True    # \ settings
+            ratesettingsflag2 = False   # / for 'basic'
             if ratesettingsmode == 'none':
                 ratesettingsflag1 = False
             elif ratesettingsmode == 'full':
@@ -1911,7 +2061,6 @@ class DownloadInfoFrame:
         self.gui_fractiondone = None
         dpflag.set()
 
-
     def finished(self):
         self.fin = True
         self.invokeLater(self.onFinishEvent)
@@ -1924,10 +2073,12 @@ class DownloadInfoFrame:
         self.invokeLater(self.onErrorEvent, [errormsg])
 
     def onFinishEvent(self):
-        self.activity = hours(clock() - self.starttime) + ' / ' +'Download Succeeded!'
+        self.activity = hours(clock() - self.starttime) + ' / ' + \
+            'Download Succeeded!'
         self.cancelButton.SetLabel('Finish')
         self.gauge.SetValue(0)
-        self.frame.SetTitle('%s - Upload - BitTorrent %s' % (self.filename, version))
+        self.frame.SetTitle('{} - Upload - BitTorrent {}'.format(
+            self.filename, version))
         try:
             self.frame.SetIcon(self.finicon)
         except:
@@ -1938,7 +2089,8 @@ class DownloadInfoFrame:
 
     def onFailEvent(self):
         if not self.shuttingdown:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +'Failed!')
+            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
+                                   'Failed!')
             self.activity = 'Failed!'
             self.cancelButton.SetLabel('Close')
             self.gauge.SetValue(0)
@@ -1946,18 +2098,20 @@ class DownloadInfoFrame:
             self.setStatusIcon('startup')
 
     def onErrorEvent(self, errormsg):
-        if errormsg[:2] == '  ':    # indent at least 2 spaces means a warning message
+        # indent at least 2 spaces means a warning message
+        if errormsg[:2] == '  ':
             self.errorText.SetLabel(errormsg)
             self.lastError = clock()
         else:
-            self.errorText.SetLabel(time.strftime('ERROR (%x %X) -\n') + errormsg)
+            self.errorText.SetLabel(time.strftime('ERROR (%x %X) -\n') +
+                                    errormsg)
             self.lastError = clock()
-
 
     def chooseFile(self, default, size, saveas, dir):
         f = threading.Event()
         bucket = [None]
-        self.invokeLater(self.onChooseFile, [default, bucket, f, size, dir, saveas])
+        self.invokeLater(self.onChooseFile,
+                         [default, bucket, f, size, dir, saveas])
         f.wait()
         return bucket[0]
 
@@ -1971,16 +2125,17 @@ class DownloadInfoFrame:
                 start_dir = '/'    # yes, this hack does work in Windows
             if dir:
                 start_dir1 = start_dir
-                if os.path.isdir(os.path.join(start_dir,default)):
-                    start_dir = os.path.join(start_dir,default)
-                dl = wxDirDialog(self.frame,
-                        'Choose a directory to save to, pick a partial download to resume',
-                        defaultPath = start_dir, style = wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON)
+                if os.path.isdir(os.path.join(start_dir, default)):
+                    start_dir = os.path.join(start_dir, default)
+                dl = wxDirDialog(
+                    self.frame, 'Choose a directory to save to, pick a '
+                    'partial download to resume', defaultPath=start_dir,
+                    style=wxDD_DEFAULT_STYLE | wxDD_NEW_DIR_BUTTON)
             else:
-                dl = wxFileDialog(self.frame,
-                        'Choose file to save as, pick a partial download to resume', 
-                        defaultDir = start_dir, defaultFile = default, wildcard = '*',
-                        style = wxSAVE)
+                dl = wxFileDialog(
+                    self.frame, 'Choose file to save as, pick a partial '
+                    'download to resume', defaultDir=start_dir,
+                    defaultFile=default, wildcard='*', style=wxSAVE)
 
             if dl.ShowModal() != wxID_OK:
                 f.set()
@@ -1991,7 +2146,7 @@ class DownloadInfoFrame:
             if d == start_dir:
                 d = start_dir1
             bucket[0] = d
-            d1,d2 = os.path.split(d)
+            d1, d2 = os.path.split(d)
             if d2 == default:
                 d = d1
             self.configfile.WriteLastSaved(d)
@@ -2012,26 +2167,30 @@ class DownloadInfoFrame:
         self.filename = lname
         self.fileNameText.SetLabel('%s' % (lname))
         self.fileSizeText.SetLabel('(%.2f MiB)' % (float(size) / (1 << 20)))
-        self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' + self.activity)
+        self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
+                               self.activity)
         self.fileDestText.SetLabel(name)
         self.frame.SetTitle(lname + '- BitTorrent ' + version)
 
         minsize = self.fileNameText.GetBestSize()
         if (not self.configfileargs['gui_stretchwindow'] or
-                            minsize.GetWidth() < self.addwidth):
+                minsize.GetWidth() < self.addwidth):
             minsize.SetWidth(self.addwidth)
-        self.fnsizer.SetMinSize (minsize)
+        self.fnsizer.SetMinSize(minsize)
         minsize.SetHeight(self.fileSizeText.GetBestSize().GetHeight())
-        self.fnsizer2.SetMinSize (minsize)
+        self.fnsizer2.SetMinSize(minsize)
         minsize.SetWidth(minsize.GetWidth()+(self.FONT*8))
-        minsize.SetHeight(self.fileNameText.GetBestSize().GetHeight()+self.fileSizeText.GetBestSize().GetHeight())
-        minsize.SetHeight(2*self.errorText.GetBestSize().GetHeight())
+        minsize.SetHeight(self.fileNameText.GetBestSize().GetHeight() +
+                          self.fileSizeText.GetBestSize().GetHeight())
+        minsize.SetHeight(2 * self.errorText.GetBestSize().GetHeight())
         self.errorTextSizer.SetMinSize(minsize)
         self.topboxsizer.SetMinSize(minsize)
 
         # Kludge to make details and about catch the event
-        self.frame.SetSize ((self.frame.GetSizeTuple()[0]+1, self.frame.GetSizeTuple()[1]+1))
-        self.frame.SetSize ((self.frame.GetSizeTuple()[0]-1, self.frame.GetSizeTuple()[1]-1))
+        self.frame.SetSize((self.frame.GetSizeTuple()[0] + 1,
+                            self.frame.GetSizeTuple()[1] + 1))
+        self.frame.SetSize((self.frame.GetSizeTuple()[0] - 1,
+                            self.frame.GetSizeTuple()[1] - 1))
         self.colSizer.Fit(self.frame)
         self.frame.Layout()
         self.frame.Refresh()
@@ -2100,27 +2259,26 @@ class DownloadInfoFrame:
 
         self.frame.Destroy()
 
-
     def exception(self):
         data = StringIO()
-        traceback.print_exc(file = data)
+        traceback.print_exc(file=data)
         print data.getvalue()   # report exception here too
         self.on_errorwindow(data.getvalue())
 
     def errorwindow(self, err):
-        self.invokeLater(self.on_errorwindow,[err])
+        self.invokeLater(self.on_errorwindow, [err])
 
     def on_errorwindow(self, err):
         if self._errorwindow is None:
-            w = wxFrame(None, -1, 'BITTORRENT ERROR', size = (1,1),
-                            style = wxDEFAULT_FRAME_STYLE|wxFULL_REPAINT_ON_RESIZE)
+            w = wxFrame(None, -1, 'BITTORRENT ERROR', size=(1, 1),
+                        style=wxDEFAULT_FRAME_STYLE | wxFULL_REPAINT_ON_RESIZE)
             panel = wxPanel(w, -1)
 
-            sizer = wxFlexGridSizer(cols = 1)
-            t = ( 'BitTorrent ' + version + '\n' +
-                  'OS: ' + sys.platform + '\n' +
-                  'Python version: ' + sys.version + '\n' +
-                  'wxWindows version: ' + wxVERSION_STRING + '\n' )
+            sizer = wxFlexGridSizer(cols=1)
+            t = ('BitTorrent ' + version + '\n' +
+                 'OS: ' + sys.platform + '\n' +
+                 'Python version: ' + sys.version + '\n' +
+                 'wxWindows version: ' + wxVERSION_STRING + '\n')
             try:
                 t += 'Allocation method: ' + self.config['alloc_type']
                 if self.dow.storagewrapper.bgalloc_active:
@@ -2128,20 +2286,23 @@ class DownloadInfoFrame:
                 t += '\n'
             except:
                 pass
-            sizer.Add(wxTextCtrl(panel, -1, t + '\n' + err,
-                                size = (500,300), style = wxTE_READONLY|wxTE_MULTILINE))
+            sizer.Add(wxTextCtrl(panel, -1, t + '\n' + err, size=(500, 300),
+                      style=wxTE_READONLY | wxTE_MULTILINE))
 
             sizer.Add(wxStaticText(panel, -1,
-                    '\nHelp us iron out the bugs in the engine!'))
-            linkMail = wxStaticText(panel, -1,
-                'Please report this error to '+report_email)
-            linkMail.SetFont(wxFont(self.FONT, wxDEFAULT, wxNORMAL, wxNORMAL, True))
+                      '\nHelp us iron out the bugs in the engine!'))
+            linkMail = wxStaticText(
+                panel, -1, 'Please report this error to '+report_email)
+            linkMail.SetFont(wxFont(self.FONT, wxDEFAULT, wxNORMAL, wxNORMAL,
+                             True))
             linkMail.SetForegroundColour('Blue')
             sizer.Add(linkMail)
 
             def maillink(self):
-                threading.Thread(target = open_new("mailto:" + report_email
-                                         + "?subject=autobugreport")).start()
+                threading.Thread(
+                    target=open_new(
+                        "mailto:{}?subject=autobugreport".format(report_email))
+                ).start()
             EVT_LEFT_DOWN(linkMail, maillink)
 
             border = wxBoxSizer(wxHORIZONTAL)
@@ -2167,74 +2328,84 @@ class btWxApp(wxApp):
         d = DownloadInfoFrame(doneflag, self.configfile)
         self.SetTopWindow(d.frame)
         if len(self.params) == 0:
-            b = wxFileDialog (d.frame, 'Choose .torrent file to use',
-                        defaultDir = '', defaultFile = '', wildcard = '*.torrent',
-                        style = wxOPEN)
+            b = wxFileDialog(d.frame, 'Choose .torrent file to use',
+                             defaultDir='', defaultFile='',
+                             wildcard='*.torrent', style=wxOPEN)
 
             if b.ShowModal() == wxID_OK:
-                self.params.append (b.GetPath())
+                self.params.append(b.GetPath())
 
-        thread = threading.Thread(target = next, args = [self.params, d, doneflag, self.configfile])
+        thread = threading.Thread(
+            target=next, args=[self.params, d, doneflag, self.configfile])
         thread.setDaemon(False)
         thread.start()
         return 1
 
+
 def run(params):
     if WXPROFILER:
-        import profile, pstats
+        import profile
+        import pstats
         p = profile.Profile()
         p.runcall(_run, params)
         log_fname = 'profile_data_wx.'+time.strftime('%y%m%d%H%M%S')+'.txt'
-        with open(log_fname,'a') as log:
+        with open(log_fname, 'a') as log:
             normalstdout, sys.stdout = sys.stdout, log
             pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
             sys.stdout = normalstdout
     else:
         _run(params)
-        
+
+
 def _run(params):
     app = btWxApp(0, params)
     app.MainLoop()
 
+
 def next(params, d, doneflag, configfile):
     if PROFILER:
-        import profile, pstats
+        import profile
+        import pstats
         p = profile.Profile()
         p.runcall(_next, params, d, doneflag, configfile)
         log_fname = 'profile_data.'+time.strftime('%y%m%d%H%M%S')+'.txt'
-        with open(log_fname,'a') as log:
+        with open(log_fname, 'a') as log:
             normalstdout, sys.stdout = sys.stdout, log
             pstats.Stats(p).strip_dirs().sort_stats('time').print_stats()
             sys.stdout = normalstdout
     else:
         _next(params, d, doneflag, configfile)
 
+
 def _next(params, d, doneflag, configfile):
     err = False
     try:
         while 1:
-            try:            
+            try:
                 config = parse_params(params, configfile.config)
             except ValueError, e:
-                d.error('error: ' + str(e) + '\nrun with no args for parameter explanations')
+                d.error('error: ' + str(e) +
+                        '\nrun with no args for parameter explanations')
                 break
             if not config:
-                d.displayUsage(get_usage(presets = configfile.config))
+                d.displayUsage(get_usage(presets=configfile.config))
                 break
 
             myid = createPeerID()
             random.seed(myid)
-            
+
             rawserver = RawServer(doneflag, config['timeout_check_interval'],
-                                  config['timeout'], ipv6_enable = config['ipv6_enabled'],
-                                  failfunc = d.error, errorfunc = d.errorwindow)
+                                  config['timeout'],
+                                  ipv6_enable=config['ipv6_enabled'],
+                                  failfunc=d.error, errorfunc=d.errorwindow)
 
             upnp_type = UPnP_test(config['upnp_nat_access'])
             while True:
                 try:
-                    listen_port = rawserver.find_and_bind(config['minport'], config['maxport'],
-                                    config['bind'], ipv6_socket_style = config['ipv6_binds_v4'],
-                                    upnp = upnp_type, randomizer = config['random_port'])
+                    listen_port = rawserver.find_and_bind(
+                        config['minport'], config['maxport'], config['bind'],
+                        ipv6_socket_style=config['ipv6_binds_v4'],
+                        upnp=upnp_type, randomizer=config['random_port'])
                     break
                 except socket.error, e:
                     if upnp_type and e == UPnP_ERROR:
@@ -2246,12 +2417,13 @@ def _next(params, d, doneflag, configfile):
                     return
             d.connection_stats = rawserver.get_stats()
 
-            response = get_response(config['responsefile'], config['url'], d.error)
+            response = get_response(config['responsefile'], config['url'],
+                                    d.error)
             if not response:
                 break
 
             infohash = sha.sha(bencode(response['info'])).digest()
-            
+
             torrentdata = configfile.getTorrentData(infohash)
             if torrentdata:
                 oldsave = torrentdata.get('saved as')
@@ -2263,9 +2435,10 @@ def _next(params, d, doneflag, configfile):
             else:
                 oldsave = None
 
-            dow = BT1Download(d.updateStatus, d.finished, d.error, d.errorwindow, doneflag,
-                            config, response, infohash, myid, rawserver, listen_port,
-                            configfile.getConfigDir())
+            dow = BT1Download(
+                d.updateStatus, d.finished, d.error, d.errorwindow, doneflag,
+                config, response, infohash, myid, rawserver, listen_port,
+                configfile.getConfigDir())
             d.dow = dow
 
             if config['gui_saveas_ask'] == 1:
@@ -2274,22 +2447,22 @@ def _next(params, d, doneflag, configfile):
                 if not dow.checkSaveLocation(oldsave):
                     oldsave = None
             if oldsave:
-                def choosefile(default, size, saveas, dir, oldsave = oldsave):
+                def choosefile(default, size, saveas, dir, oldsave=oldsave):
                     d.ChooseFileDone(oldsave, size)
                     return oldsave
             elif config['gui_saveas_ask'] == 0:
                 def choosefile(default, size, saveas, dir,
-                               spot = config['gui_default_savedir']):
-                    spot = os.path.join(spot,default)
+                               spot=config['gui_default_savedir']):
+                    spot = os.path.join(spot, default)
                     d.ChooseFileDone(spot, size)
                     return spot
             else:
                 choosefile = d.chooseFile
             savedas = dow.saveAs(choosefile, d.newpath)
-            if not savedas: 
+            if not savedas:
                 break
 
-            if not dow.initFiles(old_style = True):
+            if not dow.initFiles(old_style=True):
                 break
             if not dow.startEngine():
                 dow.shutdown()
@@ -2298,32 +2471,32 @@ def _next(params, d, doneflag, configfile):
             dow.autoStats()
 
             if not dow.am_I_finished():
-                d.updateStatus(activity = 'connecting to peers')
+                d.updateStatus(activity='connecting to peers')
             rawserver.listen_forever(dow.getPortHandler())
 
             ratesettings = {
-                    'rate setting': d.current_ratesetting,
-                    'max download rate': config['max_download_rate']
-                }
+                'rate setting': d.current_ratesetting,
+                'max download rate': config['max_download_rate']
+            }
             if d.current_ratesetting != 'automatic':
                 ratesettings['uploads'] = config['min_uploads']
                 ratesettings['max upload rate'] = config['max_upload_rate']
             up, dn = dow.get_transfer_stats()
             stats = {
-                    'uploaded': up + d.old_upload,
-                    'downloaded': dn + d.old_download
-                }
+                'uploaded': up + d.old_upload,
+                'downloaded': dn + d.old_download
+            }
             torrentdata = {
-                    'saved as': savedas,
-                    'rate settings': ratesettings,
-                    'stats': stats
-                }
+                'saved as': savedas,
+                'rate settings': ratesettings,
+                'stats': stats
+            }
             dow.shutdown(torrentdata)
             break
     except:
         err = True
         data = StringIO()
-        traceback.print_exc(file = data)
+        traceback.print_exc(file=data)
         print data.getvalue()   # report exception here too
         d.errorwindow(data.getvalue())
     try:
@@ -2333,9 +2506,8 @@ def _next(params, d, doneflag, configfile):
     if not d.fin:
         d.failed()
     if err:
-        time.sleep(3600*24*30)   # this will make the app stick in the task manager,
-                            # but so be it
-
+        # this will make the app stick in the task manager, but so be it
+        time.sleep(3600*24*30)
 
 if __name__ == '__main__':
     if sys.argv[1:] == ['--version']:

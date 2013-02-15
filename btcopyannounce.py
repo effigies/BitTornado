@@ -19,7 +19,7 @@ def main(argv):
             "[file2.torrent...]" % program
     try:
         opts, args = getopt.getopt(argv[1:], "hv",
-                        ("help", "verbose"))
+                                   ("help", "verbose"))
     except getopt.error, msg:
         print msg
         return 1

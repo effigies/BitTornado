@@ -1,4 +1,5 @@
-from BitTornado.zurllib import urlopen, quote
+import urllib
+from BitTornado.zurllib import urlopen
 from urlparse import urlparse, urlunparse
 from socket import gethostbyname
 from btformats import check_peers
@@ -77,7 +78,7 @@ class Rerequester:
         self.rejectedmessage = 'rejected by tracker - '
 
         self.url = ('info_hash=%s&peer_id=%s' %
-            (quote(infohash), quote(myid)))
+            (urllib.quote(infohash), urllib.quote(myid)))
         if not config.get('crypto_allowed'):
             self.url += "&port="
         else:
@@ -94,7 +95,7 @@ class Rerequester:
 
         seed_id = config.get('dedicated_seed_id')
         if seed_id:
-            self.url += '&seed_id='+quote(seed_id)
+            self.url += '&seed_id=' + urllib.quote(seed_id)
         if self.seededfunc:
             self.url += '&check_seeded=1'
 
@@ -164,9 +165,9 @@ class Rerequester:
                 (self.url, str(self.up()), str(self.down()), 
                 str(self.amount_left())))
         if self.last is not None:
-            s += '&last=' + quote(str(self.last))
+            s += '&last=' + urllib.quote(str(self.last))
         if self.trackerid is not None:
-            s += '&trackerid=' + quote(str(self.trackerid))
+            s += '&trackerid=' + urllib.quote(str(self.trackerid))
         if self.howmany() >= self.maxpeers:
             s += '&numwant=0'
         else:

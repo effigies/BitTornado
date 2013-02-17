@@ -22,131 +22,88 @@ Booleans are written as integers.  Anything else aside from string/int/float
 may have unpredictable results.
 '''
 
-from cStringIO import StringIO
-from traceback import print_exc
-from types import DictType, StringType, BooleanType
 
-DEBUG = False
+def ini_write(fname, data, comment=''):
+    config = {'': {}}
 
-def ini_write(f, d, comment=''):
+    # Bring data dictionary into line with expectations
+    for key, value in data.iteritems():
+        if type(value) is dict:
+            config[key.lower()] = value
+        else:
+            config[''][key.lower()] = value
+
+    lines = []
+
+    if comment:
+        lines.extend('# {}'.format(line) for line in comment.split('\n'))
+        lines.append('')
+
+    for section in sorted(config):
+
+        # Add section headers, except to ''
+        if section:
+            lines.append('[{}]'.format(section))
+
+        subconf = config[section]
+        for key in sorted(subconf):
+            value = subconf[key]
+
+            # Modify string and boolean types
+            if type(value) is str:
+                value = '"{}"'.format(value)
+            elif type(value) is bool:
+                value = int(value)
+
+            lines.append("{} = {}".format(key, value))
+
+        lines.append('')
+
     try:
-        a = {'':{}}
-        for k,v in d.iteritems():
-            assert type(k) == StringType
-            k = k.lower()
-            if type(v) == DictType:
-                if DEBUG:
-                    print 'new section:' +k
-                if k:
-                    assert k not in a
-                    a[k] = {}
-                aa = a[k]
-                for kk,vv in v:
-                    assert type(kk) == StringType
-                    kk = kk.lower()
-                    assert kk not in aa
-                    if type(vv) == BooleanType:
-                        vv = int(vv)
-                    if type(vv) == StringType:
-                        vv = '"'+vv+'"'
-                    aa[kk] = str(vv)
-                    if DEBUG:
-                        print 'a['+k+']['+kk+'] = '+str(vv)
-            else:
-                aa = a['']
-                assert k not in aa
-                if type(v) == BooleanType:
-                    v = int(v)
-                if type(v) == StringType:
-                    v = '"'+v+'"'
-                aa[k] = str(v)
-                if DEBUG:
-                    print 'a[\'\']['+k+'] = '+str(v)
-        r = open(f,'w')
-        if comment:
-            for c in comment.split('\n'):
-                r.write('# '+c+'\n')
-            r.write('\n')
-        l = a.keys()
-        l.sort()
-        for k in l:
-            if k:
-                r.write('\n['+k+']\n')
-            aa = a[k]
-            ll = aa.keys()
-            ll.sort()
-            for kk in ll:
-                r.write(kk+' = '+aa[kk]+'\n')
-        success = True
-    except:
-        if DEBUG:
-            print_exc()
-        success = False
+        with open(fname, 'w') as ini_file:
+            ini_file.write('\n'.join(lines))
+        return True
+    except IOError:
+        return False
+
+
+def ini_read(fname, errfunc=lambda *x: None):
+    subconf = {}
+    config = {'': subconf}
     try:
-        r.close()
-    except:
-        pass
-    return success
+        with open(fname, 'r') as ini_file:
+            for num, line in enumerate(ini_file):
+                contents = line.strip()
+                if not contents or contents[0] == '#':
+                    continue
+                if contents[0] == '[':
+                    if contents[-1] != ']':
+                        errfunc(num, line, 'Expected: [x]')
+                        continue
+                    subconf = config.setdefault(contents[1:-1].strip().lower(),
+                                                {})
+                    continue
 
+                key, sep, value = map(str.strip, contents.partition("="))
+                if not sep:
+                    key, sep, value = map(str.strip, contents.partition(":"))
+                if not sep:
+                    errfunc(num, line, 'Expected: x=y or x:y')
+                    continue
 
-if DEBUG:
-    def errfunc(lineno, line, err):
-        print '('+str(lineno)+') '+err+': '+line
-else:
-    errfunc = lambda lineno, line, err: None
+                if value[0] in ("'", '"'):
+                    if value[-1] != value[0]:
+                        errfunc(num, line, 'Quotes must surround entire value')
+                        continue
+                    value = value[1:-1]
 
-def ini_read(f, errfunc = errfunc):
-    try:
-        with open(f,'r') as r:
-            ll = r.readlines()
-        d = {}
-        dd = {'':d}
-        for i in xrange(len(ll)):
-            l = ll[i]
-            l = l.strip()
-            if not l:
-                continue
-            if l[0] == '#':
-                continue
-            if l[0] == '[':
-                if l[-1] != ']':
-                    errfunc(i,l,'syntax error')
-                    continue
-                l1 = l[1:-1].strip().lower()
-                if not l1:
-                    errfunc(i,l,'syntax error')
-                    continue
-                if l1 in dd:
-                    errfunc(i,l,'duplicate section')
-                    d = dd[l1]
-                    continue
-                d = {}
-                dd[l1] = d
-                continue
-            try:
-                k,v = l.split('=',1)
-            except:
-                try:
-                    k,v = l.split(':',1)
-                except:
-                    errfunc(i,l,'syntax error')
-                    continue
-            k = k.strip().lower()
-            v = v.strip()
-            if len(v) > 1 and ( (v[0] == '"' and v[-1] == '"') or
-                                (v[0] == "'" and v[-1] == "'") ):
-                v = v[1:-1]
-            if not k:
-                errfunc(i,l,'syntax error')
-                continue
-            if k in d:
-                errfunc(i,l,'duplicate entry')
-                continue
-            d[k] = v
-        if DEBUG:
-            print dd
-    except:
-        if DEBUG:
-            print_exc()
-        dd = None
-    return dd
+                key = key.lower()
+                if key in subconf:
+                    errfunc(num, line, 'Duplicate entry')
+
+                subconf[key] = value
+
+    except IOError:
+        return None
+
+    return config

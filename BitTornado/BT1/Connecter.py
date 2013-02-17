@@ -1,6 +1,6 @@
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 
 DEBUG1 = False
 DEBUG2 = False
@@ -9,8 +9,7 @@ def toint(s):
     return long(hexlify(s), 16)
 
 def tobinary(i):
-    return (chr(i >> 24) + chr((i >> 16) & 0xFF) + 
-        chr((i >> 8) & 0xFF) + chr(i & 0xFF))
+    return unhexlify('{:08x'.format(i))
 
 CHOKE = chr(0)
 UNCHOKE = chr(1)

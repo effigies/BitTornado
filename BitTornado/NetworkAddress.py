@@ -23,28 +23,29 @@ import socket
 import bisect
 import operator
 
+
 class Address(long):
     """Integer representations of network addresses, building on the socket
     library.
-    
+
     Subclass with number of bits and address family."""
 
     def __str__(self):
         """Use socket library formatting"""
         words = (0xffffffff & (self >> i)
-                    for i in xrange(self.bits-32,-1,-32))
+                 for i in xrange(self.bits - 32, -1, -32))
         structdesc = ">{:d}L".format(self.bits / 32)
-        return socket.inet_ntop(self.af,struct.pack(structdesc,*words))
+        return socket.inet_ntop(self.af, struct.pack(structdesc, *words))
 
     @classmethod
     def fromString(cls, address):
         """Create address from string
-        
+
         Raises socket.error on failure"""
-        shiftword = lambda x, y: (2**32)*x + y
+        shiftword = lambda x, y: (2 ** 32) * x + y
         structdesc = ">{:d}L".format(cls.bits / 32)
         return cls(reduce(shiftword, struct.unpack(structdesc,
-                            socket.inet_pton(cls.af, address))))
+                   socket.inet_pton(cls.af, address))))
 
     @classmethod
     def isString(cls, address):
@@ -61,15 +62,18 @@ class Address(long):
         ones = (1 << self.bits) - 1
         return self.__class__(self & (ones << (self.bits - n)))
 
+
 class IPv4(Address):
-    bits    = 32
-    af      = socket.AF_INET
+    bits = 32
+    af = socket.AF_INET
+
 
 class IPv6(Address):
-    bits    = 128
-    af      = socket.AF_INET6
+    bits = 128
+    af = socket.AF_INET6
 
 ADDRESSTYPES = (IPv4, IPv6)
+
 
 def addressToLong(address):
     for addrType in ADDRESSTYPES:
@@ -77,6 +81,7 @@ def addressToLong(address):
             return addrType.fromString(address)
     else:
         return None
+
 
 class AddressRange(object):
     def __init__(self, start, end=None):
@@ -88,7 +93,7 @@ class AddressRange(object):
         self.family = type(start)
 
     def __str__(self):
-        return '{}-{}'.format(self.start,self.end)
+        return '{}-{}'.format(self.start, self.end)
 
     def __contains__(self, x):
         if AddressRange in type.mro(type(x)):
@@ -102,13 +107,14 @@ class AddressRange(object):
             elif self.start > x.end + 1:
                 return (x, self)
             else:
-                return AddressRange(min(self.start,x.start),max(self.end,x.end))
+                return AddressRange(min(self.start, x.start),
+                                    max(self.end, x.end))
         if x > self.end + 1:
             return (self, AddressRange(x))
         elif self.start > x + 1:
             return (AddressRange(x), self)
         else:
-            return AddressRange(min(self.start,x),max(self.end,x))
+            return AddressRange(min(self.start, x), max(self.end, x))
 
     def __lt__(self, x):
         """True if there is at least one address above the range and below x"""
@@ -135,7 +141,8 @@ class AddressRange(object):
         else:
             endip = None
         return cls(startip, endip)
-        
+
+
 class Subnet(AddressRange):
     def __init__(self, address, cidr):
         self.address = address.mask(cidr)
@@ -148,13 +155,13 @@ class Subnet(AddressRange):
         self.family = type(address)
 
     def __str__(self):
-        return '{}/{:d}'.format(self.address,self.cidr)
+        return '{}/{:d}'.format(self.address, self.cidr)
 
     def __contains__(self, x):
         """Determine if an address or Subnet is subsumed by this Subset"""
         if type(x) == type(self):
             return x.cidr > self.cidr and x.address in self
-        return super(Subnet,self).__contains__(x)
+        return super(Subnet, self).__contains__(x)
 
     def __add__(self, x):
         """If a Subnet subsumes another range, keep the Subnet apparatus.
@@ -164,7 +171,7 @@ class Subnet(AddressRange):
         elif self in x:
             return x
         else:
-            return super(Subnet,self).__add__(x)
+            return super(Subnet, self).__add__(x)
 
     @classmethod
     def fromCIDR(cls, netstring):
@@ -176,12 +183,13 @@ class Subnet(AddressRange):
             cidr = ip.bits
         return cls(ip, cidr)
 
+
 class AddrList(object):
     def __init__(self):
-        self.ranges = { IPv4: [],
-                        IPv6: []}
+        self.ranges = {IPv4: [],
+                       IPv6: []}
 
-    def addIP(self,ip):
+    def addIP(self, ip):
         self.addAddressRange(AddressRange(addressToLong(ip)))
 
     def addSubnet(self, subnet):
@@ -193,10 +201,10 @@ class AddrList(object):
     def addAddressRange(self, iprange):
         ranges = self.ranges[iprange.family]
 
-        l = bisect.bisect_left(ranges,iprange)
-        r = bisect.bisect_right(ranges,iprange)
+        l = bisect.bisect_left(ranges, iprange)
+        r = bisect.bisect_right(ranges, iprange)
 
-        newseg = reduce(operator.add,ranges[l:r],iprange)
+        newseg = reduce(operator.add, ranges[l:r], iprange)
         ranges[l:r] = [newseg]
 
     def __contains__(self, address):
@@ -218,7 +226,7 @@ class AddrList(object):
 
     def read_fieldlist(self, filename):
         """Read a list from a file in the format 'ip[/len] <whatever>'
-        
+
         Leading whitespace is ignored, as are lines beginning with '#'
         """
         with open(filename, 'r') as f:
@@ -230,7 +238,7 @@ class AddrList(object):
                 try:
                     self.addSubnet(fields[0])
                 except:
-                    print '*** WARNING *** could not parse IP range: '+line
+                    print '*** WARNING *** could not parse IP range: ' + line
 
     def read_rangelist(self, filename):
         """Read a list from a file in the format 'whatever:whatever:ip[-ip]
@@ -244,22 +252,25 @@ class AddrList(object):
                 try:
                     self.addRange(fields[0].split(':')[-1])
                 except:
-                    print '*** WARNING *** could not parse IP range: '+iprange
+                    print '*** WARNING *** could not parse IP range: ' + line
 
 ipv4addrmask = IPv6.fromString('::ffff:0:0')
+
 
 def ipv6_to_ipv4(ip):
     unmasked = IPv4(IPv6.fromString(ip) ^ ipv4addrmask)
     if unmasked >> IPv4.bits:
-        raise ValueError, "not convertible to IPv4"
+        raise ValueError("not convertible to IPv4")
     return str(unmasked)
 
 is_ipv4 = IPv4.isString
+
 
 def to_ipv4(ip):
     if is_ipv4(ip):
         return ip
     return ipv6_to_ipv4(ip)
+
 
 def is_valid_ip(ip):
     return (IPv4.isString(ip) or IPv6.isString(ip))

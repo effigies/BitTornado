@@ -1,17 +1,19 @@
-from select import select
-from time import sleep
+import select
+import time
 from types import IntType
-from bisect import bisect
+import bisect
+
 POLLIN = 1
 POLLOUT = 2
 POLLERR = 8
 POLLHUP = 16
 
+
 class poll:
     def __init__(self):
         self.rlist = []
         self.wlist = []
-        
+
     def register(self, f, t):
         if type(f) != IntType:
             f = f.fileno()
@@ -30,27 +32,30 @@ class poll:
         remove(self.rlist, f)
         remove(self.wlist, f)
 
-    def poll(self, timeout = None):
+    def poll(self, timeout=None):
         if self.rlist or self.wlist:
             try:
-                r, w, e = select(self.rlist, self.wlist, [], timeout)
+                r, w, e = select.select(self.rlist, self.wlist, [], timeout)
             except ValueError:
                 return None
         else:
             if timeout:
-                sleep(timeout)
+                time.sleep(timeout)
             return []
         return [(s, POLLIN) for s in r] + [(s, POLLOUT) for s in w]
 
+
 def remove(list, item):
-    i = bisect(list, item)
-    if i > 0 and list[i-1] == item:
-        del list[i-1]
+    i = bisect.bisect(list, item)
+    if i > 0 and list[i - 1] == item:
+        del list[i - 1]
+
 
 def insert(list, item):
-    i = bisect(list, item)
-    if i == 0 or list[i-1] != item:
+    i = bisect.bisect(list, item)
+    if i == 0 or list[i - 1] != item:
         list.insert(i, item)
+
 
 def test_remove():
     x = [2, 4, 6]
@@ -77,6 +82,7 @@ def test_remove():
     x = []
     remove(x, 3)
     assert x == []
+
 
 def test_insert():
     x = [2, 4]

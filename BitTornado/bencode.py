@@ -255,24 +255,24 @@ class BTEncoder(object):
 
     encode_func = {
         # Cached values are retrieved directly from the cache object
-        BencachedType:  Bencached.get,
+        BencachedType: Bencached.get,
 
         # An integer with decimal representation X is encoded as "iXe"
-        IntType:        lambda _s, i, c: c.extend(('i', str(i), 'e')),
-        LongType:       lambda _s, i, c: c.extend(('i', str(i), 'e')),
+        IntType: lambda _s, i, c: c.extend(('i', str(i), 'e')),
+        LongType: lambda _s, i, c: c.extend(('i', str(i), 'e')),
 
         # Booleans are encoded as integers of value 0 or 1
-        BooleanType:    lambda _s, b, c: c.extend(('i', str(int(b)), 'e')),
+        BooleanType: lambda _s, b, c: c.extend(('i', str(int(b)), 'e')),
 
         # Strings are encoded with decimal length, followed by a colon and
         # the string itself
-        StringType:     lambda _s, s, c: c.extend((str(len(s)), ':', s)),
+        StringType: lambda _s, s, c: c.extend((str(len(s)), ':', s)),
 
         # Types that are slightly less simple to encode
-        UnicodeType:    encode_unicode,
-        ListType:       encode_list,
-        TupleType:      encode_list,
-        DictType:       encode_dict
+        UnicodeType: encode_unicode,
+        ListType:    encode_list,
+        TupleType:   encode_list,
+        DictType:    encode_dict
     }
 
 

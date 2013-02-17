@@ -17,10 +17,11 @@ ADJUST_DOWN = 0.95
 UP_DELAY_FIRST = 5
 UP_DELAY_NEXT = 2
 SLOTS_STARTING = 6
-SLOTS_FACTOR = 1.66/1000
+SLOTS_FACTOR = 1.66 / 1000
+
 
 class RateLimiter:
-    def __init__(self, sched, unitsize, slotsfunc = lambda x: None):
+    def __init__(self, sched, unitsize, slotsfunc=lambda x: None):
         self.sched = sched
         self.last = None
         self.unitsize = unitsize
@@ -60,7 +61,7 @@ class RateLimiter:
             self.last.next_upload = conn
             self.last = conn
 
-    def try_send(self, check_time = False):
+    def try_send(self, check_time=False):
         t = clock()
         self.bytes_sent -= (t - self.lasttime) * self.upload_rate
         self.lasttime = t
@@ -87,9 +88,8 @@ class RateLimiter:
             self.sched(self.try_send, self.bytes_sent / self.upload_rate)
 
     def adjust_sent(self, bytes):
-        self.bytes_sent = min(self.bytes_sent+bytes, self.upload_rate*3)
+        self.bytes_sent = min(self.bytes_sent + bytes, self.upload_rate * 3)
         self.measure.update_rate(bytes)
-
 
     def ping(self, delay):
         if DEBUG:
@@ -97,7 +97,7 @@ class RateLimiter:
         if not self.autoadjust:
             return
         self.pings.append(delay > PING_BOUNDARY)
-        if len(self.pings) < PING_SAMPLES+PING_DISCARDS:
+        if len(self.pings) < PING_SAMPLES + PING_DISCARDS:
             return
         if DEBUG:
             print 'cycle'
@@ -105,15 +105,15 @@ class RateLimiter:
         del self.pings[:]
         if pings >= PING_THRESHHOLD:   # assume flooded
             if self.upload_rate == MAX_RATE:
-                self.upload_rate = self.measure.get_rate()*ADJUST_DOWN
+                self.upload_rate = self.measure.get_rate() * ADJUST_DOWN
             else:
                 self.upload_rate = min(self.upload_rate,
-                                       self.measure.get_rate()*1.1)
-            self.upload_rate = max(int(self.upload_rate*ADJUST_DOWN),2)
-            self.slots = int(sqrt(self.upload_rate*SLOTS_FACTOR))
+                                       self.measure.get_rate() * 1.1)
+            self.upload_rate = max(int(self.upload_rate * ADJUST_DOWN), 2)
+            self.slots = int(sqrt(self.upload_rate * SLOTS_FACTOR))
             self.slotsfunc(self.slots)
             if DEBUG:
-                print 'adjust down to '+str(self.upload_rate)
+                print 'adjust down to ' + str(self.upload_rate)
             self.lasttime = clock()
             self.bytes_sent = 0
             self.autoadjustup = UP_DELAY_FIRST
@@ -123,15 +123,11 @@ class RateLimiter:
             self.autoadjustup -= 1
             if self.autoadjustup:
                 return
-            self.upload_rate = int(self.upload_rate*ADJUST_UP)
-            self.slots = int(sqrt(self.upload_rate*SLOTS_FACTOR))
+            self.upload_rate = int(self.upload_rate * ADJUST_UP)
+            self.slots = int(sqrt(self.upload_rate * SLOTS_FACTOR))
             self.slotsfunc(self.slots)
             if DEBUG:
-                print 'adjust up to '+str(self.upload_rate)
+                print 'adjust up to ' + str(self.upload_rate)
             self.lasttime = clock()
             self.bytes_sent = 0
             self.autoadjustup = UP_DELAY_NEXT
-
-
-
-

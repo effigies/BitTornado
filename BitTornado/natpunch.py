@@ -1,20 +1,20 @@
+import __init__
 import socket
 from traceback import print_exc
 from NetworkAddress import AddrList
 from clock import clock
-from __init__ import createPeerID
 
 DEBUG = False
 
-EXPIRE_CACHE = 30 # seconds
-ID = "BT-"+createPeerID()[-4:]
+EXPIRE_CACHE = 30   # seconds
+ID = "BT-" + __init__.createPeerID()[-4:]
 
 try:
-    import pythoncom, win32com.client
+    import pythoncom
+    import win32com.client
     _supported = 1
 except ImportError:
     _supported = 0
-
 
 
 class _UPnP1:   # derived from Myers Carpenter's code
@@ -43,38 +43,35 @@ class _UPnP1:   # derived from Myers Carpenter's code
             success = False
         return success
 
-
     def open(self, ip, p):
         map = self._get_map()
         try:
-            map.Add(p,'TCP',p,ip,True,ID)
+            map.Add(p, 'TCP', p, ip, True, ID)
             if DEBUG:
-                print 'port opened: '+ip+':'+str(p)
+                print 'port opened: {}:{}'.format(ip, p)
             success = True
         except:
             if DEBUG:
-                print "COULDN'T OPEN "+str(p)
+                print "COULDN'T OPEN " + str(p)
                 print_exc()
             success = False
         return success
-
 
     def close(self, p):
         map = self._get_map()
         try:
-            map.Remove(p,'TCP')
+            map.Remove(p, 'TCP')
             success = True
             if DEBUG:
-                print 'port closed: '+str(p)
+                print 'port closed: ' + str(p)
         except:
             if DEBUG:
-                print 'ERROR CLOSING '+str(p)
+                print 'ERROR CLOSING ' + str(p)
                 print_exc()
             success = False
         return success
 
-
-    def clean(self, retry = False):
+    def clean(self, retry=False):
         if not _supported:
             return
         try:
@@ -93,11 +90,11 @@ class _UPnP1:   # derived from Myers Carpenter's code
             success = True
             for port in ports_in_use:
                 try:
-                    map.Remove(port,'TCP')
+                    map.Remove(port, 'TCP')
                 except:
                     success = False
             if not success and not retry:
-                self.clean(retry = True)
+                self.clean(retry=True)
         except:
             pass
 
@@ -110,16 +107,17 @@ class _UPnP2:   # derived from Yejun Yang's code
     def __init__(self):
         self.services = None
         self.last_got_services = -10e10
-                           
+
     def _get_services(self):
-        if not self.services or self.last_got_services + EXPIRE_CACHE < clock():
+        if not self.services or \
+                self.last_got_services + EXPIRE_CACHE < clock():
             self.services = []
             try:
-                f=win32com.client.Dispatch("UPnP.UPnPDeviceFinder")
-                for t in ( "urn:schemas-upnp-org:service:WANIPConnection:1",
-                           "urn:schemas-upnp-org:service:WANPPPConnection:1" ):
+                f = win32com.client.Dispatch("UPnP.UPnPDeviceFinder")
+                for t in ("urn:schemas-upnp-org:service:WANIPConnection:1",
+                          "urn:schemas-upnp-org:service:WANPPPConnection:1"):
                     try:
-                        conns = f.FindByType(t,0)
+                        conns = f.FindByType(t, 0)
                         for c in xrange(len(conns)):
                             try:
                                 svcs = conns[c].Services
@@ -139,39 +137,38 @@ class _UPnP2:   # derived from Yejun Yang's code
 
     def test(self):
         try:
-            assert self._get_services()    # make sure some services can be found
+            assert self._get_services()  # make sure some services can be found
             success = True
         except:
             success = False
         return success
-
 
     def open(self, ip, p):
         svcs = self._get_services()
         success = False
         for s in svcs:
             try:
-                s.InvokeAction('AddPortMapping',['',p,'TCP',p,ip,True,ID,0],'')
+                s.InvokeAction('AddPortMapping',
+                               ['', p, 'TCP', p, ip, True, ID, 0], '')
                 success = True
             except:
                 pass
         if DEBUG and not success:
-            print "COULDN'T OPEN "+str(p)
+            print "COULDN'T OPEN " + str(p)
             print_exc()
         return success
-
 
     def close(self, p):
         svcs = self._get_services()
         success = False
         for s in svcs:
             try:
-                s.InvokeAction('DeletePortMapping', ['',p,'TCP'], '')
+                s.InvokeAction('DeletePortMapping', ['', p, 'TCP'], '')
                 success = True
             except:
                 pass
         if DEBUG and not success:
-            print "COULDN'T OPEN "+str(p)
+            print "COULDN'T OPEN " + str(p)
             print_exc()
         return success
 
@@ -184,19 +181,20 @@ class _UPnP:    # master holding class
         self.upnp = None
         self.local_ip = None
         self.last_got_ip = -10e10
-        
+
     def get_ip(self):
         if self.last_got_ip + EXPIRE_CACHE < clock():
             local_ips = AddrList()
             local_ips.set_intranet_addresses()
             try:
-                for info in socket.getaddrinfo(socket.gethostname(),0,socket.AF_INET):
+                for info in socket.getaddrinfo(
+                        socket.gethostname(), 0, socket.AF_INET):
                             # exception if socket library isn't recent
                     self.local_ip = info[4][0]
                     if self.local_ip in local_ips:
                         self.last_got_ip = clock()
                         if DEBUG:
-                            print 'Local IP found: '+self.local_ip
+                            print 'Local IP found: ' + self.local_ip
                         break
                 else:
                     raise ValueError('couldn\'t find intranet IP')
@@ -209,7 +207,7 @@ class _UPnP:    # master holding class
 
     def test(self, upnp_type):
         if DEBUG:
-            print 'testing UPnP type '+str(upnp_type)
+            print 'testing UPnP type ' + str(upnp_type)
         if not upnp_type or not _supported or self.get_ip() is None:
             if DEBUG:
                 print 'not supported'
@@ -225,11 +223,13 @@ class _UPnP:    # master holding class
         return 0
 
     def open(self, p):
-        assert self.upnp, "must run UPnP_test() with the desired UPnP access type first"
+        assert self.upnp, "must run UPnP_test() with the desired UPnP " \
+            "access type first"
         return self.upnp.open(self.get_ip(), p)
 
     def close(self, p):
-        assert self.upnp, "must run UPnP_test() with the desired UPnP access type first"
+        assert self.upnp, "must run UPnP_test() with the desired UPnP " \
+            "access type first"
         return self.upnp.close(p)
 
     def clean(self):
@@ -241,4 +241,3 @@ UPnP_test = _upnp_.test
 UPnP_open_port = _upnp_.open
 UPnP_close_port = _upnp_.close
 UPnP_reset = _upnp_.clean
-

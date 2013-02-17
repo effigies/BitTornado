@@ -3,10 +3,10 @@ import socket
 import random
 from errno import EWOULDBLOCK
 try:
-    from select import poll, error, POLLIN, POLLOUT, POLLERR, POLLHUP
+    from select import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
     timemult = 1000
 except ImportError:
-    from selectpoll import poll, error, POLLIN, POLLOUT, POLLERR, POLLHUP
+    from selectpoll import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
     timemult = 1
 from clock import clock
 from natpunch import UPnP_open_port, UPnP_close_port
@@ -15,8 +15,9 @@ POLLALL = POLLIN | POLLOUT
 
 UPnP_ERROR = "unable to forward port via UPnP"
 
+
 class SingleSocket:
-    def __init__(self, socket_handler, sock, handler, ip = None):
+    def __init__(self, socket_handler, sock, handler, ip=None):
         self.socket_handler = socket_handler
         self.socket = sock
         self.handler = handler
@@ -33,7 +34,7 @@ class SingleSocket:
                 self.ip = 'unknown'
             else:
                 self.ip = ip
-        
+
     def get_ip(self, real=False):
         if real:
             try:
@@ -41,7 +42,7 @@ class SingleSocket:
             except:
                 pass
         return self.ip
-        
+
     def close(self):
         '''
         for x in xrange(5,0,-1):
@@ -109,8 +110,9 @@ class SingleSocket:
     def set_handler(self, handler):
         self.handler = handler
 
+
 class SocketHandler:
-    def __init__(self, timeout, ipv6_enable, readsize = 100000):
+    def __init__(self, timeout, ipv6_enable, readsize=100000):
         self.timeout = timeout
         self.ipv6_enable = ipv6_enable
         self.readsize = readsize
@@ -128,7 +130,7 @@ class SocketHandler:
             if s.last_hit < t and s.socket is not None:
                 self._close_socket(s)
 
-    def bind(self, port, bind = '', reuse = False, ipv6_socket_style = 1, upnp = 0):
+    def bind(self, port, bind='', reuse=False, ipv6_socket_style=1, upnp=0):
         port = int(port)
         addrinfos = []
         self.servers = {}
@@ -143,17 +145,20 @@ class SocketHandler:
                 socktype = socket.AF_INET
             for addr in bind.split(','):
                 addrinfos.extend(socket.getaddrinfo(addr, port,
-                                               socktype, socket.SOCK_STREAM))
+                                 socktype, socket.SOCK_STREAM))
         else:
             if self.ipv6_enable:
-                addrinfos.append([socket.AF_INET6, None, None, None, ('', port)])
+                addrinfos.append([socket.AF_INET6, None, None, None,
+                                 ('', port)])
             if not addrinfos or ipv6_socket_style != 0:
-                addrinfos.append([socket.AF_INET, None, None, None, ('', port)])
+                addrinfos.append([socket.AF_INET, None, None, None,
+                                 ('', port)])
         for addrinfo in addrinfos:
             try:
                 server = socket.socket(addrinfo[0], socket.SOCK_STREAM)
                 if reuse:
-                    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                                      1)
                 server.setblocking(0)
                 server.bind(addrinfo[4])
                 self.servers[server.fileno()] = server
@@ -161,14 +166,16 @@ class SocketHandler:
                     self.interfaces.append(server.getsockname()[0])
                 server.listen(64)
                 self.poll.register(server, POLLIN)
-            except socket.error, e:
+            except socket.error as e:
                 for server in self.servers.itervalues():
                     try:
                         server.close()
                     except:
                         pass
-                if self.ipv6_enable and ipv6_socket_style == 0 and self.servers:
-                    raise socket.error('blocked port (may require ipv6_binds_v4 to be set)')
+                if self.ipv6_enable and ipv6_socket_style == 0 and \
+                        self.servers:
+                    raise socket.error(
+                        'blocked port (may require ipv6_binds_v4 to be set)')
                 raise socket.error(str(e))
         if not self.servers:
             raise socket.error('unable to open server port')
@@ -185,35 +192,33 @@ class SocketHandler:
             self.port_forwarded = port
         self.port = port
 
-    def find_and_bind(self, minport, maxport, bind = '', reuse = False,
-                      ipv6_socket_style = 1, upnp = 0, randomizer = False):
+    def find_and_bind(self, minport, maxport, bind='', reuse=False,
+                      ipv6_socket_style=1, upnp=0, randomizer=False):
         e = 'maxport less than minport - no ports to check'
-        if maxport-minport < 50 or not randomizer:
-            portrange = range(minport, maxport+1)
+        if maxport - minport < 50 or not randomizer:
+            portrange = range(minport, maxport + 1)
             if randomizer:
                 random.shuffle(portrange)
                 portrange = portrange[:20]  # check a maximum of 20 ports
         else:
             portrange = []
             while len(portrange) < 20:
-                listen_port = random.randrange(minport, maxport+1)
+                listen_port = random.randrange(minport, maxport + 1)
                 if not listen_port in portrange:
                     portrange.append(listen_port)
         for listen_port in portrange:
             try:
                 self.bind(listen_port, bind,
-                               ipv6_socket_style = ipv6_socket_style, upnp = upnp)
+                          ipv6_socket_style=ipv6_socket_style, upnp=upnp)
                 return listen_port
             except socket.error, e:
                 pass
         raise socket.error(str(e))
 
-
     def set_handler(self, handler):
         self.handler = handler
 
-
-    def start_connection_raw(self, dns, socktype = socket.AF_INET, handler = None):
+    def start_connection_raw(self, dns, socktype=socket.AF_INET, handler=None):
         if handler is None:
             handler = self.handler
         sock = socket.socket(socktype, socket.SOCK_STREAM)
@@ -229,8 +234,7 @@ class SocketHandler:
         self.single_sockets[sock.fileno()] = s
         return s
 
-
-    def start_connection(self, dns, handler = None, randomize = False):
+    def start_connection(self, dns, handler=None, randomize=False):
         if handler is None:
             handler = self.handler
 
@@ -249,7 +253,8 @@ class SocketHandler:
             random.shuffle(addrinfos)
         for addrinfo in addrinfos:
             try:
-                s = self.start_connection_raw(addrinfo[4],addrinfo[0],handler)
+                s = self.start_connection_raw(addrinfo[4], addrinfo[0],
+                                              handler)
                 break
             except:
                 pass
@@ -258,10 +263,9 @@ class SocketHandler:
 
         return s
 
-
     def _sleep(self):
         time.sleep(1)
-        
+
     def handle_events(self, events):
         for sock, event in events:
             s = self.servers.get(sock)
@@ -320,24 +324,23 @@ class SocketHandler:
         s.handler.connection_lost(s)
 
     def do_poll(self, t):
-        r = self.poll.poll(t*timemult)
+        r = self.poll.poll(t * timemult)
         if r is None:
             connects = len(self.single_sockets)
-            to_close = int(connects*0.05)+1 # close 5% of sockets
-            self.max_connects = connects-to_close
+            to_close = int(connects * 0.05) + 1   # close 5% of sockets
+            self.max_connects = connects - to_close
             closelist = self.single_sockets.itervalues()
             random.shuffle(closelist)
             closelist = closelist[:to_close]
             for sock in closelist:
                 self._close_socket(sock)
             return []
-        return r     
+        return r
 
     def get_stats(self):
-        return { 'interfaces': self.interfaces,
-                 'port': self.port,
-                 'upnp': self.port_forwarded is not None }
-
+        return {'interfaces': self.interfaces,
+                'port': self.port,
+                'upnp': self.port_forwarded is not None}
 
     def shutdown(self):
         for ss in self.single_sockets.itervalues():
@@ -352,4 +355,3 @@ class SocketHandler:
                 pass
         if self.port_forwarded is not None:
             UPnP_close_port(self.port_forwarded)
-

@@ -1,16 +1,16 @@
 from httplib import HTTPConnection, HTTPSConnection, HTTPException
 from urlparse import urlparse
 from bencode import bdecode
-import socket
 from gzip import GzipFile
 from StringIO import StringIO
 from __init__ import product_name, version_short
 
-VERSION = product_name+'/'+version_short
+VERSION = product_name + '/' + version_short
 MAX_REDIRECTS = 10
 
 
-class btHTTPcon(HTTPConnection): # attempt to add automatic connection timeout
+class btHTTPcon(HTTPConnection):
+    """Add automatic connection timeout to HTTPConnection"""
     def connect(self):
         HTTPConnection.connect(self)
         try:
@@ -18,13 +18,16 @@ class btHTTPcon(HTTPConnection): # attempt to add automatic connection timeout
         except:
             pass
 
-class btHTTPScon(HTTPSConnection): # attempt to add automatic connection timeout
+
+class btHTTPScon(HTTPSConnection):
+    """Add automatic connection timeout to HTTPSConnection"""
     def connect(self):
         HTTPSConnection.connect(self)
         try:
             self.sock.settimeout(30)
         except:
-            pass 
+            pass
+
 
 class urlopen:
     def __init__(self, url):
@@ -35,16 +38,16 @@ class urlopen:
     def _open(self, url):
         self.tries += 1
         if self.tries > MAX_REDIRECTS:
-            raise IOError, ('http error', 500,
-                            "Internal Server Error: Redirect Recursion")
+            raise IOError(('http error', 500,
+                          "Internal Server Error: Redirect Recursion"))
         (scheme, netloc, path, pars, query, fragment) = urlparse(url)
         if scheme != 'http' and scheme != 'https':
-            raise IOError, ('url error', 'unknown url type', scheme, url)
+            raise IOError(('url error', 'unknown url type', scheme, url))
         url = path
         if pars:
-            url += ';'+pars
+            url += ';' + pars
         if query:
-            url += '?'+query
+            url += '?' + query
 #        if fragment:
         try:
             if scheme == 'http':
@@ -52,13 +55,13 @@ class urlopen:
             else:
                 self.connection = btHTTPScon(netloc)
             self.connection.request('GET', url, None,
-                                { 'User-Agent': VERSION,
-                                  'Accept-Encoding': 'gzip' } )
+                                    {'User-Agent': VERSION,
+                                     'Accept-Encoding': 'gzip'})
             self.response = self.connection.getresponse()
         except HTTPException, e:
-            raise IOError, ('http error', str(e))
+            raise IOError(('http error', str(e)))
         status = self.response.status
-        if status in (301,302):
+        if status in (301, 302):
             try:
                 self.connection.close()
             except:
@@ -74,7 +77,7 @@ class urlopen:
                     return
             except:
                 pass
-            raise IOError, ('http error', status, self.response.reason)
+            raise IOError(('http error', status, self.response.reason))
 
     def read(self):
         if self.error_return:
@@ -83,13 +86,13 @@ class urlopen:
 
     def _read(self):
         data = self.response.read()
-        if self.response.getheader('Content-Encoding','').find('gzip') >= 0:
+        if self.response.getheader('Content-Encoding', '').find('gzip') >= 0:
             try:
                 compressed = StringIO(data)
-                f = GzipFile(fileobj = compressed)
+                f = GzipFile(fileobj=compressed)
                 data = f.read()
             except:
-                raise IOError, ('http error', 'got corrupt response')
+                raise IOError(('http error', 'got corrupt response'))
         return data
 
     def close(self):

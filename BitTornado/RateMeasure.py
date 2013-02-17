@@ -2,6 +2,7 @@ from clock import clock
 
 FACTOR = 0.999
 
+
 class RateMeasure:
     def __init__(self):
         self.last = None
@@ -31,15 +32,15 @@ class RateMeasure:
         if t - self.last > 15:
             self.update(0)
         try:
-            remaining = left/self.rate
+            remaining = left / self.rate
             if not self.lastten and remaining <= 10:
                 self.lastten = True
             if self.lastten:
                 return remaining
-            delta = max(remaining/20,2)
+            delta = max(remaining / 20, 2)
             if self.remaining is None:
                 self.remaining = remaining
-            elif abs(self.remaining-remaining) > delta:
+            elif abs(self.remaining - remaining) > delta:
                 self.remaining = remaining
             else:
                 self.remaining -= t - self.last_checked
@@ -54,7 +55,7 @@ class RateMeasure:
         t = clock()
         t1 = int(t)
         l1 = int(self.last)
-        for i in xrange(l1,t1):
+        for i in xrange(l1, t1):
             self.time *= FACTOR
             self.got *= FACTOR
         self.got += amount

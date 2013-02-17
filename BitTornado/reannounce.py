@@ -1,23 +1,25 @@
 from bencode import bencode, bdecode
 
-def reannounce(fname, announce, announce_list = None, verbose = False):
+
+def reannounce(fname, announce, announce_list=None, verbose=False):
     """Replace announce and announce-list in info file"""
     with open(fname, 'rb') as metainfo_file:
         metainfo = bdecode(metainfo_file.read())
 
     if verbose:
         print 'old announce for %s: %s' % (fname, metainfo['announce'])
-    
+
     metainfo['announce'] = announce
-    
+
     if 'announce-list' in metainfo:
         if verbose:
-            print 'old announce-list for %s: %s' % (fname,
-                '|'.join(','.join(tier) for tier in metainfo['announce-list']))
+            print 'old announce-list for {}: {}'.format(
+                fname, '|'.join(','.join(tier)
+                                for tier in metainfo['announce-list']))
         if announce_list is not None:
             metainfo['announce-list'] = announce_list
         else:
-            metainfo.pop('announce-list',None)
-            
+            metainfo.pop('announce-list', None)
+
     with open(fname, 'wb') as metainfo_file:
         metainfo_file.write(bencode(metainfo))

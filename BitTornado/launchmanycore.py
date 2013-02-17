@@ -5,13 +5,14 @@ from ServerPortHandler import MultiHandler
 from parsedir import parsedir
 from natpunch import UPnP_test
 from random import seed
-from socket import error as socketerror
+import socket
 from threading import Event
-import sys, os
+import os
 from clock import clock
-from __init__ import createPeerID, mapbase64, version
+from __init__ import createPeerID, mapbase64
 from cStringIO import StringIO
 from traceback import print_exc
+
 
 def fmttime(n):
     try:
@@ -23,13 +24,14 @@ def fmttime(n):
     h, m = divmod(m, 60)
     return '%d:%02d:%02d' % (h, m, s)
 
+
 class SingleDownload:
     def __init__(self, controller, hash, response, config, myid):
         self.controller = controller
         self.hash = hash
         self.response = response
         self.config = config
-        
+
         self.doneflag = Event()
         self.waiting = True
         self.checking = False
@@ -59,7 +61,6 @@ class SingleDownload:
             return
         self.controller.hashchecksched(self.hash)
 
-
     def saveAs(self, name, length, saveas, isdir):
         return self.controller.saveAs(self.hash, name, saveas, isdir)
 
@@ -76,7 +77,7 @@ class SingleDownload:
         if self.is_dead():
             self._shutdown()
             return
-        if not self.d.startEngine(ratelimiter = self.controller.ratelimiter):
+        if not self.d.startEngine(ratelimiter=self.controller.ratelimiter):
             self._shutdown()
             return
         self.d.startRerequester()
@@ -104,9 +105,8 @@ class SingleDownload:
         self.controller.was_stopped(self.hash)
         if not quiet:
             self.controller.died(self.hash)
-            
 
-    def display(self, activity = None, fractionDone = None):
+    def display(self, activity=None, fractionDone=None):
         # really only used by StorageWrapper now
         if activity:
             self.status_msg = activity
@@ -143,21 +143,24 @@ class LaunchMany:
 
             self.hashcheck_queue = []
             self.hashcheck_current = None
-            
-            self.rawserver = RawServer(self.doneflag, config['timeout_check_interval'],
-                              config['timeout'], ipv6_enable = config['ipv6_enabled'],
-                              failfunc = self.failed, errorfunc = self.exchandler)
+
+            self.rawserver = RawServer(
+                self.doneflag, config['timeout_check_interval'],
+                config['timeout'], ipv6_enable=config['ipv6_enabled'],
+                failfunc=self.failed, errorfunc=self.exchandler)
+
             upnp_type = UPnP_test(config['upnp_nat_access'])
             while True:
                 try:
                     self.listen_port = self.rawserver.find_and_bind(
-                                    config['minport'], config['maxport'], config['bind'],
-                                    ipv6_socket_style = config['ipv6_binds_v4'],
-                                    upnp = upnp_type, randomizer = config['random_port'])
+                        config['minport'], config['maxport'], config['bind'],
+                        ipv6_socket_style=config['ipv6_binds_v4'],
+                        upnp=upnp_type, randomizer=config['random_port'])
                     break
-                except socketerror, e:
+                except socket.error as e:
                     if upnp_type and e == UPnP_ERROR:
-                        self.Output.message('WARNING: COULD NOT FORWARD VIA UPnP')
+                        self.Output.message(
+                            'WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0
                         continue
                     self.failed("Couldn't listen - " + str(e))
@@ -177,34 +180,34 @@ class LaunchMany:
             self.Output.message('shutting down')
             self.hashcheck_queue = []
             for hash in self.torrent_list:
-                self.Output.message('dropped "'+self.torrent_cache[hash]['path']+'"')
+                self.Output.message('dropped "{}"'.format(
+                    self.torrent_cache[hash]['path']))
                 self.downloads[hash].shutdown()
             self.rawserver.shutdown()
 
         except:
             data = StringIO()
-            print_exc(file = data)
+            print_exc(file=data)
             Output.exception(data.getvalue())
-
 
     def scan(self):
         self.rawserver.add_task(self.scan, self.scan_period)
-                                
-        r = parsedir(self.torrent_dir, self.torrent_cache,
-                     self.file_cache, self.blocked_files,
-                     return_metainfo = True, errfunc = self.Output.message)
 
-        ( self.torrent_cache, self.file_cache, self.blocked_files,
-            added, removed ) = r
+        r = parsedir(self.torrent_dir, self.torrent_cache, self.file_cache,
+                     self.blocked_files, return_metainfo=True,
+                     errfunc=self.Output.message)
+
+        (self.torrent_cache, self.file_cache, self.blocked_files, added,
+         removed) = r
 
         for hash, data in removed.iteritems():
-            self.Output.message('dropped "'+data['path']+'"')
+            self.Output.message('dropped "{}"'.format(data['path']))
             self.remove(hash)
         for hash, data in added.iteritems():
-            self.Output.message('added "'+data['path']+'"')
+            self.Output.message('added "{}"'.format(data['path']))
             self.add(hash, data)
 
-    def stats(self):            
+    def stats(self):
         self.rawserver.add_task(self.stats, self.stats_period)
         data = []
         for hash in self.torrent_list:
@@ -231,7 +234,7 @@ class LaunchMany:
                 status = 'waiting for hash check'
             elif d.checking:
                 status = d.status_msg
-                progress = '%.1f%%' % (d.status_done*100)
+                progress = '{:.1%}'.format(d.status_done)
             else:
                 stats = d.statsfunc()
                 s = stats['stats']
@@ -250,7 +253,7 @@ class LaunchMany:
                     else:
                         t = -1
                         status = 'connecting to peers'
-                    progress = '%.1f%%' % (int(stats['frac']*1000)/10.0)
+                    progress = '{:.1%}'.format(stats['frac'])
                     seeds = s.numSeeds
                     dist = s.numCopies2
                     dnrate = stats['down']
@@ -258,14 +261,14 @@ class LaunchMany:
                 uprate = stats['up']
                 upamt = s.upTotal
                 dnamt = s.downTotal
-                   
-            if d.is_dead() or d.status_errtime+300 > clock():
+
+            if d.is_dead() or d.status_errtime + 300 > clock():
                 msg = d.status_err[-1]
             else:
                 msg = ''
 
-            data.append(( name, status, progress, peers, seeds, seedsmsg, dist,
-                          uprate, dnrate, upamt, dnamt, size, t, msg ))
+            data.append((name, status, progress, peers, seeds, seedsmsg, dist,
+                         uprate, dnrate, upamt, dnamt, size, t, msg))
         stop = self.Output.display(data)
         if stop:
             self.doneflag.set()
@@ -274,13 +277,13 @@ class LaunchMany:
         self.torrent_list.remove(hash)
         self.downloads[hash].shutdown()
         del self.downloads[hash]
-        
+
     def add(self, hash, data):
         c = self.counter
         self.counter += 1
         x = ''
         for i in xrange(3):
-            x = mapbase64[c & 0x3F]+x
+            x = mapbase64[c & 0x3F] + x
             c >>= 6
         peer_id = createPeerID(x)
         d = SingleDownload(self, hash, data['metainfo'], self.config, peer_id)
@@ -288,22 +291,21 @@ class LaunchMany:
         self.downloads[hash] = d
         d.start()
 
-
     def saveAs(self, hash, name, saveas, isdir):
         x = self.torrent_cache[hash]
         style = self.config['saveas_style']
         if style == 1 or style == 3:
             if saveas:
-                saveas = os.path.join(saveas,x['file'][:-1-len(x['type'])])
+                saveas = os.path.join(saveas, x['file'][:-1 - len(x['type'])])
             else:
-                saveas = x['path'][:-1-len(x['type'])]
+                saveas = x['path'][:-1 - len(x['type'])]
             if style == 3:
                 if not os.path.isdir(saveas):
                     try:
                         os.mkdir(saveas)
                     except:
-                        raise OSError("couldn't create directory for "+x['path']
-                                      +" ("+saveas+")")
+                        raise OSError("couldn't create directory for {} ({})"
+                                      ''.format(x['path'], saveas))
                 if not isdir:
                     saveas = os.path.join(saveas, name)
         else:
@@ -311,17 +313,16 @@ class LaunchMany:
                 saveas = os.path.join(saveas, name)
             else:
                 saveas = os.path.join(os.path.split(x['path'])[0], name)
-                
+
         if isdir and not os.path.isdir(saveas):
             try:
                 os.mkdir(saveas)
             except:
-                raise OSError("couldn't create directory for "+x['path']
-                                      +" ("+saveas+")")
+                raise OSError("couldn't create directory for {} ({})".format(
+                              x['path'], saveas))
         return saveas
 
-
-    def hashchecksched(self, hash = None):
+    def hashchecksched(self, hash=None):
         if hash:
             self.hashcheck_queue.append(hash)
         if not self.hashcheck_current:
@@ -329,7 +330,8 @@ class LaunchMany:
 
     def _hashcheck_start(self):
         self.hashcheck_current = self.hashcheck_queue.pop(0)
-        self.downloads[self.hashcheck_current].hashcheck_start(self.hashcheck_callback)
+        self.downloads[self.hashcheck_current].hashcheck_start(
+            self.hashcheck_callback)
 
     def hashcheck_callback(self):
         self.downloads[self.hashcheck_current].hashcheck_callback()
@@ -340,8 +342,9 @@ class LaunchMany:
 
     def died(self, hash):
         if hash in self.torrent_cache:
-            self.Output.message('DIED: "'+self.torrent_cache[hash]['path']+'"')
-        
+            self.Output.message('DIED: "{}"'.format(
+                self.torrent_cache[hash]['path']))
+
     def was_stopped(self, hash):
         try:
             self.hashcheck_queue.remove(hash)
@@ -353,7 +356,7 @@ class LaunchMany:
                 self._hashcheck_start()
 
     def failed(self, s):
-        self.Output.message('FAILURE: '+s)
+        self.Output.message('FAILURE: ' + s)
 
     def exchandler(self, s):
         self.Output.exception(s)

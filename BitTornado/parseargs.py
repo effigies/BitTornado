@@ -1,6 +1,7 @@
 from types import NoneType, StringType, IntType, LongType, FloatType
 
-def formatDefinitions(options, COLS, presets = {}):
+
+def formatDefinitions(options, COLS, presets={}):
     """Format command-line options and documentation to fit into a given
     column width
 
@@ -28,7 +29,7 @@ def formatDefinitions(options, COLS, presets = {}):
         default = presets.get(longname, default)
 
         # Don't add default info for empty strings or None
-        if default not in ('',None):
+        if default not in ('', None):
             doc += ' (defaults to {})'.format(default)
 
         # Word wrap documentation string
@@ -41,6 +42,7 @@ def formatDefinitions(options, COLS, presets = {}):
 
         lines.append('')
     return '\n'.join(lines)
+
 
 def defaultargs(options):
     """Produce a dictionary of default arguments from a list of options
@@ -57,9 +59,10 @@ def defaultargs(options):
         config[longname] = default
     return config
 
-def parseargs(argv, options, minargs = 0, maxargs = None, presets = {}):
+
+def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
     """Parse an argument list, given a list of options, with defaults,
-    
+
     Parameter
         str[]   - Indexable sequence of arguments (list or tuple)
         tuple[] - (flag, default, docstring) tuples describing each flag
@@ -77,7 +80,7 @@ def parseargs(argv, options, minargs = 0, maxargs = None, presets = {}):
         config[longname] = default
 
     # presets after defaults but before arguments
-    config.update(presets) 
+    config.update(presets)
 
     args = []
     while argv:
@@ -99,7 +102,7 @@ def parseargs(argv, options, minargs = 0, maxargs = None, presets = {}):
         # Coerce value type to the type of default arg
         try:
             t = type(config[key])
-            if t in (NoneType,StringType):
+            if t in (NoneType, StringType):
                 config[key] = value
             elif t in (IntType, LongType):
                 config[key] = long(value)
@@ -123,38 +126,32 @@ def parseargs(argv, options, minargs = 0, maxargs = None, presets = {}):
 
     return (config, args)
 
+
+def _test_exception(exc, func, *data):
+    """Validate that func(data) raises exc"""
+    try:
+        func(*data)
+    except exc:
+        return True
+    except:
+        pass
+    return False
+
+
 def test_parseargs():
-    assert parseargs(('d', '--a', 'pq', 'e', '--b', '3', '--c', '4.5', 'f'), (('a', 'x', ''), ('b', 1, ''), ('c', 2.3, ''))) == ({'a': 'pq', 'b': 3, 'c': 4.5}, ['d', 'e', 'f'])
+    assert parseargs(('d', '--a', 'pq', 'e', '--b', '3', '--c', '4.5', 'f'),
+                     (('a', 'x', ''), ('b', 1, ''), ('c', 2.3, ''))) == \
+        ({'a': 'pq', 'b': 3, 'c': 4.5}, ['d', 'e', 'f'])
     assert parseargs([], [('a', 'x', '')]) == ({'a': 'x'}, [])
-    assert parseargs(['--a', 'x', '--a', 'y'], [('a', '', '')]) == ({'a': 'y'}, [])
-    try:
-        parseargs([], [('a', 'x', '')])
-    except ValueError:
-        pass
-    try:
-        parseargs(['--a', 'x'], [])
-    except ValueError:
-        pass
-    try:
-        parseargs(['--a'], [('a', 'x', '')])
-    except ValueError:
-        pass
-    try:
-        parseargs([], [], 1, 2)
-    except ValueError:
-        pass
+    assert parseargs(['--a', 'x', '--a', 'y'], [('a', '', '')]) == \
+        ({'a': 'y'}, [])
     assert parseargs(['x'], [], 1, 2) == ({}, ['x'])
     assert parseargs(['x', 'y'], [], 1, 2) == ({}, ['x', 'y'])
-    try:
-        parseargs(['x', 'y', 'z'], [], 1, 2)
-    except ValueError:
-        pass
-    try:
-        parseargs(['--a', '2.0'], [('a', 3, '')])
-    except ValueError:
-        pass
-    try:
-        parseargs(['--a', 'z'], [('a', 2.1, '')])
-    except ValueError:
-        pass
-
+    assert _test_exception(ValueError, parseargs, ['--a', 'x'], [])
+    assert _test_exception(ValueError, parseargs, ['--a'], [('a', 'x', '')])
+    assert _test_exception(ValueError, parseargs, [], [], 1, 2)
+    assert _test_exception(ValueError, parseargs, ['x', 'y', 'z'], [], 1, 2)
+    assert _test_exception(ValueError, parseargs, ['--a', '2.0'],
+                           [('a', 3, '')])
+    assert _test_exception(ValueError, parseargs, ['--a', 'z'],
+                           [('a', 2.1, '')])

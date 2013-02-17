@@ -1,18 +1,19 @@
 """Replicate win32 time.clock() behavior for all platforms"""
 
-from time import *
+import time
 import sys
 
 _MAXFORWARD = 100
 _FUDGE = 1
 
+
 class RelativeTime:
     def __init__(self):
-        self.time = time()
+        self.time = time.time()
         self.offset = 0
 
-    def get_time(self):        
-        t = time() + self.offset
+    def get_time(self):
+        t = time.time() + self.offset
         if t < self.time or t > self.time + _MAXFORWARD:
             self.time += _FUDGE
             self.offset += self.time - t
@@ -22,5 +23,6 @@ class RelativeTime:
 
 if sys.platform != 'win32':
     _RTIME = RelativeTime()
+
     def clock():
         return _RTIME.get_time()

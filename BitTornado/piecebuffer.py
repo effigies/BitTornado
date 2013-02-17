@@ -4,6 +4,7 @@ from array import array
 
 DEBUG = False
 
+
 class SingleBuffer:
     def __init__(self, pool):
         self.pool = pool
@@ -25,8 +26,8 @@ class SingleBuffer:
         self.length = 0
 
     def append(self, s):
-        l = self.length+len(s)
-        self.buf[self.length:l] = array('c',s)
+        l = self.length + len(s)
+        self.buf[self.length:l] = array('c', s)
         self.length = l
 
     def __len__(self):

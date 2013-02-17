@@ -1,5 +1,6 @@
 from binascii import unhexlify
 
+
 def parsetorrentlist(filename, parsed):
     """Parse a list of torrent hashes in the form of one hash per line in
     hex format"""
@@ -21,4 +22,3 @@ def parsetorrentlist(filename, parsed):
             except TypeError:
                 print base_error + 'has non-hex digits: ' + l
     return (new_parsed, added)
-

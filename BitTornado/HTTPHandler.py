@@ -7,7 +7,8 @@ from gzip import GzipFile
 DEBUG = False
 
 months = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 
 class HTTPConnection:
     def __init__(self, handler, connection):
@@ -59,7 +60,7 @@ class HTTPConnection:
         data = data.strip()
         if data == '':
             self.donereading = True
-            if self.headers.get('accept-encoding','').find('gzip') > -1:
+            if self.headers.get('accept-encoding', '').find('gzip') > -1:
                 self.encoding = 'gzip'
             else:
                 self.encoding = 'identity'
@@ -71,9 +72,9 @@ class HTTPConnection:
             i = data.index(':')
         except ValueError:
             return None
-        self.headers[data[:i].strip().lower()] = data[i+1:].strip()
+        self.headers[data[:i].strip().lower()] = data[i + 1:].strip()
         if DEBUG:
-            print data[:i].strip() + ": " + data[i+1:].strip()
+            print data[:i].strip() + ": " + data[i + 1:].strip()
         return self.read_header
 
     def answer(self, (responsecode, responsestring, headers, data)):
@@ -81,7 +82,7 @@ class HTTPConnection:
             return
         if self.encoding == 'gzip':
             compressed = StringIO()
-            gz = GzipFile(fileobj = compressed, mode = 'wb', compresslevel = 9)
+            gz = GzipFile(fileobj=compressed, mode='wb', compresslevel=9)
             gz.write(data)
             gz.close()
             cdata = compressed.getvalue()
@@ -89,7 +90,8 @@ class HTTPConnection:
                 self.encoding = 'identity'
             else:
                 if DEBUG:
-                   print "Compressed: %i  Uncompressed: %i\n" % (len(cdata),len(data))
+                    print "Compressed: %i  Uncompressed: %i\n".format(
+                        len(cdata), len(data))
                 data = cdata
                 headers['Content-Encoding'] = 'gzip'
 
@@ -98,14 +100,13 @@ class HTTPConnection:
             ident = '-'
         else:
             ident = self.encoding
-        self.handler.log( self.connection.get_ip(), ident, '-',
-                          self.header, responsecode, len(data),
-                          self.headers.get('referer','-'),
-                          self.headers.get('user-agent','-') )
+        self.handler.log(self.connection.get_ip(), ident, '-', self.header,
+                         responsecode, len(data),
+                         self.headers.get('referer', '-'),
+                         self.headers.get('user-agent', '-'))
         self.done = True
         r = StringIO()
-        r.write('HTTP/1.0 ' + str(responsecode) + ' ' + 
-            responsestring + '\r\n')
+        r.write('HTTP/1.0 {} {}\r\n'.format(responsecode, responsestring))
         if not self.pre1:
             headers['Content-Length'] = len(data)
             for key, value in headers.iteritems():
@@ -116,6 +117,7 @@ class HTTPConnection:
         self.connection.write(r.getvalue())
         if self.connection.is_flushed():
             self.connection.shutdown(1)
+
 
 class HTTPHandler:
     def __init__(self, getfunc, minflush):
@@ -143,12 +145,12 @@ class HTTPHandler:
         if not c.data_came_in(data) and not c.closed:
             c.connection.shutdown(1)
 
-    def log(self, ip, ident, username, header,
-            responsecode, length, referrer, useragent):
+    def log(self, ip, ident, username, header, responsecode, length, referrer,
+            useragent):
         year, month, day, hour, minute, second, a, b, c = time.localtime()
-        print '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' % (
-            ip, ident, username, day, months[month], year, hour,
-            minute, second, header, responsecode, length, referrer, useragent)
+        print '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' \
+            '' % (ip, ident, username, day, months[month], year, hour, minute,
+                  second, header, responsecode, length, referrer, useragent)
         t = clock()
         if t - self.lastflush > self.minflush:
             self.lastflush = t

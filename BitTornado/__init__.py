@@ -1,8 +1,8 @@
 product_name = 'BitTornado'
 version_short = 'T-0.3.18'
 
-version = version_short+' ('+product_name+')'
-report_email = version_short+'@degreez.net'
+version = version_short + ' (' + product_name + ')'
+report_email = version_short + '@degreez.net'
 
 __author__ = """
 Christopher J. Johnson <effigies@gmail.com>
@@ -35,12 +35,13 @@ for subver in version_short[2:].split('.'):
     except:
         subver = 0
     _idprefix += mapbase64[subver]
-_idprefix += ('-' * (6-len(_idprefix)))
+_idprefix += ('-' * (6 - len(_idprefix)))
 _idrandom = [None]
+
 
 def resetPeerIDs():
     try:
-        with open('/dev/urandom','rb') as f:
+        with open('/dev/urandom', 'rb') as f:
             x = f.read(20)
     except:
         x = ''
@@ -50,26 +51,25 @@ def resetPeerIDs():
     while t == clock():
         l1 += 1
     l2 = 0
-    t = long(time()*100)
-    while t == long(time()*100):
+    t = long(time() * 100)
+    while t == long(time() * 100):
         l2 += 1
     l3 = 0
     if l2 < 1000:
-        t = long(time()*10)
-        while t == long(clock()*10):
+        t = long(time() * 10)
+        while t == long(clock() * 10):
             l3 += 1
-    x += ( repr(time()) + '/' + str(time()) + '/'
-           + str(l1) + '/' + str(l2) + '/' + str(l3) + '/'
-           + str(getpid()) )
+    x += '{}/{}/{}/{}/{}/{}'.format(repr(time()), time(), l1, l2, l3, getpid())
 
     s = ''
     for i in sha(x).digest()[-11:]:
         s += mapbase64[ord(i) & 0x3F]
     _idrandom[0] = s
-        
+
 resetPeerIDs()
 
-def createPeerID(ins = '---'):
+
+def createPeerID(ins='---'):
     assert type(ins) is StringType
     assert len(ins) == 3
     return _idprefix + ins + _idrandom[0]

@@ -1,12 +1,13 @@
 import sys
 import threading
 from bisect import insort
-from SocketHandler import SocketHandler, UPnP_ERROR
+from SocketHandler import SocketHandler
 import socket
 from cStringIO import StringIO
 from traceback import print_exc
 import select
 from clock import clock
+
 
 def autodetect_ipv6():
     try:
@@ -16,12 +17,13 @@ def autodetect_ipv6():
         return 0
     return 1
 
+
 def autodetect_socket_style():
     if sys.platform.find('linux') < 0:
         return 1
     else:
         try:
-            with open('/proc/sys/net/ipv6/bindv6only','r') as f:
+            with open('/proc/sys/net/ipv6/bindv6only', 'r') as f:
                 dual_socket_style = int(f.read())
             return int(not dual_socket_style)
         except:
@@ -30,10 +32,11 @@ def autodetect_socket_style():
 
 READSIZE = 32768
 
+
 class RawServer:
-    def __init__(self, doneflag, timeout_check_interval, timeout, noisy = True,
-                 ipv6_enable = True, failfunc = lambda x: None, errorfunc = None,
-                 sockethandler = None, excflag = threading.Event()):
+    def __init__(self, doneflag, timeout_check_interval, timeout, noisy=True,
+                 ipv6_enable=True, failfunc=lambda x: None, errorfunc=None,
+                 sockethandler=None, excflag=threading.Event()):
         self.timeout_check_interval = timeout_check_interval
         self.timeout = timeout
         self.servers = {}
@@ -49,7 +52,7 @@ class RawServer:
         self.finished = threading.Event()
         self.tasks_to_kill = set()
         self.excflag = excflag
-        
+
         if sockethandler is None:
             sockethandler = SocketHandler(timeout, ipv6_enable, READSIZE)
         self.sockethandler = sockethandler
@@ -58,11 +61,11 @@ class RawServer:
     def get_exception_flag(self):
         return self.excflag
 
-    def _add_task(self, func, delay, id = None):
+    def _add_task(self, func, delay, id=None):
         assert float(delay) >= 0
         insort(self.funcs, (clock() + delay, func, id))
 
-    def add_task(self, func, delay = 0, id = None):
+    def add_task(self, func, delay=0, id=None):
         assert float(delay) >= 0
         self.externally_added.append((func, delay, id))
 
@@ -70,19 +73,19 @@ class RawServer:
         self.add_task(self.scan_for_timeouts, self.timeout_check_interval)
         self.sockethandler.scan_for_timeouts()
 
-    def bind(self, port, bind = '', reuse = False,
-                        ipv6_socket_style = 1, upnp = False):
+    def bind(self, port, bind='', reuse=False, ipv6_socket_style=1,
+             upnp=False):
         self.sockethandler.bind(port, bind, reuse, ipv6_socket_style, upnp)
 
-    def find_and_bind(self, minport, maxport, bind = '', reuse = False,
-                      ipv6_socket_style = 1, upnp = 0, randomizer = False):
-        return self.sockethandler.find_and_bind(minport, maxport, bind, reuse,
-                                 ipv6_socket_style, upnp, randomizer)
+    def find_and_bind(self, minport, maxport, bind='', reuse=False,
+                      ipv6_socket_style=1, upnp=0, randomizer=False):
+        return self.sockethandler.find_and_bind(
+            minport, maxport, bind, reuse, ipv6_socket_style, upnp, randomizer)
 
-    def start_connection_raw(self, dns, socktype, handler = None):
+    def start_connection_raw(self, dns, socktype, handler=None):
         return self.sockethandler.start_connection_raw(dns, socktype, handler)
 
-    def start_connection(self, dns, handler = None, randomize = False):
+    def start_connection(self, dns, handler=None, randomize=False):
         return self.sockethandler.start_connection(dns, handler, randomize)
 
     def get_stats(self):
@@ -92,7 +95,6 @@ class RawServer:
         while self.externally_added:
             (a, b, c) = self.externally_added.pop(0)
             self._add_task(a, b, c)
-
 
     def listen_forever(self, handler):
         self.sockethandler.set_handler(handler)
@@ -157,13 +159,13 @@ class RawServer:
     def _kill_tasks(self):
         if self.tasks_to_kill:
             self.funcs = [(t, func, tid) for (t, func, tid) in self.funcs
-                            if tid not in self.tasks_to_kill]
+                          if tid not in self.tasks_to_kill]
             self.tasks_to_kill = set()
 
     def kill_tasks(self, id):
         self.tasks_to_kill.add(id)
 
-    def exception(self, kbint = False):
+    def exception(self, kbint=False):
         if not kbint:
             self.excflag.set()
         self.exccount += 1
@@ -171,9 +173,10 @@ class RawServer:
             print_exc()
         else:
             data = StringIO()
-            print_exc(file = data)
+            print_exc(file=data)
 #            print data.getvalue()   # report exception here too
-            if not kbint:           # don't report here if it's a keyboard interrupt
+            # don't report here if it's a keyboard interrupt
+            if not kbint:
                 self.errorfunc(data.getvalue())
 
     def shutdown(self):

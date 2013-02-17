@@ -4,6 +4,7 @@ from BT1.Encrypter import protocol_name
 
 default_task_id = []
 
+
 class SingleRawServer:
     def __init__(self, info_hash, multihandler, doneflag, protocol):
         self.info_hash = info_hash
@@ -29,15 +30,15 @@ class SingleRawServer:
                 self.handler.close_all()
 
     def _external_connection_made(self, c, options, already_read,
-                                  encrypted = None ):
+                                  encrypted=None):
         if self.running:
             c.set_handler(self.handler)
             self.handler.externally_handshaked_connection_made(
-                c, options, already_read, encrypted = encrypted)
+                c, options, already_read, encrypted=encrypted)
 
     ### RawServer functions ###
 
-    def add_task(self, func, delay=0, id = default_task_id):
+    def add_task(self, func, delay=0, id=default_task_id):
         if id is default_task_id:
             id = self.info_hash
         if not self.finished:
@@ -45,8 +46,8 @@ class SingleRawServer:
 
 #    def bind(self, port, bind = '', reuse = False):
 #        pass    # not handled here
-        
-    def start_connection(self, dns, handler = None):
+
+    def start_connection(self, dns, handler=None):
         if not handler:
             handler = self.handler
         c = self.rawserver.start_connection(dns, handler)
@@ -54,7 +55,7 @@ class SingleRawServer:
 
 #    def listen_forever(self, handler):
 #        pass    # don't call with this
-    
+
     def start_listening(self, handler):
         self.handler = handler
         self.running = True
@@ -77,22 +78,23 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         self.complete = False
         self.read = self._read
         self.write = connection.write
-        self.next_len, self.next_func = 1+len(protocol_name), self.read_header
+        self.next_len = 1 + len(protocol_name)
+        self.next_func = self.read_header
         self.multihandler.rawserver.add_task(self._auto_close, 30)
 
     def _auto_close(self):
         if not self.complete:
             self.close()
-        
+
     def close(self):
         if not self.closed:
             self.connection.close()
             self.closed = True
 
     # copied from Encrypter and modified
-    
+
     def _read_header(self, s):
-        if s == chr(len(protocol_name))+protocol_name:
+        if s == chr(len(protocol_name)) + protocol_name:
             self.protocol = protocol_name
             return 8, self.read_options
         return None
@@ -111,33 +113,34 @@ class NewSocketHandler:     # hand a new socket off where it belongs
 
     def read_crypto_header(self, s):
         self.encrypter.received_key(s)
-        self.write(self.encrypter.pubkey+self.encrypter.padding())
+        self.write(self.encrypter.pubkey + self.encrypter.padding())
         self._max_search = 520
         return 0, self.read_crypto_block3a
 
     def _search_for_pattern(self, s, pat):
         p = s.find(pat)
         if p < 0:
-            self._max_search -= len(s)+1-len(pat)
+            self._max_search -= len(s) + 1 - len(pat)
             if self._max_search < 0:
                 self.close()
                 return False
-            self._write_buffer(s[1-len(pat):])
+            self._write_buffer(s[1 - len(pat):])
             return False
-        self._write_buffer(s[p+len(pat):])
+        self._write_buffer(s[p + len(pat):])
         return True
 
     def read_crypto_block3a(self, s):
-        if not self._search_for_pattern(s,self.encrypter.block3a):
+        if not self._search_for_pattern(s, self.encrypter.block3a):
             return -1, self.read_crypto_block3a     # wait for more data
         return 20, self.read_crypto_block3b
 
     def read_crypto_block3b(self, s):
-        for k in self.multihandler.singlerawservers:
-            if self.encrypter.test_skey(s,k):
-                self.multihandler.singlerawservers[k]._external_connection_made(
-                        self.connection, None, self.buffer,
-                        encrypted = self.encrypter )
+        srs = self.multihandler.singlerawservers
+        for k in srs:
+            if self.encrypter.test_skey(s, k):
+                srs[k]._external_connection_made(
+                    self.connection, None, self.buffer,
+                    encrypted=self.encrypter)
                 return True
         return None
 
@@ -146,13 +149,13 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         return 20, self.read_download_id
 
     def read_download_id(self, s):
-        if s in self.multihandler.singlerawservers:
-            if self.multihandler.singlerawservers[s].protocol == self.protocol:
-                self.multihandler.singlerawservers[s]._external_connection_made(
-                        self.connection, self.options, self.buffer)
+        srs = self.multihandler.singlerawservers
+        if s in srs:
+            if srs[s].protocol == self.protocol:
+                srs[s]._external_connection_made(
+                    self.connection, self.options, self.buffer)
                 return True
         return None
-
 
     def read_dead(self, s):
         return None
@@ -161,7 +164,7 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         self.read(s)
 
     def _write_buffer(self, s):
-        self.buffer = s+self.buffer
+        self.buffer = s + self.buffer
 
     def _read(self, s):
         self.buffer += s
@@ -187,19 +190,19 @@ class NewSocketHandler:     # hand a new socket off where it belongs
             if x is None:
                 self.close()
                 return
-            if x == True:
+            if x:
                 self.complete = True
                 return
             self.next_len, self.next_func = x
             if self.next_len < 0:  # already checked buffer
                 return             # wait for additional data
 
-
     def connection_flushed(self, ss):
         pass
 
     def connection_lost(self, ss):
         self.closed = True
+
 
 class MultiHandler:
     def __init__(self, rawserver, doneflag, config):
@@ -225,7 +228,7 @@ class MultiHandler:
             srs.finished = True
             srs.running = False
             srs.doneflag.set()
-        
+
     ### RawServer handler functions ###
     # be wary of name collisions
 

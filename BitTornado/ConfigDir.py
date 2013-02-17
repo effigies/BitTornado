@@ -1,3 +1,7 @@
+"""Manage application-specific configuration and caches
+"""
+
+import __init__
 import sys
 import os
 import time
@@ -8,314 +12,277 @@ from bencode import bencode, bdecode
 from types import IntType, LongType, StringType, FloatType
 from CreateIcons import GetIcons, CreateIcon
 from parseargs import defaultargs
-from __init__ import product_name, version_short
 
 try:
-    realpath = os.path.realpath
-except:
-    realpath = lambda x:x
-OLDICONPATH = os.path.abspath(os.path.dirname(realpath(sys.argv[0])))
+    OLDICONPATH = os.path.dirname(os.path.realpath(sys.argv[0]))
+except AttributeError:
+    OLDICONPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-DIRNAME = '.'+product_name
+DIRNAME = '.' + __init__.product_name
 
-class ConfigDir:
 
-    ###### INITIALIZATION TASKS ######
+class ConfigDir(object):
+    """Class for managing configuration data, icons and caches"""
 
-    def __init__(self, config_type = None):
-        self.config_type = config_type
-        if config_type:
-            config_ext = '.'+config_type
-        else:
-            config_ext = ''
-
-        def check_sysvars(x):
-            y = os.path.expandvars(x)
-            if y != x and os.path.isdir(y):
-                return y
-            return None
-
-        for d in ['${APPDATA}', '${HOME}', '${HOMEPATH}', '${USERPROFILE}']:
-            dir_root = check_sysvars(d)
-            if dir_root:
+    def __init__(self, config_type=None):
+        # Figure out a sensible application data location
+        for envvar in ('APPDATA', 'HOME', 'HOMEPATH', 'USERPROFILE'):
+            appdata = os.environ.get(envvar)
+            if appdata:
                 break
         else:
-            dir_root = os.path.expanduser('~')
-            if not os.path.isdir(dir_root):
-                dir_root = os.path.abspath(os.path.dirname(sys.argv[0]))
+            appdata = os.path.expanduser('~')
+            if not os.path.isdir(appdata):
+                appdata = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-        dir_root = os.path.join(dir_root,DIRNAME)
-        self.dir_root = dir_root
+        # Config directory is ~/.BitTornado or equivalent
+        dir_root = os.path.join(appdata, DIRNAME)
 
-        if not os.path.isdir(self.dir_root):
-            os.mkdir(self.dir_root,0700)    # exception if failed
+        # Create directory or fail loudly
+        if not os.path.isdir(dir_root):
+            os.mkdir(dir_root, 0700)
 
-        self.dir_icons = os.path.join(dir_root,'icons')
-        if not os.path.isdir(self.dir_icons):
-            os.mkdir(self.dir_icons)
+        # Create subdirectories if missing, and reference with self.dir_*
+        for attr in ('icons', 'torrentcache', 'datacache', 'piececache'):
+            path = os.path.join(dir_root, attr)
+            if not os.path.isdir(path):
+                os.mkdir(path)
+            setattr(self, 'dir_' + attr, path)
+
+        # Try copying icons or generate from CreateIcons
         for icon in GetIcons():
-            i = os.path.join(self.dir_icons,icon)
-            if not os.path.exists(i) and \
-                not shutil.copyfile(os.path.join(OLDICONPATH,icon),i):
-                    CreateIcon(icon,self.dir_icons)
+            old_icon = os.path.join(OLDICONPATH, icon)
+            new_icon = os.path.join(self.dir_icons, icon)
+            if not (os.path.exists(new_icon) or
+                    shutil.copyfile(old_icon, new_icon)):
+                CreateIcon(icon, self.dir_icons)
 
-        self.dir_torrentcache = os.path.join(dir_root,'torrentcache')
-        if not os.path.isdir(self.dir_torrentcache):
-            os.mkdir(self.dir_torrentcache)
+        # Allow caller-specific config and state data
+        ext = '' if config_type is None else ('.' + config_type)
 
-        self.dir_datacache = os.path.join(dir_root,'datacache')
-        if not os.path.isdir(self.dir_datacache):
-            os.mkdir(self.dir_datacache)
+        self.configfile = os.path.join(dir_root, 'config' + ext + '.ini')
+        self.statefile = os.path.join(dir_root, 'state' + ext)
 
-        self.dir_piececache = os.path.join(dir_root,'piececache')
-        if not os.path.isdir(self.dir_piececache):
-            os.mkdir(self.dir_piececache)
-
-        self.configfile = os.path.join(dir_root,'config'+config_ext+'.ini')
-        self.statefile = os.path.join(dir_root,'state'+config_ext)
-
-        self.TorrentDataBuffer = {}
-
+        self.torrentDataBuffer = {}
+        self.config = {}
 
     ###### CONFIG HANDLING ######
-
-    def setDefaults(self, defaults, ignore=[]):
+    def setDefaults(self, defaults, ignore=()):
+        """Set config to default arguments, with option to ignore arguments"""
         self.config = defaultargs(defaults)
-        for k in ignore:
-            if k in self.config:
-                del self.config[k]
+        for key in ignore:
+            self.config.pop(key, None)
 
     def checkConfig(self):
+        """True if configfile exists"""
         return os.path.exists(self.configfile)
 
     def loadConfig(self):
-        try:
-            r = ini_read(self.configfile)['']
-        except:
+        """Read configuration file and update local config dictionary"""
+        newconfig = ini_read(self.configfile).get('')
+
+        if not newconfig:
             return self.config
-        l = self.config.keys()
-        for k,v in r.iteritems():
-            if k in self.config:
-                t = type(self.config[k])
+
+        # Track which keys aren't seen in config file
+        configkeys = set(self.config)
+
+        for key, val in newconfig.iteritems():
+            if key in self.config:
+                valtype = type(self.config[key])
                 try:
-                    if t == StringType:
-                        self.config[k] = v
-                    elif t == IntType or t == LongType:
-                        self.config[k] = long(v)
-                    elif t == FloatType:
-                        self.config[k] = float(v)
-                    l.remove(k)
-                except:
+                    if valtype == StringType:
+                        self.config[key] = val
+                    elif valtype == IntType or valtype == LongType:
+                        self.config[key] = long(val)
+                    elif valtype == FloatType:
+                        self.config[key] = float(val)
+                    configkeys.discard(key)
+                except ValueError:
                     pass
-        if l: # new default values since last save
+
+        if configkeys:  # Unsaved keys or invalid types prompt re-saving
             self.saveConfig()
         return self.config
 
-    def saveConfig(self, new_config = None):
+    def saveConfig(self, new_config=None):
+        """Save config dictionary to config file"""
         if new_config:
-            for k,v in new_config.iteritems():
-                if k in self.config:
-                    self.config[k] = v
-        try:
-            ini_write( self.configfile, self.config,
-                       'Generated by '+product_name+'/'+version_short+'\n'
-                       + time.strftime('%x %X') )
-            return True
-        except:
-            return False
+            for key, val in new_config.iteritems():
+                if key in self.config:
+                    self.config[key] = val
+        return ini_write(self.configfile, self.config, 'Generated by {}/{}\n{}'
+                         ''.format(__init__.product_name,
+                                   __init__.version_short,
+                                   time.strftime('%x %X')))
 
     def getConfig(self):
+        """Return config dictionary"""
         return self.config
 
-
-    ###### STATE HANDLING ######
-
-    def getState(self):
-        try:
-            with open(self.statefile,'rb') as f:
-                return bdecode(f.read())
-        except:
-            return None
-
-    def saveState(self, state):
-        try:
-            with open(self.statefile,'wb') as f:
-                f.write(bencode(state))
-            return True
-        except:
-            return False
-
-
     ###### TORRENT HANDLING ######
-
     def getTorrents(self):
-        d = set()
-        for f in os.listdir(self.dir_torrentcache):
-            f = os.path.basename(f)
-            try:
-                f, garbage = f.split('.')
-            except:
-                pass
-            d.add(unhexlify(f))
-        return d
+        """Retrieve set of torrents in torrent cache"""
+        return set(unhexlify(os.path.basename(torrent).split('.')[0])
+                   for torrent in os.listdir(self.dir_torrentcache))
 
-    def getTorrentVariations(self, t):
-        t = hexlify(t)
-        d = []
-        for f in os.listdir(self.dir_torrentcache):
-            f = os.path.basename(f)
-            if f[:len(t)] == t:
-                try:
-                    garbage, ver = f.split('.')
-                except:
-                    ver = '0'
-                d.append(int(ver))
-        d.sort()
-        return d
+    def getTorrentVariations(self, torrent):
+        """Retrieve set of versions of a given torrent"""
+        torrent = hexlify(torrent)
+        variations = []
+        for fname in map(os.path.basename, os.listdir(self.dir_torrentcache)):
+            if fname[:len(torrent)] == torrent:
+                torrent, _dot, version = torrent.partition('.')
+                variations.append(int(version or '0'))
+        return sorted(variations)
 
-    def getTorrent(self, t, v = -1):
-        t = hexlify(t)
-        if v == -1:
-            v = max(self.getTorrentVariations(t))   # potential exception
-        if v:
-            t += '.'+str(v)
+    def getTorrent(self, torrent, version=-1):
+        """Return the contents of a torrent file
+
+        If version is -1 (default), get the most recent.
+        If version is specified and > -1, retrieve specified version."""
+        torrent = hexlify(torrent)
+        fname = os.path.join(self.dir_torrentcache, torrent)
+
+        if version == -1:
+            version = max(self.getTorrentVariations(torrent))
+        if version:
+            fname += '.' + str(version)
+
         try:
-            with open(os.path.join(self.dir_torrentcache,t),'rb') as f:
-                return bdecode(f.read())
-        except:
+            with open(fname, 'rb') as tfile:
+                return bdecode(tfile.read())
+        except (IOError, ValueError):
             return None
 
-    def writeTorrent(self, data, t, v = -1):
-        t = hexlify(t)
-        if v == -1:
+    def writeTorrent(self, data, torrent, version=-1):
+        """Write data to a torrent file
+
+        If no version is provided, create a new version"""
+        torrent = hexlify(torrent)
+        fname = os.path.join(self.dir_torrentcache, torrent)
+
+        if version == -1:
             try:
-                v = max(self.getTorrentVariations(t))+1
-            except:
-                v = 0
-        if v:
-            t += '.'+str(v)
+                version = max(self.getTorrentVariations(torrent)) + 1
+            except ValueError:
+                version = 0
+        if version:
+            fname += '.' + str(version)
         try:
-            with open(os.path.join(self.dir_torrentcache,t),'wb') as f:
-                f.write(bencode(data))
-        except:
+            with open(fname, 'wb') as tfile:
+                tfile.write(bencode(data))
+        except (IOError, TypeError, KeyError):
             return None
 
-        return v
-
+        return version
 
     ###### TORRENT DATA HANDLING ######
-
-    def getTorrentData(self, t):
-        if t in self.TorrentDataBuffer:
-            return self.TorrentDataBuffer[t]
-        t = os.path.join(self.dir_datacache,hexlify(t))
-        if not os.path.exists(t):
+    def getTorrentData(self, torrent):
+        """Read a torrent data file from cache"""
+        if torrent in self.torrentDataBuffer:
+            return self.torrentDataBuffer[torrent]
+        fname = os.path.join(self.dir_datacache, hexlify(torrent))
+        if not os.path.exists(fname):
             return None
         try:
-            with open(t,'rb') as f:
-                r = bdecode(f.read())
-        except:
-            r = None
-        self.TorrentDataBuffer[t] = r
-        return r
+            with open(fname, 'rb') as tfile:
+                data = bdecode(tfile.read())
+        except (IOError, ValueError):
+            data = None
+        self.torrentDataBuffer[fname] = data
+        return data
 
-    def writeTorrentData(self, t, data):
-        self.TorrentDataBuffer[t] = data
+    def writeTorrentData(self, torrent, data):
+        """Add a torrent data file to cache"""
+        self.torrentDataBuffer[torrent] = data
+        fname = os.path.join(self.dir_datacache, hexlify(torrent))
         try:
-            with open(os.path.join(self.dir_datacache,hexlify(t)),'wb') as f:
-                f.write(bencode(data))
+            with open(fname, 'wb') as tfile:
+                tfile.write(bencode(data))
             return True
-        except:
-            self.deleteTorrentData(t)
+        except (IOError, TypeError, KeyError):
+            self.deleteTorrentData(torrent)
             return False
 
-    def deleteTorrentData(self, t):
+    def deleteTorrentData(self, torrent):
+        """Remove a torrent data file from cache"""
+        self.torrentDataBuffer.pop(torrent, None)
         try:
-            os.remove(os.path.join(self.dir_datacache,hexlify(t)))
-        except:
+            os.remove(os.path.join(self.dir_datacache, hexlify(torrent)))
+        except OSError:
             pass
 
-    def getPieceDir(self, t):
-        return os.path.join(self.dir_piececache,hexlify(t))
-
+    def getPieceDir(self, torrent):
+        """Get torrent-specific piece cache directory"""
+        return os.path.join(self.dir_piececache, hexlify(torrent))
 
     ###### EXPIRATION HANDLING ######
-
-    def deleteOldCacheData(self, days, still_active = [], delete_torrents = False):
+    def deleteOldCacheData(self, days, still_active=(), delete_torrents=False):
+        """Remove cache data after a given number of days inactive"""
         if not days:
             return
-        exptime = time.time() - (days*24*3600)
+        exptime = time.time() - (days * 24 * 3600)
         names = {}
         times = {}
 
-        for f in os.listdir(self.dir_torrentcache):
-            p = os.path.join(self.dir_torrentcache,f)
-            f = os.path.basename(f)
-            try:
-                f, garbage = f.split('.')
-            except:
-                pass
-            try:
-                f = unhexlify(f)
-                assert len(f) == 20
-            except:
+        for torrent in os.listdir(self.dir_torrentcache):
+            path = os.path.join(self.dir_torrentcache, torrent)
+            torrent = unhexlify(os.path.basename(torrent).split('.')[0])
+            if len(torrent) != 20:
                 continue
             if delete_torrents:
-                names.setdefault(f,[]).append(p)
+                names.setdefault(torrent, []).append(path)
             try:
-                t = os.path.getmtime(p)
-            except:
-                t = time.time()
-            times.setdefault(f,[]).append(t)
-        
-        for f in os.listdir(self.dir_datacache):
-            p = os.path.join(self.dir_datacache,f)
-            try:
-                f = unhexlify(os.path.basename(f))
-                assert len(f) == 20
-            except:
-                continue
-            names.setdefault(f,[]).append(p)
-            try:
-                t = os.path.getmtime(p)
-            except:
-                t = time.time()
-            times.setdefault(f,[]).append(t)
+                mtime = os.path.getmtime(path)
+            except OSError:
+                mtime = time.time()
+            times.setdefault(torrent, []).append(mtime)
 
-        for f in os.listdir(self.dir_piececache):
-            p = os.path.join(self.dir_piececache,f)
-            try:
-                f = unhexlify(os.path.basename(f))
-                assert len(f) == 20
-            except:
+        for fname in os.listdir(self.dir_datacache):
+            path = os.path.join(self.dir_datacache, fname)
+            fname = unhexlify(os.path.basename(fname))
+            if len(fname) != 20:
                 continue
-            for f2 in os.listdir(p):
-                p2 = os.path.join(p,f2)
-                names.setdefault(f,[]).append(p2)
+            names.setdefault(fname, []).append(path)
+            try:
+                mtime = os.path.getmtime(path)
+            except OSError:
+                mtime = time.time()
+            times.setdefault(fname, []).append(mtime)
+
+        for piece in os.listdir(self.dir_piececache):
+            piecepath = os.path.join(self.dir_piececache, piece)
+            piece = unhexlify(os.path.basename(piece))
+            if len(piece) != 20:
+                continue
+
+            for fname in os.listdir(piecepath):
+                path = os.path.join(piecepath, fname)
+                names.setdefault(piece, []).append(path)
                 try:
-                    t = os.path.getmtime(p2)
-                except:
-                    t = time.time()
-                times.setdefault(f,[]).append(t)
-            names.setdefault(f,[]).append(p)
+                    mtime = os.path.getmtime(path)
+                except OSError:
+                    mtime = time.time()
+                times.setdefault(piece, []).append(mtime)
+            names.setdefault(piece, []).append(piecepath)
 
-        for k,v in times.iteritems():
-            if max(v) < exptime and not k in still_active:
-                for f in names[k]:
+        for obj, mtime in times.iteritems():
+            if max(mtime) < exptime and obj not in still_active:
+                for fname in names[obj]:
                     try:
-                        os.remove(f)
-                    except:
+                        os.remove(fname)
+                    except OSError:
                         try:
-                            os.removedirs(f)
-                        except:
+                            os.removedirs(fname)
+                        except OSError:
                             pass
 
-
-    def deleteOldTorrents(self, days, still_active = []):
+    def deleteOldTorrents(self, days, still_active=()):
+        """Synonym for deleteOldCacheData with delete_torrents set"""
         self.deleteOldCacheData(days, still_active, True)
 
-
     ###### OTHER ######
-
     def getIconDir(self):
+        """Return application specific icon directory"""
         return self.dir_icons

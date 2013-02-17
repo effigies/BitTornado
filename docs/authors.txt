@@ -15,7 +15,7 @@ BitTornado/BTTree.py
 BitTornado/clock.py
     - John Hoffman
 BitTornado/ConfigDir.py
-    - John Hoffman
+    - John Hoffman and Christopher J. Johnson
 BitTornado/ConfigReader.py
     - John Hoffman
 BitTornado/ConnChoice.py
@@ -29,7 +29,7 @@ BitTornado/download_bt1.py
 BitTornado/HTTPHandler.py
     - Bram Cohen
 BitTornado/inifile.py
-    - John Hoffman
+    - John Hoffman and Christopher J. Johnson
 BitTornado/launchmanycore.py
     - John Hoffman
 BitTornado/natpunch.py
@@ -41,7 +41,7 @@ BitTornado/NetworkAddress.py
 BitTornado/parseargs.py
     - Bill Bumgarner, Bram Cohen and Christopher J. Johnson
 BitTornado/parsedir.py
-    - John Hoffman and Uoti Urpala
+    - John Hoffman, Uoti Urpala and Christopher J. Johnson
 BitTornado/piecebuffer.py
     - John Hoffman
 BitTornado/RateLimiter.py

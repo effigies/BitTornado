@@ -1,13 +1,12 @@
-from cStringIO import StringIO
-from urllib import quote
-from threading import Event
+import threading
 
-INIT_STATE = (('R','R+'),('L','L+'))
+INIT_STATE = (('R', 'R+'), ('L', 'L+'))
+
 
 class DownloaderFeedback:
     def __init__(self, choker, httpdl, add_task, upfunc, downfunc,
-            ratemeasure, leftfunc, file_length, finflag, sp, statistics,
-            statusfunc = None, interval = None):
+                 ratemeasure, leftfunc, file_length, finflag, sp, statistics,
+                 statusfunc=None, interval=None):
         self.choker = choker
         self.httpdl = httpdl
         self.add_task = add_task
@@ -21,11 +20,10 @@ class DownloaderFeedback:
         self.statistics = statistics
         self.lastids = []
         self.spewdata = None
-        self.doneprocessing = Event()
+        self.doneprocessing = threading.Event()
         self.doneprocessing.set()
         if statusfunc:
             self.autodisplay(statusfunc, interval)
-        
 
     def _rotate(self):
         cs = self.choker.connections
@@ -44,7 +42,8 @@ class DownloaderFeedback:
             a['id'] = c.get_readable_id()
             a['ip'] = c.get_ip()
             a['optimistic'] = (c is self.choker.connections[0])
-            a['direction'] = INIT_STATE[c.is_locally_initiated()][c.is_encrypted()]
+            a['direction'] = INIT_STATE[c.is_locally_initiated()][
+                c.is_encrypted()]
             u = c.get_upload()
             a['uprate'] = int(u.measure.get_rate())
             a['uinterested'] = u.is_interested()
@@ -57,12 +56,14 @@ class DownloaderFeedback:
             a['utotal'] = d.connection.upload.measure.get_total()
             a['dtotal'] = d.connection.download.measure.get_total()
             if len(d.connection.download.have) > 0:
-                a['completed'] = float(len(d.connection.download.have)-d.connection.download.have.numfalse)/float(len(d.connection.download.have))
+                a['completed'] = float(len(d.connection.download.have) -
+                                       d.connection.download.have.numfalse) / \
+                    float(len(d.connection.download.have))
             else:
                 a['completed'] = 1.0
             a['speed'] = d.connection.download.peermeasure.get_rate()
 
-            l.append(a)                                               
+            l.append(a)
 
         for dl in self.httpdl.get_downloads():
             if dl.goodseed:
@@ -87,8 +88,7 @@ class DownloaderFeedback:
 
         return l
 
-
-    def gather(self, displayfunc = None):
+    def gather(self, displayfunc=None):
         s = {'stats': self.statistics.update()}
         if self.sp.isSet():
             s['spew'] = self.spews()
@@ -103,15 +103,14 @@ class DownloaderFeedback:
         s['done'] = obtained
         s['wanted'] = desired
         if desired > 0:
-            s['frac'] = float(obtained)/desired
+            s['frac'] = float(obtained) / desired
         else:
             s['frac'] = 1.0
         if desired == obtained:
             s['time'] = 0
         else:
-            s['time'] = self.ratemeasure.get_time_left(desired-obtained)
-        return s        
-
+            s['time'] = self.ratemeasure.get_time_left(desired - obtained)
+        return s
 
     def display(self, displayfunc):
         if not self.doneprocessing.isSet():
@@ -119,21 +118,18 @@ class DownloaderFeedback:
         self.doneprocessing.clear()
         stats = self.gather()
         if self.finflag.isSet():
-            displayfunc(dpflag = self.doneprocessing,
-                upRate = stats['up'],
-                statistics = stats['stats'], spew = stats['spew'])
+            displayfunc(dpflag=self.doneprocessing, upRate=stats['up'],
+                        statistics=stats['stats'], spew=stats['spew'])
         elif stats['time'] is not None:
-            displayfunc(dpflag = self.doneprocessing,
-                fractionDone = stats['frac'], sizeDone = stats['done'],
-                downRate = stats['down'], upRate = stats['up'],
-                statistics = stats['stats'], spew = stats['spew'],
-                timeEst = stats['time'])
+            displayfunc(dpflag=self.doneprocessing, fractionDone=stats['frac'],
+                        sizeDone=stats['done'], downRate=stats['down'],
+                        upRate=stats['up'], statistics=stats['stats'],
+                        spew=stats['spew'], timeEst=stats['time'])
         else:
-            displayfunc(dpflag = self.doneprocessing,
-                fractionDone = stats['frac'], sizeDone = stats['done'],
-                downRate = stats['down'], upRate = stats['up'],
-                statistics = stats['stats'], spew = stats['spew'])
-
+            displayfunc(dpflag=self.doneprocessing, fractionDone=stats['frac'],
+                        sizeDone=stats['done'], downRate=stats['down'],
+                        upRate=stats['up'], statistics=stats['stats'],
+                        spew=stats['spew'])
 
     def autodisplay(self, displayfunc, interval):
         self.displayfunc = displayfunc

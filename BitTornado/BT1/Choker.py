@@ -1,8 +1,9 @@
 import random
 from BitTornado.clock import clock
 
+
 class Choker:
-    def __init__(self, config, schedule, picker, done = lambda: False):
+    def __init__(self, config, schedule, picker, done=lambda: False):
         self.config = config
         self.round_robin_period = config['round_robin_period']
         self.schedule = schedule
@@ -23,7 +24,7 @@ class Choker:
         if self.super_seed:
             cons = range(len(self.connections))
             to_close = []
-            count = self.config['min_uploads']-self.last_preferred
+            count = self.config['min_uploads'] - self.last_preferred
             if count > 0:   # optimization
                 random.shuffle(cons)
             for c in cons:
@@ -43,7 +44,8 @@ class Choker:
                 c = self.connections[i]
                 u = c.get_upload()
                 if u.is_choked() and u.is_interested():
-                    self.connections = self.connections[i:] + self.connections[:i]
+                    self.connections = self.connections[i:] + \
+                        self.connections[:i]
                     break
         self._rechoke()
 
@@ -69,7 +71,7 @@ class Choker:
                 preferred.append((-r, c))
             self.last_preferred = len(preferred)
             preferred.sort()
-            del preferred[maxuploads-1:]
+            del preferred[maxuploads - 1:]
             preferred = [x[1] for x in preferred]
         count = len(preferred)
         hit = False
@@ -89,7 +91,7 @@ class Choker:
         for u in to_unchoke:
             u.unchoke()
 
-    def connection_made(self, connection, p = None):
+    def connection_made(self, connection, p=None):
         if p is None:
             p = random.randrange(-2, len(self.connections) + 1)
         self.connections.insert(max(p, 0), connection)
@@ -98,7 +100,8 @@ class Choker:
     def connection_lost(self, connection):
         self.connections.remove(connection)
         self.picker.lost_peer(connection)
-        if connection.get_upload().is_interested() and not connection.get_upload().is_choked():
+        if connection.get_upload().is_interested() and \
+                not connection.get_upload().is_choked():
             self._rechoke()
 
     def interested(self, connection):

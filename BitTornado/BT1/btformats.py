@@ -1,98 +1,100 @@
-from types import StringType, LongType, IntType, ListType, DictType
-from re import compile
+"""Functions to verify assumptions about BitTorrent data structures"""
+import re
 
-reg = compile(r'^[^/\\.~][^/\\]*$')
+REG = re.compile(r'^[^/\\.~][^/\\]*$')
+INTS = (long, int)
 
-ints = (LongType, IntType)
+
+def check_types(obj, types, errmsg='', pred=lambda x: False):
+    """Raise value error if obj does not match types or triggers predicate"""
+    if type(obj) not in types or pred(obj):
+        raise ValueError(errmsg)
+
+
+def check_type(obj, typ, errmsg='', pred=lambda x: False):
+    """Raise value error if obj does not match type or triggers predicate"""
+    if type(obj) is not typ or pred(obj):
+        raise ValueError(errmsg)
+
 
 def check_info(info):
-    if type(info) != DictType:
-        raise ValueError, 'bad metainfo - not a dictionary'
-    pieces = info.get('pieces')
-    if type(pieces) != StringType or len(pieces) % 20 != 0:
-        raise ValueError, 'bad metainfo - bad pieces key'
-    piecelength = info.get('piece length')
-    if type(piecelength) not in ints or piecelength <= 0:
-        raise ValueError, 'bad metainfo - illegal piece length'
+    """Validate torrent metainfo dictionary"""
+    berr = 'bad metainfo - '
+    check_type(info, dict, berr + 'not a dictionary')
+
+    check_type(info.get('pieces'), str, berr + 'bad pieces key',
+                lambda x: x % 20 != 0)
+
+    check_types(info.get('piece length'), INTS, berr + 'illegal piece length',
+                 lambda x: x <= 0)
+
     name = info.get('name')
-    if type(name) != StringType:
-        raise ValueError, 'bad metainfo - bad name'
-    if not reg.match(name):
-        raise ValueError, 'name %s disallowed for security reasons' % name
+    check_type(name, str, berr + 'bad name')
+    if not REG.match(name):
+        raise ValueError('name %s disallowed for security reasons' % name)
+
     if ('files' in info) == ('length' in info):
-        raise ValueError, 'single/multiple file mix'
+        raise ValueError('single/multiple file mix')
+
     if 'length' in info:
-        length = info['length']
-        if type(length) not in ints or length < 0:
-            raise ValueError, 'bad metainfo - bad length'
+        check_types(info['length'], INTS, berr + 'bad length',
+                     lambda x: x < 0)
     else:
         files = info.get('files')
-        if type(files) != ListType:
-            raise ValueError
+        check_type(files, list)
+
         paths = {}
-        for f in files:
-            if type(f) != DictType:
-                raise ValueError, 'bad metainfo - bad file value'
-            length = f.get('length')
-            if type(length) not in ints or length < 0:
-                raise ValueError, 'bad metainfo - bad length'
-            path = f.get('path')
-            if type(path) != ListType or path == []:
-                raise ValueError, 'bad metainfo - bad path'
-            for p in path:
-                if type(p) != StringType:
-                    raise ValueError, 'bad metainfo - bad path dir'
-                if not reg.match(p):
-                    raise ValueError, 'path %s disallowed for security reasons' % p
+        for finfo in files:
+            check_type(finfo, dict, berr + 'bad file value')
+
+            check_types(finfo.get('length'), INTS, berr + 'bad length',
+                         lambda x: x < 0)
+
+            path = finfo.get('path')
+            check_type(path, list, berr + 'bad path', lambda x: x == [])
+
+            for directory in path:
+                check_type(directory, str, berr + 'bad path dir')
+                if not REG.match(directory):
+                    raise ValueError('path {} disallowed for security reasons'
+                                     ''.format(directory))
+
             tpath = tuple(path)
             if tpath in paths:
-                raise ValueError, 'bad metainfo - duplicate path'
+                raise ValueError('bad metainfo - duplicate path')
             paths[tpath] = True
 
+
 def check_message(message):
-    if type(message) != DictType:
-        raise ValueError
+    """Validate a dictionary with an announce string and info dictionary"""
+    check_type(message, dict)
     check_info(message.get('info'))
-    if type(message.get('announce')) != StringType:
-        raise ValueError
+    check_type(message.get('announce'), str)
+
 
 def check_peers(message):
-    if type(message) != DictType:
-        raise ValueError
+    """Validate a dictionary with a list of peers"""
+    check_type(message, dict)
     if 'failure reason' in message:
-        if type(message['failure reason']) != StringType:
-            raise ValueError
+        check_type(message['failure reason'], str)
         return
+
     peers = message.get('peers')
-    if type(peers) == ListType:
-        for p in peers:
-            if type(p) != DictType:
-                raise ValueError
-            if type(p.get('ip')) != StringType:
-                raise ValueError
-            port = p.get('port')
-            if type(port) not in ints or p <= 0:
-                raise ValueError
-            if 'peer id' in p:
-                id = p['peer id']
-                if type(id) != StringType or len(id) != 20:
-                    raise ValueError
-    elif type(peers) != StringType or len(peers) % 6 != 0:
+    if type(peers) is list:
+        for peer in peers:
+            check_type(peer, dict)
+            check_type(peer.get('ip'), str)
+            check_types(peer.get('port'), INTS, pred=lambda x: x <= 0)
+            if 'peer id' in peer:
+                check_type(peer.get('peer id'), str,
+                            pred=lambda x: len(x) != 20)
+
+    elif type(peers) is not str or len(peers) % 6 != 0:
         raise ValueError
-    interval = message.get('interval', 1)
-    if type(interval) not in ints or interval <= 0:
-        raise ValueError
-    minint = message.get('min interval', 1)
-    if type(minint) not in ints or minint <= 0:
-        raise ValueError
-    if type(message.get('tracker id', '')) != StringType:
-        raise ValueError
-    npeers = message.get('num peers', 0)
-    if type(npeers) not in ints or npeers < 0:
-        raise ValueError
-    dpeers = message.get('done peers', 0)
-    if type(dpeers) not in ints or dpeers < 0:
-        raise ValueError
-    last = message.get('last', 0)
-    if type(last) not in ints or last < 0:
-        raise ValueError
+
+    check_types(message.get('interval', 1), INTS, pred=lambda x: x <= 0)
+    check_types(message.get('min interval', 1), INTS, pred=lambda x: x <= 0)
+    check_type(message.get('tracker id', ''), str)
+    check_types(message.get('num peers', 0), INTS, pred=lambda x: x < 0)
+    check_types(message.get('done peers', 0), INTS, pred=lambda x: x < 0)
+    check_types(message.get('last', 0), INTS, pred=lambda x: x < 0)

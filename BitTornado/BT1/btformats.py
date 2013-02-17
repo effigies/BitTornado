@@ -23,10 +23,10 @@ def check_info(info):
     check_type(info, dict, berr + 'not a dictionary')
 
     check_type(info.get('pieces'), str, berr + 'bad pieces key',
-                lambda x: x % 20 != 0)
+               lambda x: x % 20 != 0)
 
     check_types(info.get('piece length'), INTS, berr + 'illegal piece length',
-                 lambda x: x <= 0)
+                lambda x: x <= 0)
 
     name = info.get('name')
     check_type(name, str, berr + 'bad name')
@@ -38,7 +38,7 @@ def check_info(info):
 
     if 'length' in info:
         check_types(info['length'], INTS, berr + 'bad length',
-                     lambda x: x < 0)
+                    lambda x: x < 0)
     else:
         files = info.get('files')
         check_type(files, list)
@@ -48,7 +48,7 @@ def check_info(info):
             check_type(finfo, dict, berr + 'bad file value')
 
             check_types(finfo.get('length'), INTS, berr + 'bad length',
-                         lambda x: x < 0)
+                        lambda x: x < 0)
 
             path = finfo.get('path')
             check_type(path, list, berr + 'bad path', lambda x: x == [])
@@ -87,7 +87,7 @@ def check_peers(message):
             check_types(peer.get('port'), INTS, pred=lambda x: x <= 0)
             if 'peer id' in peer:
                 check_type(peer.get('peer id'), str,
-                            pred=lambda x: len(x) != 20)
+                           pred=lambda x: len(x) != 20)
 
     elif type(peers) is not str or len(peers) % 6 != 0:
         raise ValueError

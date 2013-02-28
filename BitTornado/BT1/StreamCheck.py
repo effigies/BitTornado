@@ -7,14 +7,17 @@ DEBUG = False
 
 
 protocol_name = 'BitTorrent protocol'
-option_pattern = chr(0)*8
+option_pattern = chr(0) * 8
+
 
 def toint(s):
     return long(hexlify(s), 16)
 
+
 def tobinary(i):
     return (chr(i >> 24) + chr((i >> 16) & 0xFF) + 
         chr((i >> 8) & 0xFF) + chr(i & 0xFF))
+
 
 def make_readable(s):
     if not s:
@@ -22,7 +25,7 @@ def make_readable(s):
     if urllib.quote(s).find('%') >= 0:
         return hexlify(s).upper()
     return '"'+s+'"'
-   
+
 # header, reserved, download id, my id, [length, message]
 
 streamno = 0
@@ -78,7 +81,8 @@ class StreamCheck:
             index = toint(s[1:5])
             begin = toint(s[5:9])
             length = toint(s[9:])
-            print self.no, 'Request: '+str(index)+': '+str(begin)+'-'+str(begin)+'+'+str(length)
+            print self.no, 'Request: {0}: {1}-{1}+{2}'.format(index, begin,
+                                                              length)
         elif m == Connecter.CANCEL:
             if len(s) != 13:
                 print self.no, 'BAD CANCEL SIZE: '+str(len(s))
@@ -86,12 +90,14 @@ class StreamCheck:
             index = toint(s[1:5])
             begin = toint(s[5:9])
             length = toint(s[9:])
-            print self.no, 'Cancel: '+str(index)+': '+str(begin)+'-'+str(begin)+'+'+str(length)
+            print self.no, 'Cancel: {0}: {1}-{1}+{2}'.format(index, begin,
+                                                             length)
         elif m == Connecter.PIECE:
             index = toint(s[1:5])
             begin = toint(s[5:9])
             length = len(s)-9
-            print self.no, 'Piece: '+str(index)+': '+str(begin)+'-'+str(begin)+'+'+str(length)
+            print self.no, 'Piece: {0}: {1}-{1}+{2}'.format(index, begin,
+                                                            length)
         else:
             print self.no, 'Message '+str(ord(m))+' (length '+str(len(s))+')'
         return 4, self.read_len

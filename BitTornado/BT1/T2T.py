@@ -1,10 +1,8 @@
-import sys
 import random
 import threading
 from Rerequester import Rerequester
 from urllib import quote
 from string import lower
-import __init__
 
 DEBUG = True
 
@@ -15,9 +13,10 @@ def excfunc(x):
 R_0 = lambda: 0
 R_1 = lambda: 1
 
+
 class T2TConnection:
     def __init__(self, myid, tracker, hash, interval, peers, timeout,
-                     rawserver, disallow, isdisallowed):
+                 rawserver, disallow, isdisallowed):
         self.tracker = tracker
         self.interval = interval
         self.hash = hash
@@ -32,26 +31,25 @@ class T2TConnection:
         self.rejected = 0
         self.trackererror = False
         self.peerlists = []
-        cfg = { 'min_peers': peers,
-                'max_initiate': peers,
-                'rerequest_interval': interval,
-                'http_timeout': timeout }
-        self.rerequester = Rerequester( 0, myid, hash, [[tracker]], cfg,
-            rawserver.add_task, rawserver.add_task, self.errorfunc, excfunc,
-            self.addtolist, R_0, R_1, R_0, R_0, R_0, R_0,
-            threading.Event() )
+        cfg = {'min_peers': peers,
+               'max_initiate': peers,
+               'rerequest_interval': interval,
+               'http_timeout': timeout}
+        self.rerequester = Rerequester(
+            0, myid, hash, [[tracker]], cfg, rawserver.add_task,
+            rawserver.add_task, self.errorfunc, excfunc, self.addtolist, R_0,
+            R_1, R_0, R_0, R_0, R_0, threading.Event())
 
         if self.isactive():
             rawserver.add_task(self.refresh,
-                                random.randrange(int(self.interval/10),
-                                self.interval))
-                                        # stagger announces
+                               random.randrange(int(self.interval / 10),
+                               self.interval))  # stagger announces
 
     def isactive(self):
         if self.isdisallowed(self.tracker):    # whoops!
             self.deactivate()
         return self.active
-            
+
     def deactivate(self):
         self.active = False
 
@@ -61,7 +59,8 @@ class T2TConnection:
         self.lastsuccessful = True
         self.newpeerdata = []
         if DEBUG:
-            print 'contacting %s for info_hash=%s' % (self.tracker, quote(self.hash))
+            print 'contacting %s for info_hash=%s' % (self.tracker,
+                                                      quote(self.hash))
         self.rerequester.snoop(self.peers, self.callback)
 
     def callback(self):
@@ -69,33 +68,40 @@ class T2TConnection:
         if self.lastsuccessful:
             self.errors = 0
             self.rejected = 0
-            if self.rerequester.announce_interval > (3*self.interval):
-                # I think I'm stripping from a regular tracker; boost the number of peers requested
-                self.peers = int(self.peers * (self.rerequester.announce_interval / self.interval))
+            if self.rerequester.announce_interval > (3 * self.interval):
+                # I think I'm stripping from a regular tracker
+                # boost the number of peers requested
+                self.peers = int(
+                    self.peers *
+                    (self.rerequester.announce_interval / self.interval))
             self.operatinginterval = self.rerequester.announce_interval
             if DEBUG:
-                print ("%s with info_hash=%s returned %d peers" %
-                        (self.tracker, quote(self.hash), len(self.newpeerdata)))
+                print "{} with info_hash={} returned {:d} peers".format(
+                    self.tracker, quote(self.hash), len(self.newpeerdata))
             self.peerlists.append(self.newpeerdata)
-            self.peerlists = self.peerlists[-10:]  # keep up to the last 10 announces
+            # keep up to the last 10 announces
+            self.peerlists = self.peerlists[-10:]
         if self.isactive():
             self.rawserver.add_task(self.refresh, self.operatinginterval)
 
     def addtolist(self, peers):
         for peer in peers:
-            self.newpeerdata.append((peer[1],peer[0][0],peer[0][1]))
-        
+            self.newpeerdata.append((peer[1], peer[0][0], peer[0][1]))
+
     def errorfunc(self, r):
         self.lastsuccessful = False
         if DEBUG:
-            print "%s with info_hash=%s gives error: '%s'" % (self.tracker, quote(self.hash), r)
+            print "{} with info_hash={} gives error: '{}'".format(
+                self.tracker, quote(self.hash), r)
         if r == self.rerequester.rejectedmessage + 'disallowed':   # whoops!
             if DEBUG:
                 print ' -- disallowed - deactivating'
             self.deactivate()
-            self.disallow(self.tracker)   # signal other torrents on this tracker
+            # signal other torrents on this tracker
+            self.disallow(self.tracker)
             return
-        if lower(r[:8]) == 'rejected': # tracker rejected this particular torrent
+        # tracker rejected this particular torrent
+        if lower(r[:8]) == 'rejected':
             self.rejected += 1
             if self.rejected == 3:     # rejected 3 times
                 if DEBUG:
@@ -103,10 +109,11 @@ class T2TConnection:
                 self.deactivate()
             return
         self.errors += 1
-        if self.errors >= 3:                         # three or more errors in a row
+        if self.errors >= 3:    # three or more errors in a row
             self.operatinginterval += self.interval  # lengthen the interval
             if DEBUG:
-                print ' -- lengthening interval to '+str(self.operatinginterval)+' seconds'
+                print ' -- lengthening interval to {} seconds'.format(
+                    self.operatinginterval)
 
     def harvest(self):
         x = []
@@ -117,7 +124,8 @@ class T2TConnection:
 
 
 class T2TList:
-    def __init__(self, enabled, trackerid, interval, maxpeers, timeout, rawserver):
+    def __init__(self, enabled, trackerid, interval, maxpeers, timeout,
+                 rawserver):
         self.enabled = enabled
         self.trackerid = trackerid
         self.interval = interval
@@ -133,42 +141,47 @@ class T2TList:
         if not self.enabled:
             return
 
-        # step 1:  Create a new list with all tracker/torrent combinations in allowed_dir        
+        # step 1:  Create a new list with all tracker/torrent combinations in
+        # allowed_dir
         newlist = {}
         for hash, data in allowed_list.iteritems():
-            for tier in data.get('announce-list',[]):
+            for tier in data.get('announce-list', []):
                 for tracker in tier:
                     self.disallowed.setdefault(tracker, False)
                     newlist.setdefault(tracker, {})
-                    newlist[tracker][hash] = None # placeholder
-                            
+                    newlist[tracker][hash] = None   # placeholder
+
         # step 2:  Go through and copy old data to the new list.
         # if the new list has no place for it, then it's old, so deactivate it
         for tracker, hashdata in self.list.iteritems():
             for hash, t2t in hashdata.iteritems():
                 if tracker not in newlist or hash not in newlist[tracker]:
-                    t2t.deactivate()                # this connection is no longer current
+                    t2t.deactivate()    # this connection is no longer current
                     self.oldtorrents += [t2t]
-                        # keep it referenced in case a thread comes along and tries to access.
+                    # keep it referenced in case a thread comes along and
+                    # tries to access.
                 else:
                     newlist[tracker][hash] = t2t
             if tracker not in newlist:
-                self.disallowed[tracker] = False    # reset when no torrents on it left
+                # reset when no torrents on it left
+                self.disallowed[tracker] = False
 
         self.list = newlist
         newtorrents = {}
 
-        # step 3:  If there are any entries that haven't been initialized yet, do so.
+        # step 3:  If there are any entries that haven't been initialized yet,
+        # do so.
         # At the same time, copy all entries onto the by-torrent list.
         for tracker, hashdata in newlist.iteritems():
             for hash, t2t in hashdata.iteritems():
                 if t2t is None:
-                    hashdata[hash] = T2TConnection(self.trackerid, tracker, hash,
-                                        self.interval, self.maxpeers, self.timeout,
-                                        self.rawserver, self._disallow, self._isdisallowed)
-                newtorrents.setdefault(hash,[])
+                    hashdata[hash] = T2TConnection(
+                        self.trackerid, tracker, hash, self.interval,
+                        self.maxpeers, self.timeout, self.rawserver,
+                        self._disallow, self._isdisallowed)
+                newtorrents.setdefault(hash, [])
                 newtorrents[hash] += [hashdata[hash]]
-                
+
         self.torrents = newtorrents
 
         # structures:
@@ -177,13 +190,13 @@ class T2TList:
         # disallowed = {tracker: flag, ...}
         # oldtorrents = [T2TConnection, ...]
 
-    def _disallow(self,tracker):
+    def _disallow(self, tracker):
         self.disallowed[tracker] = True
 
-    def _isdisallowed(self,tracker):
+    def _isdisallowed(self, tracker):
         return self.disallowed[tracker]
 
-    def harvest(self,hash):
+    def harvest(self, hash):
         harvest = []
         if self.enabled:
             for t2t in self.torrents[hash]:

@@ -6,7 +6,8 @@ import signal
 import random
 import threading
 from urllib import quote, unquote
-from BitTornado.NetworkAddress import is_ipv4, is_valid_ip, ipv6_to_ipv4, to_ipv4, AddrList
+from BitTornado.NetworkAddress import is_ipv4, is_valid_ip, ipv6_to_ipv4, \
+    to_ipv4, AddrList
 from BitTornado.parseargs import parseargs, formatDefinitions
 from BitTornado.RawServer import RawServer, autodetect_socket_style
 from BitTornado.HTTPHandler import HTTPHandler, months

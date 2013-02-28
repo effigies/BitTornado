@@ -1,12 +1,14 @@
 from random import randrange, shuffle
 from BitTornado.clock import clock
 
+
 class PiecePicker:
     def __init__(self, numpieces,
-                 rarest_first_cutoff = 1, rarest_first_priority_cutoff = 3,
-                 priority_step = 20):
+                 rarest_first_cutoff=1, rarest_first_priority_cutoff=3,
+                 priority_step=20):
         self.rarest_first_cutoff = rarest_first_cutoff
-        self.rarest_first_priority_cutoff = rarest_first_priority_cutoff + priority_step
+        self.rarest_first_priority_cutoff = rarest_first_priority_cutoff + \
+            priority_step
         self.priority_step = priority_step
         self.cutoff = rarest_first_priority_cutoff
         self.numpieces = numpieces
@@ -37,21 +39,20 @@ class PiecePicker:
             self.pos_in_interests[interests[i]] = i
         self.interests.append(interests)
 
-
     def got_have(self, piece):
-        self.totalcount+=1
+        self.totalcount += 1
         numint = self.numhaves[piece]
         self.numhaves[piece] += 1
         self.crosscount[numint] -= 1
-        if numint+1==len(self.crosscount):
+        if numint + 1 == len(self.crosscount):
             self.crosscount.append(0)
-        self.crosscount[numint+1] += 1
+        self.crosscount[numint + 1] += 1
         if not self.done:
-            numintplus = numint+self.has[piece]
+            numintplus = numint + self.has[piece]
             self.crosscount2[numintplus] -= 1
-            if numintplus+1 == len(self.crosscount2):
+            if numintplus + 1 == len(self.crosscount2):
                 self.crosscount2.append(0)
-            self.crosscount2[numintplus+1] += 1
+            self.crosscount2[numintplus + 1] += 1
             numint = self.level_in_interests[piece]
             self.level_in_interests[piece] += 1
         if self.superseed:
@@ -62,18 +63,19 @@ class PiecePicker:
             return
         if numint == len(self.interests) - 1:
             self.interests.append([])
-        self._shift_over(piece, self.interests[numint], self.interests[numint + 1])
+        self._shift_over(piece, self.interests[numint],
+                         self.interests[numint + 1])
 
     def lost_have(self, piece):
-        self.totalcount-=1
+        self.totalcount -= 1
         numint = self.numhaves[piece]
         self.numhaves[piece] -= 1
         self.crosscount[numint] -= 1
-        self.crosscount[numint-1] += 1
+        self.crosscount[numint - 1] += 1
         if not self.done:
-            numintplus = numint+self.has[piece]
+            numintplus = numint + self.has[piece]
             self.crosscount2[numintplus] -= 1
-            self.crosscount2[numintplus-1] += 1
+            self.crosscount2[numintplus - 1] += 1
             numint = self.level_in_interests[piece]
             self.level_in_interests[piece] -= 1
         if self.superseed:
@@ -81,10 +83,12 @@ class PiecePicker:
             self.level_in_interests[piece] -= 1
         elif self.has[piece] or self.priority[piece] == -1:
             return
-        self._shift_over(piece, self.interests[numint], self.interests[numint - 1])
+        self._shift_over(piece, self.interests[numint],
+                         self.interests[numint - 1])
 
     def _shift_over(self, piece, l1, l2):
-        assert self.superseed or (not self.has[piece] and self.priority[piece] >= 0)
+        assert self.superseed or not self.has[piece] and \
+            self.priority[piece] >= 0
         parray = self.pos_in_interests
         p = parray[piece]
         assert l1[p] == piece
@@ -92,7 +96,7 @@ class PiecePicker:
         l1[p] = q
         parray[q] = p
         del l1[-1]
-        newp = randrange(len(l2)+1)
+        newp = randrange(len(l2) + 1)
         if newp == len(l2):
             parray[piece] = len(l2)
             l2.append(piece)
@@ -103,17 +107,17 @@ class PiecePicker:
             l2[newp] = piece
             parray[piece] = newp
 
-
     def got_seed(self):
         self.seeds_connected += 1
-        self.cutoff = max(self.rarest_first_priority_cutoff-self.seeds_connected,0)
+        self.cutoff = max(self.rarest_first_priority_cutoff -
+                          self.seeds_connected, 0)
 
     def became_seed(self):
         self.got_seed()
         self.totalcount -= self.numpieces
-        self.numhaves = [i-1 for i in self.numhaves]
+        self.numhaves = [i - 1 for i in self.numhaves]
         if self.superseed or not self.done:
-            self.level_in_interests = [i-1 for i in self.level_in_interests]
+            self.level_in_interests = [i - 1 for i in self.level_in_interests]
             if self.interests:
                 del self.interests[0]
         del self.crosscount[0]
@@ -122,13 +126,13 @@ class PiecePicker:
 
     def lost_seed(self):
         self.seeds_connected -= 1
-        self.cutoff = max(self.rarest_first_priority_cutoff-self.seeds_connected,0)
-
+        self.cutoff = max(self.rarest_first_priority_cutoff -
+                          self.seeds_connected, 0)
 
     def requested(self, piece):
         self.started.add(piece)
 
-    def _remove_from_interests(self, piece, keep_partial = False):
+    def _remove_from_interests(self, piece, keep_partial=False):
         l = self.interests[self.level_in_interests[piece]]
         p = self.pos_in_interests[piece]
         assert l[p] == piece
@@ -153,13 +157,12 @@ class PiecePicker:
         else:
             numhaves = self.numhaves[piece]
             self.crosscount2[numhaves] -= 1
-            if numhaves+1 == len(self.crosscount2):
+            if numhaves + 1 == len(self.crosscount2):
                 self.crosscount2.append(0)
-            self.crosscount2[numhaves+1] += 1
+            self.crosscount2[numhaves + 1] += 1
         self._remove_from_interests(piece)
 
-
-    def next(self, haves, wantfunc, complete_first = False):
+    def next(self, haves, wantfunc, complete_first=False):
         cutoff = self.numgot < self.rarest_first_cutoff
         complete_first = (complete_first or cutoff) and not haves.complete()
         best = None
@@ -170,17 +173,17 @@ class PiecePicker:
                     best = i
                     bestnum = self.level_in_interests[i]
         if best is not None:
-            if complete_first or (cutoff and len(self.interests) > self.cutoff):
+            if complete_first or cutoff and len(self.interests) > self.cutoff:
                 return best
         if haves.complete():
-            r = [ (0, min(bestnum,len(self.interests))) ]
+            r = [(0, min(bestnum, len(self.interests)))]
         elif cutoff and len(self.interests) > self.cutoff:
-            r = [ (self.cutoff, min(bestnum,len(self.interests))),
-                      (0, self.cutoff) ]
+            r = [(self.cutoff, min(bestnum, len(self.interests))),
+                 (0, self.cutoff)]
         else:
-            r = [ (0, min(bestnum,len(self.interests))) ]
-        for lo,hi in r:
-            for i in xrange(lo,hi):
+            r = [(0, min(bestnum, len(self.interests)))]
+        for lo, hi in r:
+            for i in xrange(lo, hi):
                 for j in self.interests[i]:
                     if haves[j] and wantfunc(j):
                         return j
@@ -188,16 +191,15 @@ class PiecePicker:
             return best
         return None
 
-
     def am_I_complete(self):
         return self.done
-    
+
     def bump(self, piece):
         l = self.interests[self.level_in_interests[piece]]
         pos = self.pos_in_interests[piece]
         del l[pos]
         l.append(piece)
-        for i in range(pos,len(l)):
+        for i in range(pos, len(l)):
             self.pos_in_interests[l[i]] = i
         self.started.discard(piece)
 
@@ -219,11 +221,11 @@ class PiecePicker:
             self.level_in_interests[piece] = level
             if self.has[piece]:
                 return True
-            while len(self.interests) < level+1:
+            while len(self.interests) < level + 1:
                 self.interests.append([])
             l2 = self.interests[level]
             parray = self.pos_in_interests
-            newp = randrange(len(l2)+1)
+            newp = randrange(len(l2) + 1)
             if newp == len(l2):
                 parray[piece] = len(l2)
                 l2.append(piece)
@@ -243,14 +245,13 @@ class PiecePicker:
         self.level_in_interests[piece] = newint
         if self.has[piece]:
             return False
-        while len(self.interests) < newint+1:
+        while len(self.interests) < newint + 1:
             self.interests.append([])
         self._shift_over(piece, self.interests[numint], self.interests[newint])
         return False
 
     def is_blocked(self, piece):
         return self.priority[piece] < 0
-
 
     def set_superseed(self):
         assert self.done
@@ -262,8 +263,10 @@ class PiecePicker:
         if self.seed_time is None:
             self.seed_time = clock()
             return None
-        if clock() < self.seed_time+10:  # wait 10 seconds after seeing the first peers
-            return None                 # to give time to grab have lists
+        # wait 10 seconds after seeing the first peers to give time to grab
+        # have lists
+        if clock() < self.seed_time + 10:
+            return None
         if not connection.upload.super_seeding:
             return None
         olddl = self.seed_connections.get(connection)
@@ -275,25 +278,29 @@ class PiecePicker:
                 if not looser_upload:
                     self.seed_got_haves[olddl] -= 1         # penalize
         if olddl is not None:
+            # send a new have even if it hasn't spread that piece elsewhere
             if looser_upload:
-                num = 1     # send a new have even if it hasn't spread that piece elsewhere
+                num = 1
             else:
                 num = 2
             if self.seed_got_haves[olddl] < num:
                 return None
-            if not connection.upload.was_ever_interested:   # it never downloaded it?
+            # it never downloaded it?
+            if not connection.upload.was_ever_interested:
                 connection.upload.skipped_count += 1
-                if connection.upload.skipped_count >= 3:    # probably another stealthed seed
-                    return -1                               # signal to close it
+                # probably another stealthed seed
+                if connection.upload.skipped_count >= 3:
+                    return -1   # signal to close it
         for tier in self.interests:
             for piece in tier:
                 if not connection.download.have[piece]:
                     seedint = self.level_in_interests[piece]
-                    self.level_in_interests[piece] += 1  # tweak it up one, so you don't duplicate effort
+                    # tweak it up one, so you don't duplicate effort
+                    self.level_in_interests[piece] += 1
                     if seedint == len(self.interests) - 1:
                         self.interests.append([])
-                    self._shift_over(piece,
-                                self.interests[seedint], self.interests[seedint + 1])
+                    self._shift_over(piece, self.interests[seedint],
+                                     self.interests[seedint + 1])
                     self.seed_got_haves[piece] = 0       # reset this
                     self.seed_connections[connection] = piece
                     connection.upload.seed_have_list.append(piece)

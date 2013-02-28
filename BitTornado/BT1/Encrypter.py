@@ -1,6 +1,6 @@
 import socket
 import urllib
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 from BitTornado.BTcrypto import Crypto
 
 DEBUG = False
@@ -15,7 +15,7 @@ def toint(s):
     return long(hexlify(s), 16)
 
 def tobinary16(i):
-    return chr((i >> 8) & 0xFF) + chr(i & 0xFF)
+    return unhexlify('{:04x}'.format(i & 0xFFFF))
 
 def make_readable(s):
     if not s:

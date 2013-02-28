@@ -10,6 +10,7 @@ MAX_INCOMPLETE = 8
 protocol_name = 'BitTorrent protocol'
 option_pattern = chr(0)*8
 
+
 def toint(s):
     return long(hexlify(s), 16)
 

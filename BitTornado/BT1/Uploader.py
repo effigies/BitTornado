@@ -1,5 +1,6 @@
 from BitTornado.CurrentRateMeasure import Measure
 
+
 class Upload:
     def __init__(self, connection, ratelimiter, totalup, choker, storage,
                  picker, config):
@@ -16,7 +17,8 @@ class Upload:
         self.interested = False
         self.super_seeding = False
         self.buffer = []
-        self.measure = Measure(config['max_rate_period'], config['upload_rate_fudge'])
+        self.measure = Measure(config['max_rate_period'],
+                               config['upload_rate_fudge'])
         self.was_ever_interested = False
         if storage.get_amount_left() == 0:
             if choker.super_seed:
@@ -64,9 +66,10 @@ class Upload:
                 self.piecedl = index
                 self.piecebuf = self.storage.get_piece(index, 0, -1)
             try:
-                piece = self.piecebuf[begin:begin+length]
+                piece = self.piecebuf[begin:begin + length]
                 assert len(piece) == length
-            except:     # fails if storage.get_piece returns None or if out of range
+            except:
+                # fails if storage.get_piece returns None or if out of range
                 self.connection.close()
                 return None
         else:
@@ -82,15 +85,14 @@ class Upload:
         return (index, begin, piece)
 
     def got_request(self, index, begin, length):
-        if ( (self.super_seeding and not index in self.seed_have_list)
-                   or not self.interested or length > self.max_slice_length ):
+        if self.super_seeding and index not in self.seed_have_list or \
+                not self.interested or length > self.max_slice_length:
             self.connection.close()
             return
         if not self.cleared:
             self.buffer.append((index, begin, length))
         if not self.choked and self.connection.next_upload is None:
                 self.ratelimiter.queue(self.connection)
-
 
     def got_cancel(self, index, begin, length):
         try:
@@ -116,7 +118,7 @@ class Upload:
             self.choked = False
             self.cleared = False
             self.connection.send_unchoke()
-        
+
     def disconnected(self):
         if self.piecebuf:
             self.piecebuf.release()
@@ -124,7 +126,7 @@ class Upload:
 
     def is_choked(self):
         return self.choked
-        
+
     def is_interested(self):
         return self.interested
 
@@ -133,4 +135,3 @@ class Upload:
 
     def get_rate(self):
         return self.measure.get_rate()
-    

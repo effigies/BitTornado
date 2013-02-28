@@ -15,8 +15,7 @@ def toint(s):
 
 
 def tobinary(i):
-    return (chr(i >> 24) + chr((i >> 16) & 0xFF) + 
-        chr((i >> 8) & 0xFF) + chr(i & 0xFF))
+    return unhexlify('{:08x}'.format(i & 0xFFFFFFFF))
 
 
 def make_readable(s):

@@ -1,5 +1,6 @@
 import random
 
+
 class FileSelector:
     def __init__(self, files, piece_length, bufferdir,
                  storage, storagewrapper, sched, failfunc):
@@ -12,7 +13,7 @@ class FileSelector:
         self.picker = None
 
         storage.set_bufferdir(bufferdir)
-        
+
         self.numfiles = len(files)
         self.priority = [1] * self.numfiles
         self.new_priority = None
@@ -23,20 +24,18 @@ class FileSelector:
             if not length:
                 self.filepieces.append(())
             else:
-                pieces = range( int(total/piece_length),
-                                int((total+length-1)/piece_length)+1 )
+                pieces = range(int(total / piece_length),
+                               int((total + length - 1) / piece_length) + 1)
                 self.filepieces.append(tuple(pieces))
                 total += length
-        self.numpieces = int((total+piece_length-1)/piece_length)
+        self.numpieces = int((total + piece_length - 1) / piece_length)
         self.piece_priority = [1] * self.numpieces
-        
-
 
     def init_priority(self, new_priority):
         try:
             assert len(new_priority) == self.numfiles
             for v in new_priority:
-                assert type(v) in (type(0),type(0L))
+                assert type(v) in (type(0), type(0L))
                 assert v >= -1
                 assert v <= 2
         except:
@@ -73,7 +72,6 @@ class FileSelector:
         self.storagewrapper.reblock([i == -1 for i in new_piece_priority])
         self.new_partials = self.storagewrapper.unpickle(d, pieces)
 
-
     def tie_in(self, picker, cancelfunc, requestmorefunc, rerequestfunc):
         self.picker = picker
         self.cancelfunc = cancelfunc
@@ -90,7 +88,6 @@ class FileSelector:
             for p in self.new_partials:
                 self.picker.requested(p)
         self.new_partials = None
-        
 
     def _set_files_disabled(self, old_priority, new_priority):
         old_disabled = [p == -1 for p in old_priority]
@@ -107,7 +104,7 @@ class FileSelector:
                     return False
                 buffer.append((piece, start, data))
 
-        files_updated = False        
+        files_updated = False
         try:
             for f in xrange(self.numfiles):
                 if new_disabled[f] and not old_disabled[f]:
@@ -135,8 +132,7 @@ class FileSelector:
         if not self.storagewrapper.doublecheck_data(changed_pieces):
             return False
 
-        return True        
-
+        return True
 
     def _get_piece_priority_list(self, file_priority_list):
         l = [-1] * self.numpieces
@@ -147,9 +143,8 @@ class FileSelector:
                 if l[i] == -1:
                     l[i] = file_priority_list[f]
                     continue
-                l[i] = min(l[i],file_priority_list[f])
+                l[i] = min(l[i], file_priority_list[f])
         return l
-        
 
     def _set_piece_priority(self, new_priority):
         was_complete = self.storagewrapper.am_I_complete()
@@ -159,7 +154,7 @@ class FileSelector:
         new_blocked = []
         new_unblocked = []
         for piece in pieces:
-            self.picker.set_priority(piece,new_piece_priority[piece])
+            self.picker.set_priority(piece, new_piece_priority[piece])
             o = self.piece_priority[piece] == -1
             n = new_piece_priority[piece] == -1
             if n and not o:
@@ -174,10 +169,9 @@ class FileSelector:
         if was_complete and not self.storagewrapper.am_I_complete():
             self.rerequestfunc()
 
-        return new_piece_priority        
+        return new_piece_priority
 
-
-    def set_priorities_now(self, new_priority = None):
+    def set_priorities_now(self, new_priority=None):
         if not new_priority:
             new_priority = self.new_priority
             self.new_priority = None    # potential race condition
@@ -192,7 +186,7 @@ class FileSelector:
     def set_priorities(self, new_priority):
         self.new_priority = new_priority
         self.sched(self.set_priorities_now)
-        
+
     def set_priority(self, f, p):
         new_priority = self.get_priorities()
         new_priority[f] = p
@@ -212,7 +206,6 @@ class FileSelector:
             return self.new_priority[index]
         except:
             return self.priority[index]
-
 
     def finish(self):
         for f in xrange(self.numfiles):

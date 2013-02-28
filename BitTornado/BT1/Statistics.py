@@ -1,5 +1,6 @@
 import threading
 
+
 class Statistics_Response:
     pass    # empty class
 
@@ -23,7 +24,6 @@ class Statistics:
         self.placesopen = None
         self.storage_totalpieces = len(self.storage.hashes)
 
-
     def set_dirstats(self, files, piece_length):
         self.piecescomplete = 0
         self.placesopen = 0
@@ -45,12 +45,11 @@ class Statistics:
             else:
                 fp = self.filepieces[i]
                 fp2 = self.filepieces2[i]
-                for piece in range(int(start/piece_length),
-                                   int((start+l-1)/piece_length)+1):
+                for piece in range(int(start / piece_length),
+                                   int((start + l - 1) / piece_length) + 1):
                     fp.append(piece)
                     fp2.append(piece)
                 start += l
-
 
     def update(self):
         s = Statistics_Response()
@@ -59,32 +58,32 @@ class Statistics:
         s.last_failed = self.rerequest_lastfailed()
         s.external_connection_made = self.connecter.external_connection_made
         if s.downTotal > 0:
-            s.shareRating = float(s.upTotal)/s.downTotal
+            s.shareRating = float(s.upTotal) / s.downTotal
         elif s.upTotal == 0:
-           s.shareRating = 0.0
+            s.shareRating = 0.0
         else:
-           s.shareRating = -1.0
+            s.shareRating = -1.0
         s.torrentRate = self.torrentmeasure.get_rate()
         s.torrentTotal = self.torrentmeasure.get_total()
         s.numSeeds = self.picker.seeds_connected
         s.numOldSeeds = self.downloader.num_disconnected_seeds()
-        s.numPeers = len(self.downloader.downloads)-s.numSeeds
+        s.numPeers = len(self.downloader.downloads) - s.numSeeds
         s.numCopies = 0.0
         for i in self.picker.crosscount:
-            if i==0:
-                s.numCopies+=1
+            if i == 0:
+                s.numCopies += 1
             else:
-                s.numCopies+=1-float(i)/self.picker.numpieces
+                s.numCopies += 1 - float(i) / self.picker.numpieces
                 break
         if self.picker.done:
             s.numCopies2 = s.numCopies + 1
         else:
             s.numCopies2 = 0.0
             for i in self.picker.crosscount2:
-                if i==0:
-                    s.numCopies2+=1
+                if i == 0:
+                    s.numCopies2 += 1
                 else:
-                    s.numCopies2+=1-float(i)/self.picker.numpieces
+                    s.numCopies2 += 1 - float(i) / self.picker.numpieces
                     break
         s.discarded = self.downloader.discarded
         s.numSeeds += self.httpdl.seedsfound
@@ -92,7 +91,8 @@ class Statistics:
         if s.numPeers == 0 or self.picker.numpieces == 0:
             s.percentDone = 0.0
         else:
-            s.percentDone = 100.0*(float(self.picker.totalcount)/self.picker.numpieces)/s.numPeers
+            s.percentDone = 100.0 * (float(self.picker.totalcount) /
+                                     self.picker.numpieces) / s.numPeers
 
         s.backgroundallocating = self.storage.bgalloc_active
         s.storage_totalpieces = len(self.storage.hashes)
@@ -109,7 +109,7 @@ class Statistics:
         s.peers_banned = self.downloader.banned.items()
 
         try:
-            s.upRate = int(self.ratelimiter.upload_rate/1000)
+            s.upRate = int(self.ratelimiter.upload_rate / 1000)
             assert s.upRate < 5000
         except:
             s.upRate = 0
@@ -117,7 +117,7 @@ class Statistics:
 
         if self.piecescomplete is None:     # not a multi-file torrent
             return s
-        
+
         if self.fdatflag.isSet():
             if not self.fdatactive:
                 self.fdatactive = True
@@ -129,22 +129,21 @@ class Statistics:
                 if self.filecomplete[i]:
                     continue
                 oldlist = self.filepieces[i]
-                newlist = [ piece
-                            for piece in oldlist
-                            if not self.storage.have[piece] ]
+                newlist = [piece for piece in oldlist
+                           if not self.storage.have[piece]]
                 if len(newlist) != len(oldlist):
                     self.filepieces[i] = newlist
                     self.fileamtdone[i] = (
-                        (len(self.filepieces2[i])-len(newlist))
-                         /float(len(self.filepieces2[i])) )
+                        (len(self.filepieces2[i]) - len(newlist)) /
+                        float(len(self.filepieces2[i])))
                     if not newlist:
                         self.filecomplete[i] = True
                     self.filelistupdated.set()
 
             self.piecescomplete = self.picker.numgot
 
-        if ( self.filelistupdated.isSet()
-                 or self.placesopen != len(self.storage.places) ):
+        if self.filelistupdated.isSet() or \
+                self.placesopen != len(self.storage.places):
             for i in xrange(len(self.filecomplete)):
                 if not self.filecomplete[i] or self.fileinplace[i]:
                     continue
@@ -166,4 +165,3 @@ class Statistics:
         s.filelistupdated = self.filelistupdated
 
         return s
-

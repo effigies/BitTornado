@@ -5,6 +5,7 @@ import time
 import signal
 import random
 import threading
+from urllib import quote, unquote
 from BitTornado.NetworkAddress import is_ipv4, is_valid_ip, ipv6_to_ipv4, to_ipv4, AddrList
 from BitTornado.parseargs import parseargs, formatDefinitions
 from BitTornado.RawServer import RawServer, autodetect_ipv6, autodetect_socket_style
@@ -15,7 +16,7 @@ from BitTornado.BTcrypto import CRYPTO_OK
 from T2T import T2TList
 from BitTornado.torrentlistparse import parsetorrentlist
 from BitTornado.bencode import bencode, bdecode, Bencached
-from BitTornado.zurllib import urlopen, quote, unquote
+from BitTornado.zurllib import urlopen
 from Filter import Filter
 from urlparse import urlparse
 from cStringIO import StringIO

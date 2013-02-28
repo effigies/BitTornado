@@ -9,7 +9,7 @@ def toint(s):
     return long(hexlify(s), 16)
 
 def tobinary(i):
-    return unhexlify('{:08x'.format(i))
+    return unhexlify('{:08x}'.format(i & 0xFFFFFFFF))
 
 CHOKE = chr(0)
 UNCHOKE = chr(1)

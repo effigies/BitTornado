@@ -1,6 +1,6 @@
 import urllib
 from cStringIO import StringIO
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 import Connecter
 
 DEBUG = False

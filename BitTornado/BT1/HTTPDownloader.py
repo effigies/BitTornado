@@ -4,18 +4,22 @@ from urlparse import urlparse
 from httplib import HTTPConnection
 from urllib import quote
 from threading import Thread
-from BitTornado.__init__ import product_name,version_short
+from BitTornado.__init__ import product_name, version_short
 
 EXPIRE_TIME = 60 * 60
 
-VERSION = product_name+'/'+version_short
+VERSION = product_name + '/' + version_short
+
 
 class haveComplete:
     def complete(self):
         return True
+
     def __getitem__(self, x):
         return True
+
 haveall = haveComplete()
+
 
 class SingleDownload:
     def __init__(self, downloader, url):
@@ -24,23 +28,23 @@ class SingleDownload:
         try:
             (scheme, self.netloc, path, pars, query, fragment) = urlparse(url)
         except:
-            self.downloader.errorfunc('cannot parse http seed address: '+url)
+            self.downloader.errorfunc('cannot parse http seed address: ' + url)
             return
         if scheme != 'http':
-            self.downloader.errorfunc('http seed url not http: '+url)
+            self.downloader.errorfunc('http seed url not http: ' + url)
             return
         try:
             self.connection = HTTPConnection(self.netloc)
         except:
-            self.downloader.errorfunc('cannot connect to http seed: '+url)
+            self.downloader.errorfunc('cannot connect to http seed: ' + url)
             return
         self.seedurl = path
         if pars:
-            self.seedurl += ';'+pars
+            self.seedurl += ';' + pars
         self.seedurl += '?'
         if query:
-            self.seedurl += query+'&'
-        self.seedurl += 'info_hash='+quote(self.downloader.infohash)
+            self.seedurl += query + '&'
+        self.seedurl += 'info_hash=' + quote(self.downloader.infohash)
 
         self.measure = Measure(downloader.max_rate_period)
         self.index = None
@@ -55,9 +59,9 @@ class SingleDownload:
         self.goodseed = False
         self.active = False
         self.cancelled = False
-        self.resched(randint(2,10))
+        self.resched(randint(2, 10))
 
-    def resched(self, len = None):
+    def resched(self, len=None):
         if len is None:
             len = self.retry_period
         if self.errorcount > 3:
@@ -76,19 +80,20 @@ class SingleDownload:
             self.downloader.downloads.remove(self)
             return
         self.index = self.downloader.picker.next(haveall, self._want)
-        if ( self.index is None and not self.endflag
-                     and not self.downloader.peerdownloader.has_downloaders() ):
+        if self.index is None and not self.endflag and \
+                not self.downloader.peerdownloader.has_downloaders():
             self.endflag = True
             self.index = self.downloader.picker.next(haveall, self._want)
         if self.index is None:
             self.endflag = True
             self.resched()
         else:
-            self.url = ( self.seedurl+'&piece='+str(self.index) )
+            self.url = (self.seedurl + '&piece=' + str(self.index))
             self._get_requests()
-            if self.request_size < self.downloader.storage._piecelen(self.index):
-                self.url += '&ranges='+self._request_ranges()
-            rq = Thread(target = self._request)
+            if self.request_size < \
+                    self.downloader.storage._piecelen(self.index):
+                self.url += '&ranges=' + self._request_ranges()
+            rq = Thread(target=self._request)
             rq.setDaemon(False)
             rq.start()
             self.active = True
@@ -97,17 +102,17 @@ class SingleDownload:
         import encodings.ascii
         import encodings.punycode
         import encodings.idna
-        
+
         self.error = None
         self.received_data = None
         try:
-            self.connection.request('GET',self.url, None,
-                                {'User-Agent': VERSION})
+            self.connection.request('GET', self.url, None,
+                                    {'User-Agent': VERSION})
             r = self.connection.getresponse()
             self.connection_status = r.status
             self.received_data = r.read()
         except Exception, e:
-            self.error = 'error accessing http seed: '+str(e)
+            self.error = 'error accessing http seed: ' + str(e)
             try:
                 self.connection.close()
             except:
@@ -115,7 +120,8 @@ class SingleDownload:
             try:
                 self.connection = HTTPConnection(self.netloc)
             except:
-                self.connection = None  # will cause an exception and retry next cycle
+                # will cause an exception and retry next cycle
+                self.connection = None
         self.downloader.rawserver.add_task(self.request_finished)
 
     def request_finished(self):
@@ -140,7 +146,7 @@ class SingleDownload:
     def _got_data(self):
         if self.connection_status == 503:   # seed is busy
             try:
-                self.retry_period = max(int(self.received_data),5)
+                self.retry_period = max(int(self.received_data), 5)
             except:
                 pass
             return False
@@ -150,7 +156,8 @@ class SingleDownload:
         self._retry_period = 1
         if len(self.received_data) != self.request_size:
             if self.goodseed:
-                self.downloader.errorfunc('corrupt data from http seed - redownloading')
+                self.downloader.errorfunc('corrupt data from http seed - '
+                                          'redownloading')
             return False
         self.measure.update_rate(len(self.received_data))
         self.downloader.measurefunc(len(self.received_data))
@@ -166,7 +173,7 @@ class SingleDownload:
             self.downloader.peerdownloader.check_complete(self.index)
             self.downloader.gotpiecefunc(self.index)
         return True
-    
+
     def _get_requests(self):
         self.requests = []
         self.request_size = 0L
@@ -181,8 +188,9 @@ class SingleDownload:
         success = True
         while self.requests:
             begin, length = self.requests.pop(0)
-            if not self.downloader.storage.piece_came_in(self.index, begin,
-                            self.received_data[start:start+length]):
+            if not self.downloader.storage.piece_came_in(
+                    self.index, begin,
+                    self.received_data[start:start + length]):
                 success = False
                 break
             start += length
@@ -203,14 +211,14 @@ class SingleDownload:
             else:
                 if s:
                     s += ','
-                s += str(begin)+'-'+str(begin+length-1)
+                s += str(begin) + '-' + str(begin + length - 1)
                 begin, length = begin1, length1
         if s:
             s += ','
-        s += str(begin)+'-'+str(begin+length-1)
+        s += str(begin) + '-' + str(begin + length - 1)
         return s
-        
-    
+
+
 class HTTPDownloader:
     def __init__(self, storage, picker, rawserver,
                  finflag, errorfunc, peerdownloader,

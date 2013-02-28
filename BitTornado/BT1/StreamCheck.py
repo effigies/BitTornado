@@ -23,7 +23,7 @@ def make_readable(s):
         return ''
     if urllib.quote(s).find('%') >= 0:
         return hexlify(s).upper()
-    return '"'+s+'"'
+    return '"' + s + '"'
 
 # header, reserved, download id, my id, [length, message]
 
@@ -64,7 +64,7 @@ class StreamCheck:
     def read_len(self, s):
         l = toint(s)
         if l > 2 ** 23:
-            print self.no, 'BAD LENGTH: '+str(l)+' ('+s+')'
+            print self.no, 'BAD LENGTH: ' + str(l) + ' (' + s + ')'
         return l, self.read_message
 
     def read_message(self, s):
@@ -72,10 +72,10 @@ class StreamCheck:
             return 4, self.read_len
         m = s[0]
         if ord(m) > 8:
-            print self.no, 'BAD MESSAGE: '+str(ord(m))
+            print self.no, 'BAD MESSAGE: ' + str(ord(m))
         if m == Connecter.REQUEST:
             if len(s) != 13:
-                print self.no, 'BAD REQUEST SIZE: '+str(len(s))
+                print self.no, 'BAD REQUEST SIZE: ' + str(len(s))
                 return 4, self.read_len
             index = toint(s[1:5])
             begin = toint(s[5:9])
@@ -84,7 +84,7 @@ class StreamCheck:
                                                               length)
         elif m == Connecter.CANCEL:
             if len(s) != 13:
-                print self.no, 'BAD CANCEL SIZE: '+str(len(s))
+                print self.no, 'BAD CANCEL SIZE: ' + str(len(s))
                 return 4, self.read_len
             index = toint(s[1:5])
             begin = toint(s[5:9])
@@ -94,11 +94,11 @@ class StreamCheck:
         elif m == Connecter.PIECE:
             index = toint(s[1:5])
             begin = toint(s[5:9])
-            length = len(s)-9
+            length = len(s) - 9
             print self.no, 'Piece: {0}: {1}-{1}+{2}'.format(index, begin,
                                                             length)
         else:
-            print self.no, 'Message '+str(ord(m))+' (length '+str(len(s))+')'
+            print self.no, 'Message {} (length {})'.format(ord(m), len(s))
         return 4, self.read_len
 
     def write(self, s):

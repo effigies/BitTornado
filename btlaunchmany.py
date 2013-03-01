@@ -42,11 +42,12 @@ class HeadlessDisplayer:
             print '"{}": "{}" ({}) - {}P{}{}{:.3f}D u{:0.1f}K/s-d{:0.1f}K/s ' \
                 'u{:d}K-d{:d}K "{}"'.format(
                     name, status, progress, peers, seeds, seedsmsg, dist,
-                    uprate/1000, dnrate/1000, upamt/1024, dnamt/1024, msg)
+                    uprate / 1000, dnrate / 1000, upamt / 1024, dnamt / 1024,
+                    msg)
         return False
 
     def message(self, s):
-        print "### "+s
+        print "### " + s
 
     def exception(self, s):
         Exceptions.append(s)
@@ -85,7 +86,7 @@ if __name__ == '__main__':
             configdir.saveConfig(config)
         configdir.deleteOldCacheData(config['expire_cache_data'])
         if not os.path.isdir(args[0]):
-            raise ValueError("Warning: "+args[0]+" is not a directory")
+            raise ValueError("Warning: " + args[0] + " is not a directory")
         config['torrent_dir'] = args[0]
     except ValueError as e:
         print 'error: {}\nrun with no args for parameter explanations' \
@@ -96,4 +97,4 @@ if __name__ == '__main__':
     if Exceptions:
         print '\nEXCEPTION:'
         print Exceptions[0]
-        print 'please report this to '+report_email
+        print 'please report this to ' + report_email

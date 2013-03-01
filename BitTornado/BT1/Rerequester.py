@@ -359,7 +359,7 @@ class Rerequester:
         else:
             lenpeers = len(p)
         cflags = r.get('crypto_flags')
-        if isinstance(cflags, str) or len(cflags) != lenpeers:
+        if not isinstance(cflags, str) or len(cflags) != lenpeers:
             cflags = None
         if cflags is None:
             cflags = [None for i in xrange(lenpeers)]

@@ -17,7 +17,7 @@ def check_info(info):
     check_type(info, dict, berr + 'not a dictionary')
 
     check_type(info.get('pieces'), str, berr + 'bad pieces key',
-               lambda x: x % 20 != 0)
+               lambda x: len(x) % 20 != 0)
 
     check_type(info.get('piece length'), INTS, berr + 'illegal piece length',
                 lambda x: x <= 0)

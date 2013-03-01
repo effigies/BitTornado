@@ -31,7 +31,7 @@ from clock import clock
 from BTcrypto import CRYPTO_OK
 from __init__ import createPeerID
 
-defaults = (
+defaults = [
     ('max_uploads', 7,
         "the maximum number of uploads to allow at once."),
     ('keepalive_interval', 120.0,
@@ -167,7 +167,7 @@ defaults = (
         "minutes between automatic flushes to disk (0 = disabled)"),
     ('dedicated_seed_id', '',
         "code to send to tracker identifying as a dedicated seed"),
-)
+]
 
 argslistheader = 'Arguments are:\n\n'
 

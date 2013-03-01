@@ -15,7 +15,8 @@ import socket
 import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
     get_usage, get_response
-from BitTornado.RawServer import RawServer, UPnP_ERROR
+from BitTornado.RawServer import RawServer
+from BitTornado.SocketHandler import UPnP_ERROR
 from BitTornado.bencode import bencode
 from BitTornado.natpunch import UPnP_test
 from BitTornado.clock import clock

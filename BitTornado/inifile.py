@@ -104,6 +104,6 @@ def ini_read(fname, errfunc=lambda *x: None):
                 subconf[key] = value
 
     except IOError:
-        return None
+        return {}
 
     return config

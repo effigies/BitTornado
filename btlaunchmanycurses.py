@@ -66,12 +66,12 @@ def fmtsize(n):
 
 def ljust(s, size):
     s = s[:size]
-    return s + (' '*(size-len(s)))
+    return s + (' ' * (size - len(s)))
 
 
 def rjust(s, size):
     s = s[:size]
-    return (' '*(size-len(s)))+s
+    return (' ' * (size - len(s))) + s
 
 
 class CursesDisplayer:
@@ -96,31 +96,31 @@ class CursesDisplayer:
     def _remake_window(self):
         self.scrh, self.scrw = self.scrwin.getmaxyx()
         self.scrpan = curses.panel.new_panel(self.scrwin)
-        self.mainwinh = int(2*(self.scrh)/3)
+        self.mainwinh = int(2 * (self.scrh) / 3)
         self.mainwinw = self.scrw - 4  # - 2 (bars) - 2 (spaces)
         self.mainwiny = 2         # + 1 (bar) + 1 (titles)
         self.mainwinx = 2         # + 1 (bar) + 1 (space)
         # + 1 to all windows so we can write at mainwinw
 
-        self.mainwin = curses.newwin(self.mainwinh, self.mainwinw+1,
+        self.mainwin = curses.newwin(self.mainwinh, self.mainwinw + 1,
                                      self.mainwiny, self.mainwinx)
         self.mainpan = curses.panel.new_panel(self.mainwin)
         self.mainwin.scrollok(0)
         self.mainwin.nodelay(1)
 
-        self.headerwin = curses.newwin(1, self.mainwinw+1,
+        self.headerwin = curses.newwin(1, self.mainwinw + 1,
                                        1, self.mainwinx)
         self.headerpan = curses.panel.new_panel(self.headerwin)
         self.headerwin.scrollok(0)
 
-        self.totalwin = curses.newwin(1, self.mainwinw+1,
-                                      self.mainwinh+1, self.mainwinx)
+        self.totalwin = curses.newwin(1, self.mainwinw + 1,
+                                      self.mainwinh + 1, self.mainwinx)
         self.totalpan = curses.panel.new_panel(self.totalwin)
         self.totalwin.scrollok(0)
 
-        self.statuswinh = self.scrh-4-self.mainwinh
-        self.statuswin = curses.newwin(self.statuswinh, self.mainwinw+1,
-                                       self.mainwinh+3, self.mainwinx)
+        self.statuswinh = self.scrh - 4 - self.mainwinh
+        self.statuswin = curses.newwin(self.statuswinh, self.mainwinw + 1,
+                                       self.mainwinh + 3, self.mainwinx)
         self.statuspan = curses.panel.new_panel(self.statuswin)
         self.statuswin.scrollok(0)
 
@@ -161,18 +161,18 @@ class CursesDisplayer:
         return self.disp_end
 
     def _display_data(self, data):
-        if 3*len(data) <= self.mainwinh:
+        if 3 * len(data) <= self.mainwinh:
             self.scroll_pos = 0
             self.scrolling = False
         elif self.scroll_time + DOWNLOAD_SCROLL_RATE < time.time():
             self.scroll_time = time.time()
             self.scroll_pos += 1
             self.scrolling = True
-            if self.scroll_pos >= 3*len(data)+2:
+            if self.scroll_pos >= 3 * len(data) + 2:
                 self.scroll_pos = 0
 
-        i = int(self.scroll_pos/3)
-        self.disp_line = (3*i)-self.scroll_pos
+        i = int(self.scroll_pos / 3)
+        self.disp_line = (3 * i) - self.scroll_pos
         self.disp_end = False
 
         while not self.disp_end:
@@ -231,10 +231,11 @@ class CursesDisplayer:
         totaldn = '%s/s' % fmtsize(totaldn)
 
         self.totalwin.erase()
-        self.totalwin.addnstr(0, self.mainwinw-27, 'Totals:', 7, curses.A_BOLD)
-        self.totalwin.addnstr(0, self.mainwinw-20 + (10-len(totaldn)),
+        self.totalwin.addnstr(0, self.mainwinw - 27, 'Totals:', 7,
+                              curses.A_BOLD)
+        self.totalwin.addnstr(0, self.mainwinw - 20 + (10 - len(totaldn)),
                               totaldn, 10, curses.A_BOLD)
-        self.totalwin.addnstr(0, self.mainwinw-10 + (10-len(totalup)),
+        self.totalwin.addnstr(0, self.mainwinw - 10 + (10 - len(totalup)),
                               totalup, 10, curses.A_BOLD)
 
         curses.panel.update_panels()
@@ -296,7 +297,7 @@ if __name__ == '__main__':
             configdir.saveConfig(config)
         configdir.deleteOldCacheData(config['expire_cache_data'])
         if not os.path.isdir(args[0]):
-            raise ValueError("Warning: "+args[0]+" is not a directory")
+            raise ValueError("Warning: " + args[0] + " is not a directory")
         config['torrent_dir'] = args[0]
     except ValueError as e:
         print 'error: {}\nrun with no args for parameter explanations' \
@@ -307,4 +308,4 @@ if __name__ == '__main__':
     if Exceptions:
         print '\nEXCEPTION:'
         print Exceptions[0]
-        print 'please report this to '+report_email
+        print 'please report this to ' + report_email

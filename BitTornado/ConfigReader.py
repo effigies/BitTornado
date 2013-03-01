@@ -22,10 +22,8 @@ def HexToColor(s):
     return wxColour(red=int(r,16), green=int(g,16), blue=int(b,16))
     
 def hex2(c):
-    h = hex(c)[2:]
-    if len(h) == 1:
-        h = '0'+h
-    return h
+    return '{:02x}'.format(c)
+
 def ColorToHex(c):
     return hex2(c.Red()) + ' ' + hex2(c.Green()) + ' ' + hex2(c.Blue())
 

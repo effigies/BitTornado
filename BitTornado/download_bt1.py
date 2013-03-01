@@ -183,7 +183,7 @@ def download(params, filefunc, statusfunc, finfunc, errorfunc, doneflag, cols,
 
     try:
         config = parse_params(params, presets)
-    except ValueError, e:
+    except ValueError as e:
         failed('error: {}\nrun with no args for parameter explanations'.format(
             e))
         return
@@ -323,7 +323,7 @@ def get_response(file, url, errorfunc):
             errorfunc("warning: bad data in responsefile")
             response = bdecode(response, sloppy=1)
         check_message(response)
-    except ValueError, e:
+    except ValueError as e:
         errorfunc("got bad file info - " + str(e))
         return None
 
@@ -447,7 +447,7 @@ class BT1Download:
                     n = os.path.join(file, *x['path'])
                     files.append((n, x['length']))
                     make(n)
-        except OSError, e:
+        except OSError as e:
             self.errorfunc("Couldn't allocate dir - " + str(e))
             return None
 
@@ -464,7 +464,7 @@ class BT1Download:
         self.finflag.set()
         try:
             self.storage.set_readonly()
-        except (IOError, OSError), e:
+        except (IOError, OSError) as e:
             self.errorfunc('trouble setting readonly at end - ' + str(e))
         if self.superseedflag.isSet():
             self._set_super_seed()

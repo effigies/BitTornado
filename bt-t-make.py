@@ -857,9 +857,9 @@ class MakeMetafile:
                             self.call.build_setgauge, progress_percent = 1)
             if not self.uiflag.isSet():
                 self.call.build_done()
-        except (OSError, IOError), e:
+        except (OSError, IOError) as e:
             self.failed(e)
-        except Exception, e:
+        except Exception as e:
             traceback.print_exc()
             self.failed(e)
 

@@ -527,9 +527,9 @@ class StorageWrapper:
                 pass
         try:
             self.storage.sync()
-        except IOError, e:
+        except IOError as e:
             self.failed('IO Error: ' + str(e))
-        except OSError, e:
+        except OSError as e:
             self.failed('OS Error: ' + str(e))
 
     def _move_piece(self, index, newpos):
@@ -757,7 +757,7 @@ class StorageWrapper:
     def set_file_readonly(self, n):
         try:
             self.storage.set_readonly(n)
-        except IOError, e:
+        except IOError as e:
             self.failed('IO Error: ' + str(e))
         except OSError as e:
             self.failed('OS Error: ' + str(e))

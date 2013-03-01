@@ -209,7 +209,7 @@ class Storage:
                     self.handles[file] = f
                     self.whandles.add(file)
                     self.lock_file(file, f)
-                except (IOError, OSError), e:
+                except (IOError, OSError) as e:
                     if DEBUG:
                         print_exc()
                     raise IOError('unable to reopen ' + file + ': ' + str(e))
@@ -232,7 +232,7 @@ class Storage:
                     self.handles[file] = f
                     if self.lock_while_reading:
                         self.lock_file(file, f)
-            except (IOError, OSError), e:
+            except (IOError, OSError) as e:
                 if DEBUG:
                     print_exc()
                 raise IOError('unable to open ' + file + ': ' + str(e))

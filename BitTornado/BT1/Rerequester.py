@@ -294,7 +294,7 @@ class Rerequester:
                 h = urlopen(url + '?' + q)
                 closer[0] = h.close
                 data = h.read()
-            except (IOError, error), e:
+            except (IOError, error) as e:
                 err = 'Problem connecting to tracker - ' + str(e)
             except:
                 err = 'Problem connecting to tracker'
@@ -317,7 +317,7 @@ class Rerequester:
             try:
                 r = bdecode(data, sloppy=1)
                 check_peers(r)
-            except ValueError, e:
+            except ValueError as e:
                 if self.lock.trip(l):
                     self.errorcodes['bad_data'] = 'bad data from tracker - ' \
                         + str(e)

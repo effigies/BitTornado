@@ -156,7 +156,7 @@ def run(params):
              'new default configuration (only for btdownloadheadless.py)'))
         try:
             config = parse_params(params, configdefaults)
-        except ValueError, e:
+        except ValueError as e:
             print 'error: {}\nrun with no args for parameter explanations' \
                 ''.format(e)
             break
@@ -186,7 +186,7 @@ def run(params):
                     ipv6_socket_style=config['ipv6_binds_v4'],
                     upnp=upnp_type, randomizer=config['random_port'])
                 break
-            except socket.error, e:
+            except socket.error as e:
                 if upnp_type and e == UPnP_ERROR:
                     print 'WARNING: COULD NOT FORWARD VIA UPnP'
                     upnp_type = 0

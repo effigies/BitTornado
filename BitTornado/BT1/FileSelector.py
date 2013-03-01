@@ -49,7 +49,7 @@ class FileSelector:
             if files_updated:
                 self.storage.reset_file_status()
             self.new_priority = new_priority
-        except (IOError, OSError), e:
+        except (IOError, OSError) as e:
             self.failfunc("can't open partial file for "
                           + self.files[f][0] + ': ' + str(e))
             return False
@@ -113,7 +113,7 @@ class FileSelector:
                 if old_disabled[f] and not new_disabled[f]:
                     self.storage.enable_file(f)
                     files_updated = True
-        except (IOError, OSError), e:
+        except (IOError, OSError) as e:
             if new_disabled[f]:
                 msg = "can't open partial file for "
             else:

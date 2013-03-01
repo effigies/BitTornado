@@ -298,7 +298,7 @@ if __name__ == '__main__':
         if not os.path.isdir(args[0]):
             raise ValueError("Warning: "+args[0]+" is not a directory")
         config['torrent_dir'] = args[0]
-    except ValueError, e:
+    except ValueError as e:
         print 'error: {}\nrun with no args for parameter explanations' \
             ''.format(e)
         sys.exit(1)

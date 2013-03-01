@@ -214,7 +214,7 @@ class configReader:
         if (self.configMenuBox is not None):
             try:
                 self.configMenuBox.Close()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 self.configMenuBox = None
 
         self.configMenuBox = wxFrame(None, -1, 'BitTornado Preferences', size = (1,1),
@@ -616,7 +616,7 @@ class configReader:
         if self.configMenuBox is not None:
             try:
                 self.configMenuBox.Close ()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 pass
             self.configMenuBox = None
 
@@ -634,7 +634,7 @@ class configReader:
         if (self.advancedMenuBox is not None):
             try:
                 self.advancedMenuBox.Close ()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 self.advancedMenuBox = None
 
         self.advancedMenuBox = wxFrame(None, -1, 'BitTornado Advanced Preferences', size = (1,1),
@@ -1040,7 +1040,7 @@ class configReader:
         if self.advancedMenuBox is not None:
             try:
                 self.advancedMenuBox.Close()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 self.advancedMenuBox = None
 
 
@@ -1054,7 +1054,7 @@ class configReader:
         if (self.cryptoMenuBox is not None):
             try:
                 self.cryptoMenuBox.Close ()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 self.cryptoMenuBox = None
 
         self.cryptoMenuBox = wxFrame(None, -1, 'BitTornado Encryption/Security Preferences', size = (1,1),
@@ -1176,7 +1176,7 @@ class configReader:
         if self.cryptMenuBox is not None:
             try:
                 self.cryptMenuBox.Close()
-            except wxPyDeadObjectError, e:
+            except wxPyDeadObjectError as e:
                 self.cryptMenuBox = None
 
 

@@ -58,7 +58,7 @@ class urlopen:
                                     {'User-Agent': VERSION,
                                      'Accept-Encoding': 'gzip'})
             self.response = self.connection.getresponse()
-        except HTTPException, e:
+        except HTTPException as e:
             raise IOError(('http error', str(e)))
         status = self.response.status
         if status in (301, 302):

@@ -299,7 +299,7 @@ class CompleteDir:
                 self.gauge.SetValue(1000)
                 self.button.SetLabel('Close')
                 self.frame.Refresh()
-        except (OSError, IOError), e:
+        except (OSError, IOError) as e:
             self.currentLabel.SetLabel('Error!')
             self.button.SetLabel('Close')
             dlg = wxMessageDialog(self.frame, message='Error - ' + str(e),

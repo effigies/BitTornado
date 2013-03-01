@@ -329,7 +329,7 @@ def run(scrwin, errlist, params):
                  ))
             try:
                 config = parse_params(params, configdefaults)
-            except ValueError, e:
+            except ValueError as e:
                 d.error('error: {}\nrun with no args for parameter '
                         'explanations'.format(e))
                 break
@@ -356,7 +356,7 @@ def run(scrwin, errlist, params):
                         ipv6_socket_style=config['ipv6_binds_v4'],
                         upnp=upnp_type, randomizer=config['random_port'])
                     break
-                except socket.error, e:
+                except socket.error as e:
                     if upnp_type and e == UPnP_ERROR:
                         d.error('WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0

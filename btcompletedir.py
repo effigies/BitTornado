@@ -26,7 +26,7 @@ def main(argv):
         config, args = parseargs(argv[1:], defaults, 2, None)
         for dir in args[1:]:
             completedir(dir, args[0], config)
-    except ValueError, e:
+    except ValueError as e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'
         return 1

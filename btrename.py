@@ -44,7 +44,7 @@ Change the suggested filename in a .torrent file
     try:
         opts, args = getopt.getopt(
             argv[1:], "hmvV", ["help", "match", "verbose", "version"])
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         return 0
 

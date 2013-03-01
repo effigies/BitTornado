@@ -111,7 +111,7 @@ class SingleDownload:
             r = self.connection.getresponse()
             self.connection_status = r.status
             self.received_data = r.read()
-        except Exception, e:
+        except Exception as e:
             self.error = 'error accessing http seed: ' + str(e)
             try:
                 self.connection.close()

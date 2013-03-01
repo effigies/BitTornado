@@ -2383,7 +2383,7 @@ def _next(params, d, doneflag, configfile):
         while 1:
             try:
                 config = parse_params(params, configfile.config)
-            except ValueError, e:
+            except ValueError as e:
                 d.error('error: ' + str(e) +
                         '\nrun with no args for parameter explanations')
                 break
@@ -2407,7 +2407,7 @@ def _next(params, d, doneflag, configfile):
                         ipv6_socket_style=config['ipv6_binds_v4'],
                         upnp=upnp_type, randomizer=config['random_port'])
                     break
-                except socket.error, e:
+                except socket.error as e:
                     if upnp_type and e == UPnP_ERROR:
                         d.error('WARNING: COULD NOT FORWARD VIA UPnP')
                         upnp_type = 0

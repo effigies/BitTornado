@@ -119,7 +119,7 @@ class RawServer:
                         try:
 #                            print func.func_name
                             func()
-                        except (SystemError, MemoryError), e:
+                        except (SystemError, MemoryError) as e:
                             self.failfunc(str(e))
                             return
                         except KeyboardInterrupt:
@@ -133,7 +133,7 @@ class RawServer:
                     if self.doneflag.isSet():
                         return
                     self.sockethandler.close_dead()
-                except (SystemError, MemoryError), e:
+                except (SystemError, MemoryError) as e:
                     self.failfunc(str(e))
                     return
                 except select.error:

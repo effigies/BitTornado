@@ -1191,7 +1191,7 @@ def track(args):
         return
     try:
         config, files = parseargs(args, defaults, 0, 0)
-    except ValueError, e:
+    except ValueError as e:
         print 'error: ' + str(e)
         print 'run with no arguments for parameter explanations'
         return

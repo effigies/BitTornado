@@ -282,7 +282,7 @@ class BTTree:
 
                 # Notify, but ignore entries that are neither
                 # files nor directories
-                except Exception, problem:
+                except Exception as problem:
                     print problem
 
             # For bittorrent's purposes, size(dir) = size(subs)

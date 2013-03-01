@@ -20,7 +20,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv[1:], "hv",
                                    ("help", "verbose"))
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         return 1
 

@@ -5,15 +5,9 @@ REG = re.compile(r'^[^/\\.~][^/\\]*$')
 INTS = (long, int)
 
 
-def check_types(obj, types, errmsg='', pred=lambda x: False):
-    """Raise value error if obj does not match types or triggers predicate"""
-    if type(obj) not in types or pred(obj):
-        raise ValueError(errmsg)
-
-
-def check_type(obj, typ, errmsg='', pred=lambda x: False):
+def check_type(obj, types, errmsg='', pred=lambda x: False):
     """Raise value error if obj does not match type or triggers predicate"""
-    if type(obj) is not typ or pred(obj):
+    if not isinstance(obj, types) or pred(obj):
         raise ValueError(errmsg)
 
 
@@ -25,7 +19,7 @@ def check_info(info):
     check_type(info.get('pieces'), str, berr + 'bad pieces key',
                lambda x: x % 20 != 0)
 
-    check_types(info.get('piece length'), INTS, berr + 'illegal piece length',
+    check_type(info.get('piece length'), INTS, berr + 'illegal piece length',
                 lambda x: x <= 0)
 
     name = info.get('name')
@@ -37,7 +31,7 @@ def check_info(info):
         raise ValueError('single/multiple file mix')
 
     if 'length' in info:
-        check_types(info['length'], INTS, berr + 'bad length',
+        check_type(info['length'], INTS, berr + 'bad length',
                     lambda x: x < 0)
     else:
         files = info.get('files')
@@ -47,7 +41,7 @@ def check_info(info):
         for finfo in files:
             check_type(finfo, dict, berr + 'bad file value')
 
-            check_types(finfo.get('length'), INTS, berr + 'bad length',
+            check_type(finfo.get('length'), INTS, berr + 'bad length',
                         lambda x: x < 0)
 
             path = finfo.get('path')
@@ -80,21 +74,21 @@ def check_peers(message):
         return
 
     peers = message.get('peers')
-    if type(peers) is list:
+    if isinstance(peers, list):
         for peer in peers:
             check_type(peer, dict)
             check_type(peer.get('ip'), str)
-            check_types(peer.get('port'), INTS, pred=lambda x: x <= 0)
+            check_type(peer.get('port'), INTS, pred=lambda x: x <= 0)
             if 'peer id' in peer:
                 check_type(peer.get('peer id'), str,
                            pred=lambda x: len(x) != 20)
 
-    elif type(peers) is not str or len(peers) % 6 != 0:
+    elif not isinstance(peers, str) or len(peers) % 6 != 0:
         raise ValueError
 
-    check_types(message.get('interval', 1), INTS, pred=lambda x: x <= 0)
-    check_types(message.get('min interval', 1), INTS, pred=lambda x: x <= 0)
+    check_type(message.get('interval', 1), INTS, pred=lambda x: x <= 0)
+    check_type(message.get('min interval', 1), INTS, pred=lambda x: x <= 0)
     check_type(message.get('tracker id', ''), str)
-    check_types(message.get('num peers', 0), INTS, pred=lambda x: x < 0)
-    check_types(message.get('done peers', 0), INTS, pred=lambda x: x < 0)
-    check_types(message.get('last', 0), INTS, pred=lambda x: x < 0)
+    check_type(message.get('num peers', 0), INTS, pred=lambda x: x < 0)
+    check_type(message.get('done peers', 0), INTS, pred=lambda x: x < 0)
+    check_type(message.get('last', 0), INTS, pred=lambda x: x < 0)

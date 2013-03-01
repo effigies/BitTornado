@@ -89,13 +89,12 @@ class ConfigDir(object):
 
         for key, val in newconfig.iteritems():
             if key in self.config:
-                valtype = type(self.config[key])
                 try:
-                    if valtype == StringType:
+                    if isinstance(self.config[key], str):
                         self.config[key] = val
-                    elif valtype == IntType or valtype == LongType:
+                    elif isinstance(self.config[key], (int, long)):
                         self.config[key] = long(val)
-                    elif valtype == FloatType:
+                    elif isinstance(self.config[key], float):
                         self.config[key] = float(val)
                     configkeys.discard(key)
                 except ValueError:

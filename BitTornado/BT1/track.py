@@ -116,14 +116,14 @@ defaults = [
 
 
 def statefiletemplate(x):
-    if type(x) is not dict:
+    if not isinstance(x, dict):
         raise ValueError
     for cname, cinfo in x.iteritems():
         if cname == 'peers':
             # The 'peers' key is a dictionary of SHA hashes (torrent ids)
             for y in cinfo.itervalues():
                 # ... for the active torrents, and each is a dictionary
-                if type(y) is not dict:
+                if not isinstance(y, dict):
                     raise ValueError
                 # ... of client ids interested in that torrent
                 for id, info in y.iteritems():
@@ -132,33 +132,33 @@ def statefiletemplate(x):
                     # ... each of which is also a dictionary
                     # ... which has an IP, a Port, and a Bytes Left count for
                     # ... that client for that torrent
-                    if type(info) is not dict:
+                    if not isinstance(info, dict):
                         raise ValueError
-                    if type(info.get('ip', '')) is not str:
+                    if not isinstance(info.get('ip', ''), str):
                         raise ValueError
                     port = info.get('port')
-                    if type(port) not in (int, long) or port < 0:
+                    if not isinstance(port, (int, long)) or port < 0:
                         raise ValueError
                     left = info.get('left')
-                    if type(left) not in (int, long) or left < 0:
+                    if not isinstance(left, (int, long)) or left < 0:
                         raise ValueError
-                    if type(info.get('supportcrypto')) not in (int, long):
+                    if not isinstance(info.get('supportcrypto'), (int, long)):
                         raise ValueError
-                    if type(info.get('requirecrypto')) not in (int, long):
+                    if not isinstance(info.get('requirecrypto'), (int, long)):
                         raise ValueError
         elif cname == 'completed':
             # The 'completed' key is a dictionary of SHA hashes (torrent ids)
             # ... for keeping track of the total completions per torrent
-            if type(cinfo) is not dict:
+            if not isinstance(cinfo, dict):
                 raise ValueError
             # ... each torrent has an integer value
             for y in cinfo.itervalues():
                 # ... for the number of reported completions for that torrent
-                if type(y) not in (int, long):
+                if not isinstance(y, (int, long)):
                     raise ValueError
         elif cname == 'allowed':
             # a list of info_hashes and included data
-            if type(cinfo) is not dict:
+            if not isinstance(cinfo, dict):
                 raise ValueError
             if 'allowed_dir_files' in x:
                 adlist = set(z[1] for z in x['allowed_dir_files'].itervalues())
@@ -168,7 +168,7 @@ def statefiletemplate(x):
                         raise ValueError
         elif cname == 'allowed_dir_files':
             # a list of files, their attributes and info hashes
-            if type(cinfo) is not dict:
+            if not isinstance(cinfo, dict):
                 raise ValueError
             dirkeys = set()
             # each entry should have a corresponding info_hash

@@ -1,6 +1,5 @@
 import select
 import time
-from types import IntType
 import bisect
 
 POLLIN = 1
@@ -15,7 +14,7 @@ class poll:
         self.wlist = []
 
     def register(self, f, t):
-        if type(f) != IntType:
+        if not isinstance(f, int):
             f = f.fileno()
         if (t & POLLIN):
             insert(self.rlist, f)
@@ -27,7 +26,7 @@ class poll:
             remove(self.wlist, f)
 
     def unregister(self, f):
-        if type(f) != IntType:
+        if not isinstance(f, int):
             f = f.fileno()
         remove(self.rlist, f)
         remove(self.wlist, f)

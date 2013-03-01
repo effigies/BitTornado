@@ -17,7 +17,6 @@ Yejun Yang and Myers Carpenter for NAT port mapping code adapted
 """
 __version__ = version_short
 
-from types import StringType
 from sha import sha
 from time import time, clock
 try:
@@ -70,6 +69,6 @@ resetPeerIDs()
 
 
 def createPeerID(ins='---'):
-    assert type(ins) is StringType
+    assert isinstance(ins, str)
     assert len(ins) == 3
     return _idprefix + ins + _idrandom[0]

@@ -28,7 +28,7 @@ def ini_write(fname, data, comment=''):
 
     # Bring data dictionary into line with expectations
     for key, value in data.iteritems():
-        if type(value) is dict:
+        if isinstance(value, dict):
             config[key.lower()] = value
         else:
             config[''][key.lower()] = value
@@ -50,9 +50,9 @@ def ini_write(fname, data, comment=''):
             value = subconf[key]
 
             # Modify string and boolean types
-            if type(value) is str:
+            if isinstance(value, str):
                 value = '"{}"'.format(value)
-            elif type(value) is bool:
+            elif isinstance(value, bool):
                 value = int(value)
 
             lines.append("{} = {}".format(key, value))

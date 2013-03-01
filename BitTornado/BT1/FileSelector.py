@@ -35,7 +35,7 @@ class FileSelector:
         try:
             assert len(new_priority) == self.numfiles
             for v in new_priority:
-                assert type(v) in (type(0), type(0L))
+                assert isinstance(v, (int, long))
                 assert v >= -1
                 assert v <= 2
         except:

@@ -1,4 +1,4 @@
-from types import NoneType, StringType, IntType, LongType, FloatType
+from types import NoneType
 
 
 def formatDefinitions(options, COLS, presets={}):
@@ -101,16 +101,15 @@ def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
 
         # Coerce value type to the type of default arg
         try:
-            t = type(config[key])
-            if t in (NoneType, StringType):
+            if isinstance(config[key], (NoneType, str)):
                 config[key] = value
-            elif t in (IntType, LongType):
+            elif isinstance(config[key], (int, long)):
                 config[key] = long(value)
-            elif t is FloatType:
+            elif isinstance(config[key], float):
                 config[key] = float(value)
             else:
                 assert 0
-        except ValueError, e:
+        except ValueError as e:
             raise ValueError('wrong format of --%s - %s' % (key, str(e)))
 
     # Non-optional flags are denoted by a None default argument

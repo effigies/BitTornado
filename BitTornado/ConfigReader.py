@@ -129,13 +129,13 @@ class configReader:
                 t = oldconfig.GetEntryType(s)
                 try:
                     if t == 1:
-                        assert type(self.config[s]) == type('')
+                        assert isinstance(self.config[s], str)
                         self.config[s] = oldconfig.Read(s)
                     elif t == 2 or t == 3:
-                        assert type(self.config[s]) == type(1)
+                        assert isinstance(self.config[s], int)
                         self.config[s] = int(oldconfig.ReadInt(s))
                     elif t == 4:
-                        assert type(self.config[s]) == type(1.0)
+                        assert isinstance(self.config[s], float)
                         self.config[s] = oldconfig.ReadFloat(s)
                 except:
                     pass

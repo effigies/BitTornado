@@ -96,12 +96,12 @@ class AddressRange(object):
         return '{}-{}'.format(self.start, self.end)
 
     def __contains__(self, x):
-        if AddressRange in type.mro(type(x)):
+        if isinstance(x, AddressRange):
             return x.start >= self.start and x.end <= self.end
         return x >= self.start and x <= self.end
 
     def __add__(self, x):
-        if AddressRange in type.mro(type(x)):
+        if isinstance(x, AddressRange):
             if x.start > self.end + 1:
                 return (self, x)
             elif self.start > x.end + 1:
@@ -118,13 +118,13 @@ class AddressRange(object):
 
     def __lt__(self, x):
         """True if there is at least one address above the range and below x"""
-        if AddressRange in type.mro(type(x)):
+        if isinstance(x, AddressRange):
             return x.start > self.end + 1
         return x > self.end + 1
 
     def __gt__(self, x):
         """True if there is at least one address below the range and above x"""
-        if AddressRange in type.mro(type(x)):
+        if isinstance(x, AddressRange):
             return self.start > x.end + 1
         return self.start > x + 1
 
@@ -159,7 +159,7 @@ class Subnet(AddressRange):
 
     def __contains__(self, x):
         """Determine if an address or Subnet is subsumed by this Subset"""
-        if type(x) == type(self):
+        if isinstance(x, Subnet):
             return x.cidr > self.cidr and x.address in self
         return super(Subnet, self).__contains__(x)
 

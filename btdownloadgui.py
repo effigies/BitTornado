@@ -488,7 +488,7 @@ class DownloadInfoFrame:
     def getStatusIcon(self, name, bitmap=False):
         if name in self.statusIcons:
             i = self.statusIcons[name]
-            if type(i) == type(self.icon) and not bitmap:
+            if isinstance(i, wxIcon) and not bitmap:
                 return i
         if bitmap:
             i = wxBitmap(self.statusIconFiles[name], wxBITMAP_TYPE_ICO)

@@ -137,14 +137,6 @@ class HeadlessDisplayer:
 
 
 def run(params):
-    try:
-        import curses
-        curses.initscr()
-        cols = curses.COLS
-        curses.endwin()
-    except:
-        cols = 80
-
     h = HeadlessDisplayer()
     while 1:
         configdir = ConfigDir('downloadheadless')

@@ -9,7 +9,6 @@ import shutil
 from binascii import hexlify, unhexlify
 from inifile import ini_write, ini_read
 from bencode import bencode, bdecode
-from types import IntType, LongType, StringType, FloatType
 from CreateIcons import GetIcons, CreateIcon
 from parseargs import defaultargs
 

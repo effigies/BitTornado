@@ -1,5 +1,6 @@
 from download_bt1 import BT1Download
-from RawServer import RawServer, UPnP_ERROR
+from RawServer import RawServer
+from SocketHandler import UPnP_ERROR
 from RateLimiter import RateLimiter
 from ServerPortHandler import MultiHandler
 from parsedir import parsedir

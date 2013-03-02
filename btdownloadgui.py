@@ -18,7 +18,8 @@ from webbrowser import open_new
 from StringIO import StringIO
 from BitTornado.download_bt1 import BT1Download, parse_params, get_usage, \
     get_response
-from BitTornado.RawServer import RawServer, UPnP_ERROR
+from BitTornado.RawServer import RawServer
+from BitTornado.SocketHandler import UPnP_ERROR
 from BitTornado.ConnChoice import connChoices, connChoiceList
 from BitTornado.ConfigReader import configReader
 from BitTornado.bencode import bencode

@@ -47,31 +47,24 @@ def fmttime(n):
     return 'ETA in %d:%02d:%02d' % (h, m, s)
 
 
-def fmtsize(n):
-    n = long(n)
-    unit = [' B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-    i = 0
-    if (n > 999):
-        i = 1
-        while i + 1 < len(unit) and (n >> 10) >= 999:
-            i += 1
-            n >>= 10
-        n = float(n) / (1 << 10)
-    if i > 0:
-        size = '%.1f' % n + '%s' % unit[i]
+def fmtsize(size):
+    if size < 1000:
+        order = 0
+        fmtstring = '{:.0f} B'
     else:
-        size = '%.0f' % n + '%s' % unit[i]
-    return size
+        for order, prefix in enumerate("KMGTPEZY", 1):
+            if size < 1000 * 2.0 ** (10 * order):
+                fmtstring = '{:.1f}' + prefix + 'iB'
+                break
+    return fmtstring.format(size / (2.0 ** (10 * order)))
 
 
 def ljust(s, size):
-    s = s[:size]
-    return s + (' ' * (size - len(s)))
+    return s[:size].ljust(size)
 
 
 def rjust(s, size):
-    s = s[:size]
-    return (' ' * (size - len(s))) + s
+    return s[:size].rjust(size)
 
 
 class CursesDisplayer:

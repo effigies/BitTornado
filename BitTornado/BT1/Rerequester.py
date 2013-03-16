@@ -1,6 +1,6 @@
 import urllib
 from BitTornado.zurllib import urlopen
-from btformats import check_peers
+from BitTornado.Info import check_type
 from BitTornado.bencode import bdecode
 from threading import Thread, Lock
 from cStringIO import StringIO
@@ -40,6 +40,35 @@ class fakeflag:
 
     def isSet(self):
         return self.state
+
+
+def check_peers(message):
+    """Validate a dictionary with a list of peers"""
+    check_type(message, dict)
+    if 'failure reason' in message:
+        check_type(message['failure reason'], str)
+        return
+
+    peers = message.get('peers')
+    if isinstance(peers, list):
+        for peer in peers:
+            check_type(peer, dict)
+            check_type(peer.get('ip'), str)
+            check_type(peer.get('port'), (int, long), pred=lambda x: x <= 0)
+            if 'peer id' in peer:
+                check_type(peer.get('peer id'), str,
+                           pred=lambda x: len(x) != 20)
+
+    elif not isinstance(peers, str) or len(peers) % 6 != 0:
+        raise ValueError
+
+    check_type(message.get('interval', 1), (int, long), pred=lambda x: x <= 0)
+    check_type(message.get('min interval', 1), (int, long),
+               pred=lambda x: x <= 0)
+    check_type(message.get('tracker id', ''), str)
+    check_type(message.get('num peers', 0), (int, long), pred=lambda x: x < 0)
+    check_type(message.get('done peers', 0), (int, long), pred=lambda x: x < 0)
+    check_type(message.get('last', 0), (int, long), pred=lambda x: x < 0)
 
 
 class Rerequester:

@@ -4,7 +4,7 @@
 import os
 import sha
 from bencode import bencode, bdecode
-from BT1.btformats import check_info
+from Info import check_info
 
 
 def _errfunc(msg):

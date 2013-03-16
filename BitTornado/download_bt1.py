@@ -3,9 +3,9 @@ import sha
 import random
 import socket
 import threading
+from Info import check_type, check_info
 from zurllib import urlopen
 from urlparse import urlparse
-from BT1.btformats import check_message
 from BT1.Choker import Choker
 from BT1.Storage import Storage
 from BT1.StorageWrapper import StorageWrapper
@@ -322,7 +322,9 @@ def get_response(file, url, errorfunc):
         except:
             errorfunc("warning: bad data in responsefile")
             response = bdecode(response, sloppy=1)
-        check_message(response)
+        check_type(response, dict)
+        check_info(response.get('info'))
+        check_type(response.get('announce'), str)
     except ValueError as e:
         errorfunc("got bad file info - " + str(e))
         return None

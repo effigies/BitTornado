@@ -6,6 +6,7 @@ BitTornado makemetafile.py behaviors.
 
 import os
 import sha
+import time
 import threading
 from bencode import bencode
 from BT1.btformats import check_info
@@ -223,7 +224,8 @@ class Info:
 
         check_info(info)
 
-        data = {'info': info, 'announce': tracker, 'creation date': long(0)}
+        data = {'info': info, 'announce': tracker,
+                'creation date': long(time.time())}
 
         # Optional data dictionary contents
         if 'comment' in params and params['comment']:

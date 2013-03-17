@@ -1,3 +1,4 @@
+#pylint: disable=W0102,C0103
 import os
 import threading
 from traceback import print_exc
@@ -54,11 +55,11 @@ def make_meta_file(loc, url, params=None, flag=None,
 
     # Extract target from parameters
     if 'target' not in params or params['target'] == '':
-        a, b = os.path.split(loc)
-        if b == '':
-            target = a + '.torrent'
+        fname, ext = os.path.split(loc)
+        if ext == '':
+            target = fname + '.torrent'
         else:
-            target = os.path.join(a, b + '.torrent')
+            target = os.path.join(fname, ext + '.torrent')
         params['target'] = target
 
     info = tree.makeInfo(flag=flag, progress=progress,
@@ -70,41 +71,39 @@ def make_meta_file(loc, url, params=None, flag=None,
     info.write(tracker=url, **params)
 
 
-def completedir(dir, url, params=None, flag=None,
+def completedir(directory, url, params=None, flag=None,
                 progress=lambda x: None, filestat=lambda x: None):
+    """Make a .torrent file for each entry in a directory"""
     if params is None:
         params = {}
     if flag is None:
         flag = threading.Event()
 
-    files = os.listdir(dir)
-    files.sort()
+    files = sorted(os.listdir(directory))
     ext = '.torrent'
-    target = params.get('target', '')
 
-    togen = []
-    for f in files:
-        if f[-len(ext):] != ext and (f + ext) not in files:
-            togen.append(os.path.join(dir, f))
+    togen = [os.path.join(directory, fname) for fname in files
+             if (fname + ext) not in files and not fname.endswith(ext)]
 
     trees = [BTTree(loc, []) for loc in togen]
-    total = sum(tree.size for tree in trees)
 
-    subtotal = [0]
+    def subprog(update, subtotal=[0], total=sum(tree.size for tree in trees),
+                progress=progress):
+        """Aggregate progress callback
+        Uses static subtotal to track across files"""
+        subtotal[0] += update
+        progress(float(subtotal[0]) / total)
 
-    def callback(x, subtotal=subtotal, total=total, vc=vc):
-        subtotal[0] += x
-        vc(float(subtotal[0]) / total)
-
-    for i in togen:
-        fc(i)
+    for fname in togen:
+        filestat(fname)
         try:
-            t = os.path.split(i)[-1]
-            if t not in ignore and t[0] != '.':
+            base = os.path.basename(fname)
+            if base not in ignore and base[0] != '.':
                 subparams = params.copy()
-                if target != '':
-                    subparams['target'] = os.path.join(target, t + ext)
-                make_meta_file(i, url, subparams, flag,
-                               progress=callback, progress_percent=False)
+                if 'target' in params and params['target'] != '':
+                    subparams['target'] = os.path.join(params['target'],
+                                                       base + ext)
+                make_meta_file(fname, url, subparams, flag,
+                               progress=subprog, progress_percent=False)
         except ValueError:
             print_exc()

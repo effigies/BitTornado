@@ -14,7 +14,7 @@ import re
 try:
     from sys import getfilesystemencoding
     ENCODING = getfilesystemencoding()
-except:
+except ImportError:
     from sys import getdefaultencoding
     ENCODING = getdefaultencoding()
     if not ENCODING:
@@ -54,6 +54,30 @@ def uniconvert(src, encoding):
         return unicode(src, encoding).encode('utf-8')
     except UnicodeError:
         raise UnicodeError('bad filename: ' + src)
+
+
+def get_piece_len(size):
+    """Parameters
+        long    size    - size of files described by torrent
+
+    Return
+        long            - size of pieces to hash
+    """
+    if size > 8 * (2 ** 30):        # >  8G file
+        piece_len_exp = 21          # =  2M pieces
+    elif size > 2 * (2 ** 30):      # >  2G file
+        piece_len_exp = 20          # =  1M pieces
+    elif size > 512 * (2 ** 20):    # >512M file
+        piece_len_exp = 19          # =512K pieces
+    elif size > 64 * (2 ** 20):     # > 64M file
+        piece_len_exp = 18          # =256K pieces
+    elif size > 16 * (2 ** 20):     # > 16M file
+        piece_len_exp = 17          # =128K pieces
+    elif size > 4 * (2 ** 20):      # >  4M file
+        piece_len_exp = 16          # = 64K pieces
+    else:                           # <  4M file
+        piece_len_exp = 15          # = 32K pieces
+    return 2 ** piece_len_exp
 
 
 def check_type(obj, types, errmsg='', pred=lambda x: False):
@@ -147,7 +171,7 @@ class Info:
         if piece_len_exp is not None and piece_len_exp != 0:
             self.piece_length = 2 ** piece_len_exp
         else:
-            self.piece_length = self.get_piece_len(size)
+            self.piece_length = get_piece_len(size)
 
         # Universal
         self.pieces = []
@@ -155,29 +179,6 @@ class Info:
         self.done = 0L
         self.files = []
         self.totalhashed = 0L
-
-    def get_piece_len(self, size):
-        """Parameters
-            long    size    - size of files described by torrent
-
-        Return
-            long            - size of pieces to hash
-        """
-        if size > 8 * (2 ** 30):        # >  8G file
-            piece_len_exp = 21          # =  2M pieces
-        elif size > 2 * (2 ** 30):      # >  2G file
-            piece_len_exp = 20          # =  1M pieces
-        elif size > 512 * (2 ** 20):    # >512M file
-            piece_len_exp = 19          # =512K pieces
-        elif size > 64 * (2 ** 20):     # > 64M file
-            piece_len_exp = 18          # =256K pieces
-        elif size > 16 * (2 ** 20):     # > 16M file
-            piece_len_exp = 17          # =128K pieces
-        elif size > 4 * (2 ** 20):      # >  4M file
-            piece_len_exp = 16          # = 64K pieces
-        else:                           # <  4M file
-            piece_len_exp = 15          # = 32K pieces
-        return 2 ** piece_len_exp
 
     def add_file_info(self, size, path):
         """Add file information to torrent.
@@ -300,5 +301,5 @@ class Info:
             data['httpseeds'] = params['httpseeds'].split('|')
 
         # Write file
-        with open(target, 'wb') as h:
-            h.write(bencode(data))
+        with open(target, 'wb') as fhandle:
+            fhandle.write(bencode(data))

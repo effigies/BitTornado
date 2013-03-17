@@ -45,18 +45,18 @@ class BTTree:
 
                 # Notify, but ignore entries that are neither
                 # files nor directories
-                except Exception as problem:
+                except IOError as problem:
                     print problem
 
             # For bittorrent's purposes, size(dir) = size(subs)
             self.size = sum(sub.size for sub in self.subs)
         else:
-            raise Exception("Entry is neither file nor directory: %s"
-                            % loc)
+            raise IOError("Entry is neither file nor directory: " + loc)
 
     def initInfo(self, **params):
+        """Determine name of file and instantiate an Info structure"""
         if self.path == []:
-            name = os.path.split(self.loc)[-1]
+            name = os.path.basename(self.loc)
         else:
             name = self.path[0]
 
@@ -72,18 +72,21 @@ class BTTree:
         return info
 
     def addFileToInfos(self, infos):
-        with open(self.loc, 'rb') as h:
+        """Add file information and data hash to a sequence of Info
+        structures"""
+        with open(self.loc, 'rb') as fhandle:
             pos = 0L
             piece_length = 0
-            for i in infos:
-                piece_length = max(piece_length, i.piece_length)
-                i.add_file_info(self.size, self.path)
+            for info in infos:
+                piece_length = max(piece_length, info.piece_length)
+                info.add_file_info(self.size, self.path)
 
             while pos < self.size:
-                a = min(piece_length, self.size - pos)
-                buf = h.read(a)
-                pos += a
-                [i.add_data(buf) for i in infos]
+                nbytes = min(piece_length, self.size - pos)
+                buf = fhandle.read(nbytes)
+                pos += nbytes
+                for info in infos:
+                    info.add_data(buf)
 
     def updateInfo(self, info):
         """Add a sub-BTTree to an Info structure
@@ -98,6 +101,7 @@ class BTTree:
             for sub in self.subs:
                 sub.updateInfo(info)
 
+    #pylint: disable=W0102
     def buildMetaTree(self, tracker, target, infos=[], **params):
         """Construct a directory structure such that, for every path in
         the source structure defined by the object, there is a .torrent
@@ -119,7 +123,7 @@ class BTTree:
 
         # Add the file pointed to by this BTTree to all infos
         if self.subs == []:
-            self.updateFileInfos(infos)
+            self.addFileToInfos(infos)
 
         # Recurse in this directory
         else:
@@ -127,7 +131,7 @@ class BTTree:
                 sub.buildMetaTree(tracker, target, infos, **params)
 
         # Verify we can make our target .torrent file
-        target_dir = os.path.split(info.target)[0]
+        target_dir = os.path.dirname(target)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 

@@ -42,8 +42,14 @@ httpseeds = optional list of http-seed URLs, in the format:
         url[|url...]"""
 
 
-def make_meta_file(loc, url, params={}, flag=threading.Event(),
+def make_meta_file(loc, url, params=None, flag=None,
                    progress=lambda x: None, progress_percent=True):
+    """Make a single .torrent file for a given location"""
+    if params is None:
+        params = {}
+    if flag is None:
+        flag = threading.Event()
+
     tree = BTTree(loc, [])
 
     # Extract target from parameters
@@ -55,7 +61,8 @@ def make_meta_file(loc, url, params={}, flag=threading.Event(),
             target = os.path.join(a, b + '.torrent')
         params['target'] = target
 
-    info = tree.makeInfo(flag, progress, progress_percent, **params)
+    info = tree.makeInfo(flag=flag, progress=progress,
+                         progress_percent=progress_percent, **params)
 
     if flag is not None and flag.isSet():
         return
@@ -63,8 +70,13 @@ def make_meta_file(loc, url, params={}, flag=threading.Event(),
     info.write(tracker=url, **params)
 
 
-def completedir(dir, url, params={}, flag=threading.Event(),
-                vc=lambda x: None, fc=lambda x: None):
+def completedir(dir, url, params=None, flag=None,
+                progress=lambda x: None, filestat=lambda x: None):
+    if params is None:
+        params = {}
+    if flag is None:
+        flag = threading.Event()
+
     files = os.listdir(dir)
     files.sort()
     ext = '.torrent'

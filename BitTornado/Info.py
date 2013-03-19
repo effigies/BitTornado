@@ -4,55 +4,14 @@ These data structures are generalizations of the original BitTorrent and
 BitTornado makemetafile.py behaviors.
 """
 
+import sys
 import os
+import re
 import time
 import hashlib
 from bencode import bencode
-import re
-
-try:
-    from sys import getfilesystemencoding
-    ENCODING = getfilesystemencoding()
-except ImportError:
-    from sys import getdefaultencoding
-    ENCODING = getdefaultencoding()
-    if not ENCODING:
-        ENCODING = 'ascii'
 
 REG = re.compile(r'^[^/\\.~][^/\\]*$')
-
-
-# Generic utility functions
-def uniconvertl(srclist, encoding):
-    """Convert a list of strings to Unicode
-
-    Parameters
-        str[]   - Strings to be converted
-        str     - Current string encoding
-
-    Return
-        str[]   - Converted strings
-    """
-    try:
-        return [uniconvert(src, encoding) for src in srclist]
-    except UnicodeError:
-        raise UnicodeError('bad filename: ' + os.path.join(*srclist))
-
-
-def uniconvert(src, encoding):
-    """Convert a string to Unicode
-
-    Parameters
-        str     - String to be converted
-        str     - Current string encoding
-
-    Return
-        str     - Converted string
-    """
-    try:
-        return unicode(src, encoding).encode('utf-8')
-    except UnicodeError:
-        raise UnicodeError('bad filename: ' + src)
 
 
 def get_piece_len(size):
@@ -230,9 +189,9 @@ class Info(object):
             f()  progress         - callback function to report progress
             bool progress_percent - flag for reporting percentage or change
         """
-        self.encoding = params.get('encoding', ENCODING)
+        self.encoding = params.get('encoding', sys.getfilesystemencoding())
 
-        self.name = uniconvert(source, self.encoding)
+        self.name = self.uniconvert((source,))[0]
         self.size = size
 
         # BitTorrent/BitTornado have traditionally allowed this parameter
@@ -271,7 +230,7 @@ class Info(object):
             str[]       path    file path e.g. ['path','to','file.ext']
         """
         self.files.append({'length': size,
-                           'path': uniconvertl(path, self.encoding)})
+                           'path': self.uniconvert(path)})
 
     def add_data(self, data):
         """Process a segment of data.
@@ -340,3 +299,18 @@ class Info(object):
         # Write file
         with open(target, 'wb') as fhandle:
             fhandle.write(bencode(data))
+
+    def uniconvert(self, srclist):
+        """Convert a list of strings to utf-8
+
+        Parameters
+            str[]   - Strings to be converted
+
+        Return
+            str[]   - Converted strings
+        """
+        try:
+            return [unicode(src, self.encoding).encode('utf-8')
+                    for src in srclist]
+        except UnicodeError:
+            raise UnicodeError('bad filename: ' + os.path.join(*srclist))

@@ -78,7 +78,7 @@ class BTTree:
             pos = 0L
             piece_length = 0
             for info in infos:
-                piece_length = max(piece_length, info.piece_length)
+                piece_length = max(piece_length, info.hasher.pieceLength)
                 info.add_file_info(self.size, self.path)
 
             while pos < self.size:

@@ -5,9 +5,8 @@ BitTornado makemetafile.py behaviors.
 """
 
 import os
-import sha
 import time
-import threading
+import hashlib
 from bencode import bencode
 import re
 
@@ -134,22 +133,96 @@ def check_info(info):
             paths[tpath] = True
 
 
-class Info:
+class PieceHasher(object):
+    """Wrapper for SHA1 hash with a maximum length"""
+    def __init__(self, pieceLength, hashtype=hashlib.sha1):
+        self.pieceLength = pieceLength
+        self._hashtype = hashtype
+        self._hash = hashtype()
+        self.done = 0L
+        self.pieces = []
+
+    def resetHash(self):
+        """Set hash to initial state"""
+        self._hash = self._hashtype()
+        self.done = 0L
+
+    def update(self, data, progress=lambda x: None):
+        """Add data to PieceHasher, splitting pieces if necessary.
+
+        Progress function that accepts a number of (new) bytes hashed optional
+        """
+        tofinish = self.pieceLength - self.done    # bytes to finish a piece
+
+        # Split data based on the number of bytes to finish the current piece
+        # If data is less than needed, remainder will be empty
+        init, remainder = data[:tofinish], data[tofinish:]
+
+        # Hash initial segment
+        self._hash.update(init)
+        progress(len(init))
+        self.done += len(init)
+
+        # Hash remainder, if present
+        if remainder:
+            toHash = len(remainder)
+
+            # Create a new hash for each piece of data present
+            hashes = [self._hashtype(remainder[i:i + self.pieceLength])
+                      for i in xrange(0, toHash, self.pieceLength)]
+            progress(toHash)
+
+            self.done = toHash % self.pieceLength
+
+            self.pieces.append(self._hash.digest())
+            self._hash = hashes[-1]
+            self.pieces.extend(piece.digest() for piece in hashes[:-1])
+
+        # If the piece is finished, reinitialize
+        if self.done == self.pieceLength:
+            self.pieces.append(self._hash.digest())
+            self.resetHash()
+
+    def __nonzero__(self):
+        """Evaluate to true if any data has been hashed"""
+        return bool(self.pieces) or self.done != 0
+
+    def __repr__(self):
+        return "<PieceHasher[{:d}] ({})>".format(
+            len(self.pieces), self._hash.hexdigest())
+
+    def __str__(self):
+        """Print concatenated digests of pieces and current digest, if
+        nonzero"""
+        excess = []
+        if self.done > 0:
+            excess.append(self._hash.digest())
+        return ''.join(self.pieces + excess)
+
+    @property
+    def digest(self):
+        """Current hash digest as a byte string"""
+        return self._hash.digest()
+
+    @property
+    def hashtype(self):
+        """Name of the hash function being used"""
+        return self._hash.name
+
+
+class Info(object):
     """Info - information associated with a .torrent file
 
     Info attributes
-        str     name            - name of file/dir being hashed
-        long    size            - total size of files to be described
-        long    piece_length    - size of pieces
-        str[]   pieces          - sha1 digests of file parts
-        sha1    sh              - sha1 hash object
-        long    done            - portion of piece hashed
-        dict[]  fs              - metadata about files described
-        long    totalhashed     - portion of total data hashed
+        str         name        - name of file/dir being hashed
+        long        size        - total size of files to be described
+        dict[]      fs          - metadata about files described
+        long        totalhashed - portion of total data hashed
+        PieceHasher hasher      - object to manage hashed files
     """
 
-    def __init__(self, source, size, flag=threading.Event(),
-                 progress=lambda x: None, progress_percent=True, **params):
+    def __init__(self, source, size, progress=lambda x: None,
+                 progress_percent=True, **params):
         """
         Parameters
             str  source           - source file name (last path element)
@@ -162,23 +235,33 @@ class Info:
         self.name = uniconvert(source, self.encoding)
         self.size = size
 
-        self.flag = flag
-        self.progress = progress
-        self.progress_percent = progress_percent
-
         # BitTorrent/BitTornado have traditionally allowed this parameter
         piece_len_exp = params.get('piece_size_pow2')
         if piece_len_exp is not None and piece_len_exp != 0:
-            self.piece_length = 2 ** piece_len_exp
+            pieceLength = 2 ** piece_len_exp
         else:
-            self.piece_length = get_piece_len(size)
+            pieceLength = get_piece_len(size)
 
         # Universal
-        self.pieces = []
-        self.sha = sha.sha()
-        self.done = 0L
         self.files = []
         self.totalhashed = 0L
+        self.hasher = PieceHasher(pieceLength)
+
+        # Progress for this function updates the total amount hashed
+        # Call the given progress function according to whether it accpts
+        # percent or update
+        if progress_percent:
+            def totalprogress(update, self=self, base=progress):
+                """Update totalhashed and use percentage progress callback"""
+                self.totalhashed += update
+                base(self.totalhashed / self.size)
+            self.progress = totalprogress
+        else:
+            def updateprogress(update, self=self, base=progress):
+                """Update totalhashed and use update progress callback"""
+                self.totalhashed += update
+                base(update)
+            self.progress = updateprogress
 
     def add_file_info(self, size, path):
         """Add file information to torrent.
@@ -198,56 +281,15 @@ class Info:
         it uses one.
 
         The length of data is relatively unimportant, though exact multiples
-        of piece_length will slightly improve performance. The largest
-        possible piece_length (2**21 bytes == 2MB) would be a reasonable
+        of the hasher's pieceLength will slightly improve performance. The
+        largest possible pieceLength (2**21 bytes == 2MB) would be a reasonable
         default.
 
         Parameters
             str data    - an arbitrarily long segment of the file to
                         be hashed
         """
-        toHash = len(data)
-        remainder = self.piece_length - self.done
-
-        while toHash > 0:
-            if toHash < remainder:
-                # If we cannot complete a piece, update hash and leave
-                self.sha.update(data)
-                self.done += toHash
-                self.totalhashed += toHash
-
-                # Update progress
-                if self.progress_percent:
-                    self.progress(self.totalhashed / self.size)
-                else:
-                    self.progress(toHash)
-
-                break
-            else:
-                # Complete a block
-                self.sha.update(data[:remainder])
-                self.pieces.append(self.sha.digest())
-
-                if self.flag is not None and self.flag.isSet():
-                    break
-
-                # Update progress
-                self.totalhashed += remainder
-                if self.progress_percent:
-                    self.progress(self.totalhashed / self.size)
-                else:
-                    self.progress(remainder)
-
-                # Reset hash
-                self.done = 0
-                self.sha = sha.sha()
-
-                # Discard hashed data
-                data = data[remainder:]
-                toHash = len(data)
-
-                # Because self.done is always zero, here
-                remainder = self.piece_length
+        self.hasher.update(data, self.progress)
 
     def write(self, target, tracker, **params):
         """Write a .torrent file
@@ -264,13 +306,8 @@ class Info:
             str[]   real_httpseeds     - list of http seeds
         """
 
-        # Whatever hash we have left, we'll add on to the end
-        excess = []
-        if self.done > 0:
-            excess.append(self.sha.digest())
-
-        info = {'pieces': ''.join(self.pieces + excess),
-                'piece length': self.piece_length,
+        info = {'pieces': str(self.hasher),
+                'piece length': self.hasher.pieceLength,
                 'name': self.name}
 
         # If there is only one file and it has the same name path as the

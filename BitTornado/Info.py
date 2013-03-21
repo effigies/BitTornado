@@ -9,7 +9,7 @@ import os
 import re
 import time
 import hashlib
-from bencode import bencode
+from bencode import bencode, bdecode
 
 
 def get_piece_len(size):
@@ -109,7 +109,8 @@ class PieceHasher(object):
     def update(self, data, progress=lambda x: None):
         """Add data to PieceHasher, splitting pieces if necessary.
 
-        Progress function that accepts a number of (new) bytes hashed optional
+        Progress function that accepts a number of (new) bytes hashed
+        is optional
         """
         tofinish = self.pieceLength - self.done    # bytes to finish a piece
 
@@ -239,10 +240,10 @@ class Info(object):
         order and concatenation. Treat it as a rolling hashing function, as
         it uses one.
 
-        The length of data is relatively unimportant, though exact multiples
-        of the hasher's pieceLength will slightly improve performance. The
-        largest possible pieceLength (2**21 bytes == 2MB) would be a reasonable
-        default.
+        The length of data is relatively unimportant, though exact
+        multiples of the hasher's pieceLength will slightly improve
+        performance. The largest possible pieceLength (2**21 bytes == 2MB)
+        would be a reasonable default.
 
         Parameters
             str data    - an arbitrarily long segment of the file to
@@ -314,3 +315,68 @@ class Info(object):
                     for src in srclist]
         except UnicodeError:
             raise UnicodeError('bad filename: ' + os.path.join(*srclist))
+
+
+class MetaInfo(dict):
+    """A constrained metainfo dictionary"""
+    validKeys = set(('info', 'announce', 'creation date', 'comment',
+                     'announce-list', 'httpseeds'))
+
+    def __init__(self, **params):
+        real_announce_list = params.pop('real_announce_list', None)
+        announce_list = params.pop('announce_list', None)
+        real_httpseeds = params.pop('real_httpseeds', None)
+        httpseeds = params.pop('httpseeds', None)
+
+        if real_announce_list:
+            self['announce-list'] = real_announce_list
+        elif announce_list:
+            self['announce-list'] = [tier.split(',')
+                                     for tier in announce_list.split('|')]
+        if real_httpseeds:
+            self['httpseeds'] = real_httpseeds
+        elif httpseeds:
+            self['httpseeds'] = httpseeds.split('|')
+
+        super(MetaInfo, self).__init__((k, params[k]) for k in params
+                                       if k in self.validKeys)
+
+    def __setitem__(self, key, value):
+        """Set value associated with key if key is in MetaInfo.validKeys"""
+        if key not in self.validKeys:
+            raise KeyError('Invalid MetaInfo key')
+        super(MetaInfo, self).__setitem__(key, value)
+
+    def update(self, itr=None, **params):
+        """Update MetaInfo from an iterable/dict and/or from named parameters
+
+        Named parameters take precedence, but all arguments are filtered
+        against MetaInfo.validKeys
+        """
+        if itr is not None:
+            if hasattr(itr, 'keys'):
+                src = ((key, itr[key]) for key in itr if key in self.validKeys)
+            else:
+                src = ((key, val) for key, val in itr if key in self.validKeys)
+            super(MetaInfo, self).update(src)
+
+        super(MetaInfo, self).update((key, params[key]) for key in params
+                                     if key in self.validKeys)
+
+    def setdefault(self, key, default=None):
+        """Return value associated with key. If not present, try to set to
+        default, or None, if not given."""
+        if key not in self:
+            self[key] = default
+        return self[key]
+
+    def write(self, torrent):
+        """Write MetaInfo to a torrent file"""
+        with open(torrent, 'wb') as torrentfile:
+            torrentfile.write(bencode(self))
+
+    @classmethod
+    def read(cls, torrent):
+        """Read MetaInfo from a torrent file"""
+        with open(torrent, 'rb') as torrentfile:
+            return cls(**bdecode(torrentfile.read()))

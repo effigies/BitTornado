@@ -11,8 +11,6 @@ import time
 import hashlib
 from bencode import bencode
 
-REG = re.compile(r'^[^/\\.~][^/\\]*$')
-
 
 def get_piece_len(size):
     """Parameters
@@ -46,6 +44,8 @@ def check_type(obj, types, errmsg='', pred=lambda x: False):
 
 def check_info(info):
     """Validate torrent metainfo dictionary"""
+
+    valid_name = re.compile(r'^[^/\\.~][^/\\]*$')
     berr = 'bad metainfo - '
     check_type(info, dict, berr + 'not a dictionary')
 
@@ -57,7 +57,7 @@ def check_info(info):
 
     name = info.get('name')
     check_type(name, str, berr + 'bad name')
-    if not REG.match(name):
+    if not valid_name.match(name):
         raise ValueError('name %s disallowed for security reasons' % name)
 
     if ('files' in info) == ('length' in info):
@@ -82,7 +82,7 @@ def check_info(info):
 
             for directory in path:
                 check_type(directory, str, berr + 'bad path dir')
-                if not REG.match(directory):
+                if not valid_name.match(directory):
                     raise ValueError('path {} disallowed for security reasons'
                                      ''.format(directory))
 

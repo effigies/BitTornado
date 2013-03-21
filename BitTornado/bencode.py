@@ -1,14 +1,78 @@
 """Encode/decode data structures for use in BitTorrent applications
 """
+#pylint: disable=R0903
 
-from types import IntType, LongType, StringType, ListType, TupleType, \
-    DictType, BooleanType
-try:
-    from types import UnicodeType
-except ImportError:
-    UnicodeType = None
+BENCACHED_MARKER = []
 
 
+class Bencached(object):
+    """Store the ciphertext of repeatedly encoded data structures"""
+    def __init__(self, ctext):
+        self.marker = BENCACHED_MARKER
+        self.bencoded = ctext
+
+    @classmethod
+    def cache(cls, data):
+        """Construct Bencached value from a plain data structure"""
+        return cls(bencode(data))
+
+
+class BTEncoder(object):
+    """Encode a data structure into a string for use in BitTorrent applications
+    """
+
+    def __call__(self, data):
+        """Encode a data structure into a string.
+
+        Creates a list in which to collect string segments and returns the
+        joined result.
+
+        See encode_* for details.
+        """
+        ctext = []
+        self.encode(data, ctext)
+        return ''.join(ctext)
+
+    def encode(self, data, ctext):
+        """Determine type of data and encode into appropriate string"""
+        if isinstance(data, (list, tuple)):
+            # A list takes the form lXe where X is the concatenation of the
+            # encodings of all elements in the list.
+            ctext.append('l')
+            for element in data:
+                self.encode(element, ctext)
+            ctext.append('e')
+        elif isinstance(data, dict):
+            # A dictionary is encoded as dXe where X is the concatenation of
+            # the encodings of all key,value pairs in the dictionary, sorted by
+            # key. Key, value pairs are themselves concatenations of the
+            # encodings of keys and values, where keys are assumed to be
+            # strings.
+            ctext.append('d')
+            ilist = data.items()
+            ilist.sort()
+            for key, data in ilist:
+                ctext.extend((str(len(key)), ':', key))
+                self.encode(data, ctext)
+            ctext.append('e')
+        elif isinstance(data, str):
+            # A string is encoded as length:contents
+            ctext.extend((str(len(data)), ':', data))
+        elif isinstance(data, unicode):
+            # For unicode, encode as utf-8 byte string, and use its length
+            # e.g.  len(u'\u20ac') == 1,
+            # while len(u'\u20ac'.encode('utf-8')) == 3
+            string = data.encode('utf-8')
+            ctext.extend((str(len(string)), ':', string))
+        elif isinstance(data, (int, long, bool)):
+            ctext.append('i{:d}e'.format(data))
+        elif isinstance(data, Bencached):
+            assert data.marker == BENCACHED_MARKER
+            ctext.append(data.bencoded)
+        else:
+            raise TypeError('Unknown type for bencode: ' + str(type(data)))
+
+#pylint: disable=R0201
 class BTDecoder(object):
     """Stateless object that decodes bencoded strings into data structures"""
     def __call__(self, ctext, sloppy=0):
@@ -120,6 +184,8 @@ class BTDecoder(object):
         'u':    decode_unicode
     }
 
+#pylint: disable=C0103
+bencode = BTEncoder().__call__
 bdecode = BTDecoder().__call__
 
 
@@ -133,6 +199,30 @@ def _test_exception(exc, func, *data):
         pass
     return False
 
+
+def test_bencode():
+    """Test encoding of encodable and unencodable data structures"""
+    assert bencode(4) == 'i4e'
+    assert bencode(0) == 'i0e'
+    assert bencode(-10) == 'i-10e'
+    assert bencode(12345678901234567890L) == 'i12345678901234567890e'
+    assert bencode('') == '0:'
+    assert bencode('abc') == '3:abc'
+    assert bencode('1234567890') == '10:1234567890'
+    assert bencode([]) == 'le'
+    assert bencode([1, 2, 3]) == 'li1ei2ei3ee'
+    assert bencode([['Alice', 'Bob'], [2, 3]]) == 'll5:Alice3:Bobeli2ei3eee'
+    assert bencode({}) == 'de'
+    assert bencode({'age': 25, 'eyes': 'blue'}) == 'd3:agei25e4:eyes4:bluee'
+    assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == \
+        'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
+    assert _test_exception(TypeError, bencode, {1: 'foo'})
+    assert _test_exception(TypeError, bencode, {'foo': 1.0})
+
+    cached = Bencached.cache({'age': 25})
+    assert bencode(cached) == cached.bencoded
+
+    assert bencode(u'') == bencode('')
 
 def test_bdecode():
     """Test decoding of valid and erroneous sample strings"""
@@ -177,128 +267,3 @@ def test_bdecode():
     assert _test_exception(ValueError, bdecode, 'l0:')
     assert _test_exception(ValueError, bdecode, 'd0:0:')
     assert _test_exception(ValueError, bdecode, 'd0:')
-
-BENCACHED_MARKER = []
-
-
-class Bencached:
-    """Store the ciphertext of repeatedly encoded data structures"""
-    def __init__(self, ctext):
-        self.marker = BENCACHED_MARKER
-        self.bencoded = ctext
-
-    @classmethod
-    def get(cls, _encoder, data, ctext):
-        """Get cached ciphertext from Bencached object
-
-        Called with an encoder, so use class method to rearrange parameters
-        """
-        assert data.marker == BENCACHED_MARKER
-        ctext.append(data.bencoded)
-
-BencachedType = type(Bencached(''))     # insufficient, but good as a filter
-
-
-class BTEncoder(object):
-    """Encode a data structure into a string for use in BitTorrent applications
-    """
-
-    def __call__(self, data):
-        """Encode a data structure into a string.
-
-        Creates a list in which to collect string segments and returns the
-        joined result.
-
-        See encode_* for details.
-        """
-        ctext = []
-        self.encode_func[type(data)](self, data, ctext)
-        return ''.join(ctext)
-
-    def encode_unicode(self, string, ctext):
-        """Encode unicode string into string segments appended to
-        ciphertext list
-
-        A unicode string is converted into UTF-8 and encoded as any other
-        string.
-        """
-        #ctext.append('u')
-        self.encode_func[str](self, string.encode('UTF-8'), ctext)
-
-    def encode_list(self, data, ctext):
-        """Encode list into string segments appended to ciphertext list
-
-        A list takes the form lXe where X is the concatenation of the
-        encodings of all elements in the list.
-        """
-        ctext.append('l')
-        for element in data:
-            self.encode_func[type(element)](self, element, ctext)
-        ctext.append('e')
-
-    def encode_dict(self, data, ctext):
-        """Encode dictionary into string segments appended to
-        ciphertext list
-
-        A dictionary is encoded as dXe where X is the concatenation of the
-        encodings of all key,value pairs in the dictionary, sorted by key.
-        Key, value pairs are themselves concatenations of the encodings of
-        keys and values, where keys are assumed to be strings.
-        """
-        ctext.append('d')
-        ilist = data.items()
-        ilist.sort()
-        for key, value in ilist:
-            ctext.extend((str(len(key)), ':', key))
-            self.encode_func[type(value)](self, value, ctext)
-        ctext.append('e')
-
-    encode_func = {
-        # Cached values are retrieved directly from the cache object
-        BencachedType: Bencached.get,
-
-        # An integer with decimal representation X is encoded as "iXe"
-        IntType: lambda _s, i, c: c.extend(('i', str(i), 'e')),
-        LongType: lambda _s, i, c: c.extend(('i', str(i), 'e')),
-
-        # Booleans are encoded as integers of value 0 or 1
-        BooleanType: lambda _s, b, c: c.extend(('i', str(int(b)), 'e')),
-
-        # Strings are encoded with decimal length, followed by a colon and
-        # the string itself
-        StringType: lambda _s, s, c: c.extend((str(len(s)), ':', s)),
-
-        # Types that are slightly less simple to encode
-        UnicodeType: encode_unicode,
-        ListType:    encode_list,
-        TupleType:   encode_list,
-        DictType:    encode_dict
-    }
-
-
-bencode = BTEncoder().__call__
-
-
-def test_bencode():
-    """Test encoding of encodable and unencodable data structures"""
-    assert bencode(4) == 'i4e'
-    assert bencode(0) == 'i0e'
-    assert bencode(-10) == 'i-10e'
-    assert bencode(12345678901234567890L) == 'i12345678901234567890e'
-    assert bencode('') == '0:'
-    assert bencode('abc') == '3:abc'
-    assert bencode('1234567890') == '10:1234567890'
-    assert bencode([]) == 'le'
-    assert bencode([1, 2, 3]) == 'li1ei2ei3ee'
-    assert bencode([['Alice', 'Bob'], [2, 3]]) == 'll5:Alice3:Bobeli2ei3eee'
-    assert bencode({}) == 'de'
-    assert bencode({'age': 25, 'eyes': 'blue'}) == 'd3:agei25e4:eyes4:bluee'
-    assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == \
-        'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
-    assert _test_exception(TypeError, bencode, {1: 'foo'})
-    assert _test_exception(KeyError, bencode, {'foo': 1.0})
-
-    cached = Bencached(bencode({'age': 25}))
-    assert bencode(cached) == cached.bencoded
-
-    assert bencode(u'') == bencode('')

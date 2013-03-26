@@ -8,7 +8,7 @@ import time
 import shutil
 from binascii import hexlify, unhexlify
 from inifile import ini_write, ini_read
-from bencode import bencode, bdecode
+from Info import MetaInfo
 from CreateIcons import GetIcons, CreateIcon
 from parseargs import defaultargs
 
@@ -148,8 +148,7 @@ class ConfigDir(object):
             fname += '.' + str(version)
 
         try:
-            with open(fname, 'rb') as tfile:
-                return bdecode(tfile.read())
+            return MetaInfo.read(fname)
         except (IOError, ValueError):
             return None
 
@@ -168,8 +167,7 @@ class ConfigDir(object):
         if version:
             fname += '.' + str(version)
         try:
-            with open(fname, 'wb') as tfile:
-                tfile.write(bencode(data))
+            data.write(fname)
         except (IOError, TypeError, KeyError):
             return None
 
@@ -184,8 +182,7 @@ class ConfigDir(object):
         if not os.path.exists(fname):
             return None
         try:
-            with open(fname, 'rb') as tfile:
-                data = bdecode(tfile.read())
+            data = MetaInfo.read(fname)
         except (IOError, ValueError):
             data = None
         self.torrentDataBuffer[fname] = data
@@ -196,8 +193,7 @@ class ConfigDir(object):
         self.torrentDataBuffer[torrent] = data
         fname = os.path.join(self.dir_datacache, hexlify(torrent))
         try:
-            with open(fname, 'wb') as tfile:
-                tfile.write(bencode(data))
+            data.write(fname)
             return True
         except (IOError, TypeError, KeyError):
             self.deleteTorrentData(torrent)

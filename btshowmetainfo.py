@@ -7,10 +7,11 @@
 import sys
 import os
 import sha
-from BitTornado.bencode import bencode, bdecode
+from BitTornado.Info import MetaInfo
+from BitTornado.bencode import bencode
 
 NAME, EXT = os.path.splitext(os.path.basename(sys.argv[0]))
-VERSION = '20030621'
+VERSION = '20130326'
 
 print '%s %s - decode BitTorrent metainfo files' % (NAME, VERSION)
 print
@@ -21,8 +22,7 @@ if len(sys.argv) == 1:
     sys.exit(2)     # common exit code for syntax error
 
 for metainfo_name in sys.argv[1:]:
-    with open(metainfo_name, 'rb') as metainfo_file:
-        metainfo = bdecode(metainfo_file.read())
+    metainfo = MetaInfo.read(metainfo_name)
     info = metainfo['info']
     info_hash = sha.sha(bencode(info))
 

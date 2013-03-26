@@ -8,7 +8,7 @@
 import sys
 import os
 import getopt
-from BitTornado.bencode import bdecode
+from BitTornado.Info import MetaInfo
 from BitTornado.reannounce import reannounce
 
 
@@ -28,8 +28,7 @@ def main(argv):
         print "%s\n%s\n" % (usage, main.__doc__)
         return 2
 
-    with open(args[0], 'rb') as metainfo_file:
-        source_metainfo = bdecode(metainfo_file.read())
+    source_metainfo = MetaInfo.read(args[0])
 
     verbose = False
 

@@ -8,7 +8,7 @@ import sys
 import os
 import threading
 from BitTornado.BT1.makemetafile import make_meta_file, completedir
-from BitTornado.bencode import bdecode
+from BitTornado.Info import MetaInfo
 try:
     from wxPython import wx
 except:
@@ -147,8 +147,7 @@ class DownloadInfo:
                              '*.torrent', wx.wxOPEN)
         if dl.ShowModal() == wx.wxID_OK:
             try:
-                with open(dl.GetPath(), 'rb') as h:
-                    metainfo = bdecode(h.read())
+                metainfo = MetaInfo.read(dl.GetPath())
                 self.annCtl.SetValue(metainfo['announce'])
                 if 'announce-list' in metainfo:
                     self.annListCtl.SetValue(

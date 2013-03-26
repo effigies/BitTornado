@@ -377,6 +377,11 @@ class MetaInfo(dict):
         real_httpseeds = params.pop('real_httpseeds', None)
         httpseeds = params.pop('httpseeds', None)
 
+        # Since httpseeds may be passed as a parameter or a list, check this
+        # possibility
+        if isinstance(httpseeds, list):
+            real_httpseeds = httpseeds
+
         if real_announce_list:
             self['announce-list'] = real_announce_list
         elif announce_list:

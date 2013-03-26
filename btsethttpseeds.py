@@ -7,7 +7,7 @@
 import sys
 import os
 import getopt
-from BitTornado.bencode import bencode, bdecode
+from BitTornado.Info import MetaInfo
 
 
 def main(argv):
@@ -44,8 +44,7 @@ def main(argv):
             verbose = True
 
     for fname in args[1:]:
-        with open(fname, 'rb') as metainfo_file:
-            metainfo = bdecode(metainfo_file.read())
+        metainfo = MetaInfo.read(fname)
 
         if 'httpseeds' in metainfo:
             if verbose:
@@ -57,8 +56,7 @@ def main(argv):
         if http_seeds is not None:
             metainfo['httpseeds'] = http_seeds
 
-        with open(fname, 'wb') as metainfo_file:
-            metainfo_file.write(bencode(metainfo))
+        metainfo.write(fname)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

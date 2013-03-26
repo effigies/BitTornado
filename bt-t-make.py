@@ -10,7 +10,7 @@ import shutil
 import threading
 import traceback
 from BitTornado.BT1.makemetafile import make_meta_file
-from BitTornado.bencode import bencode, bdecode
+from BitTornado.Info import MetaInfo
 
 try:
     from wxPython import wx
@@ -175,8 +175,7 @@ class BasicDownloadInfo:
 
     def _announcecopy(self, f):
         try:
-            with open(f, 'rb') as h:
-                metainfo = bdecode(h.read())
+            metainfo = MetaInfo.read(f)
             self.announce = metainfo['announce']
             self.announce_list = metainfo.get('announce-list')
         except:
@@ -590,8 +589,7 @@ class AdvancedDownloadInfo:
 
     def _announcecopy(self, f, external=False):
         try:
-            with open(f, 'rb') as h:
-                metainfo = bdecode(h.read())
+            metainfo = MetaInfo.read(f)
             self.annCtl.SetValue(metainfo['announce'])
             if 'announce-list' in metainfo:
                 self.annListCtl.SetValue('\n'.join(', '.join(tier)
@@ -795,7 +793,6 @@ class AdvancedDownloadInfo:
                         dlg.Destroy()
                         return
                 metainfo['announce-list'] = annlist
-            metainfo = bencode(metainfo)
         except:
             return
 
@@ -811,8 +808,7 @@ class AdvancedDownloadInfo:
         d = dl.GetPath()
 
         try:
-            with open(d, 'wb') as f:
-                f.write(metainfo)
+            metainfo.write(d)
             garbage, self.thostselection = os.path.split(d)
         except:
             pass

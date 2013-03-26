@@ -3,6 +3,7 @@ import os
 import threading
 from traceback import print_exc
 from BitTornado.BTTree import BTTree
+from BitTornado.Info import MetaInfo
 
 defaults = [
     ('announce_list', '',
@@ -68,8 +69,8 @@ def make_meta_file(loc, url, params=None, flag=None,
     if flag is not None and flag.isSet():
         return
 
-    info.write(tracker=url, **params)
-
+    metainfo = MetaInfo(announce=url, info=info, **params)
+    metainfo.write(params['target'])
 
 def completedir(directory, url, params=None, flag=None,
                 progress=lambda x: None, filestat=lambda x: None):

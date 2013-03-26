@@ -170,7 +170,7 @@ class PieceHasher(object):
         return self._hash.name
 
 
-class Info(object):
+class Info(dict):
     """Info - information associated with a .torrent file
 
     Info attributes
@@ -180,9 +180,10 @@ class Info(object):
         long        totalhashed - portion of total data hashed
         PieceHasher hasher      - object to manage hashed files
     """
+    validKeys = set(('name', 'piece length', 'pieces', 'files', 'length'))
 
-    def __init__(self, source, size, progress=lambda x: None,
-                 progress_percent=True, **params):
+    def __init__(self, name, size=None,
+                 progress=lambda x: None, progress_percent=False, **params):
         """
         Parameters
             str  source           - source file name (last path element)
@@ -190,27 +191,47 @@ class Info(object):
             f()  progress         - callback function to report progress
             bool progress_percent - flag for reporting percentage or change
         """
+        super(Info, self).__init__()
+
         self.encoding = params.get('encoding', sys.getfilesystemencoding())
 
-        self.name = self.uniconvert((source,))[0]
-        self.size = size
+        # Use encoding to set name
+        self.name = name
 
-        # BitTorrent/BitTornado have traditionally allowed this parameter
-        piece_len_exp = params.get('piece_size_pow2')
-        if piece_len_exp is not None and piece_len_exp != 0:
-            pieceLength = 2 ** piece_len_exp
+        if 'files' in params:
+            self._files = params['files']
+            self.size = sum(entry['length'] for entry in self._files)
+        elif 'length' in params:
+            self.size = params['length']
+            self._files = [{'path': self.name, 'length': self.size}]
         else:
-            pieceLength = get_piece_len(size)
+            self._files = []
+            self.size = size
 
-        # Universal
-        self.files = []
-        self.totalhashed = 0L
-        self.hasher = PieceHasher(pieceLength)
+        if 'pieces' in params:
+            pieces = params['pieces']
+            # 'piece length' can't be made a variable
+            self.hasher = PieceHasher(params['piece length'])
+            self.hasher.pieces = [pieces[i:i + 20]
+                                  for i in xrange(0, len(pieces), 20)]
+            self.totalhashed = self.size
+        elif size:
+            # BitTorrent/BitTornado have traditionally allowed this parameter
+            piece_len_exp = params.get('piece_size_pow2')
+            if piece_len_exp is not None and piece_len_exp != 0:
+                piece_length = 2 ** piece_len_exp
+            else:
+                piece_length = get_piece_len(size)
+
+            self.totalhashed = 0L
+            self.hasher = PieceHasher(piece_length)
 
         # Progress for this function updates the total amount hashed
         # Call the given progress function according to whether it accpts
         # percent or update
         if progress_percent:
+            assert self.size
+
             def totalprogress(update, self=self, base=progress):
                 """Update totalhashed and use percentage progress callback"""
                 self.totalhashed += update
@@ -223,6 +244,84 @@ class Info(object):
                 base(update)
             self.progress = updateprogress
 
+    def __contains__(self, key):
+        """Test whether a key is in the Info dict"""
+        if key == 'files':
+            return len(self._files) != 1
+        elif key == 'length':
+            return len(self._files) == 1
+        else:
+            return key in self.validKeys
+
+    def __getitem__(self, key):
+        """Retrieve value associated with key in Info dict"""
+        if key not in self.validKeys:
+            raise KeyError('Invalid Info key')
+        if key == 'piece length':
+            return self.hasher.pieceLength
+        elif key == 'pieces':
+            return str(self.hasher)
+        elif key == 'files':
+            if 'files' in self:
+                return self._files
+            raise KeyError('files')
+        elif key == 'length':
+            if 'length' in self:
+                return self.size
+            raise KeyError('length')
+        else:
+            return super(Info, self).__getitem__(key)
+
+    def iterkeys(self):
+        """Return iterator over keys in Info dict"""
+        keys = self.validKeys.copy()
+        if 'files' in self:
+            keys.remove('length')
+        else:
+            keys.remove('files')
+        return iter(keys)
+
+    def itervalues(self):
+        """Return iterator over values in Info dict"""
+        return (self[key] for key in self.keys())
+
+    def iteritems(self):
+        """Return iterator over items in Info dict"""
+        return ((key, self[key]) for key in self.keys())
+
+    def keys(self):
+        """Return list of keys in Info dict"""
+        return list(self.iterkeys())
+
+    def values(self):
+        """Return list of values in Info dict"""
+        return list(self.itervalues())
+
+    def items(self):
+        """Return list of (key, value) pairs in Info dict"""
+        return list(self.iteritems())
+
+    def get(self, key, default=None):
+        """Return value associated with key in Info dict, or default, if
+        unavailable"""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    @property
+    def name(self):         #pylint: disable=E0202
+        """Manage encoded Info name string"""
+        return self['name'].decode(self.encoding)
+
+    @name.setter            #pylint: disable=E1101
+    def name(self, name):   #pylint: disable=E0102,E0202
+        """Manage encoded Info name string"""
+        try:
+            self['name'] = unicode(name, self.encoding).encode('utf-8')
+        except UnicodeError:
+            raise UnicodeError('bad filename: ' + name)
+
     def add_file_info(self, size, path):
         """Add file information to torrent.
 
@@ -230,8 +329,8 @@ class Info(object):
             long        size    size of file (in bytes)
             str[]       path    file path e.g. ['path','to','file.ext']
         """
-        self.files.append({'length': size,
-                           'path': self.uniconvert(path)})
+        self._files.append({'length': size,
+                            'path': self._uniconvert(path)})
 
     def add_data(self, data):
         """Process a segment of data.
@@ -251,57 +350,7 @@ class Info(object):
         """
         self.hasher.update(data, self.progress)
 
-    def write(self, target, tracker, **params):
-        """Write a .torrent file
-
-        Parameters
-            str     target             - target file name (full path)
-            str     tracker            - URL of tracker
-
-        Optional parameters
-            str     comment            - comment to include in file
-            str     announce_list      - unparsed announce list
-            str[][] real_announce_list - hierarchical announce list
-            str     httpseeds          - unparsed http seed list
-            str[]   real_httpseeds     - list of http seeds
-        """
-
-        info = {'pieces': str(self.hasher),
-                'piece length': self.hasher.pieceLength,
-                'name': self.name}
-
-        # If there is only one file and it has the same name path as the
-        # torrent name, then encode directly, not as a files dictionary
-        if len(self.files) == 1 and self.files[0]['path'] == []:
-            info['length'] = self.size
-        else:
-            info['files'] = self.files
-
-        check_info(info)
-
-        data = {'info': info, 'announce': tracker,
-                'creation date': long(time.time())}
-
-        # Optional data dictionary contents
-        if 'comment' in params and params['comment']:
-            data['comment'] = params['comment']
-
-        if 'real_announce_list' in params:
-            data['announce-list'] = params['real_announce_list']
-        elif 'announce_list' in params and params['announce_list']:
-            data['announce-list'] = [
-                tier.split(',') for tier in params['announce_list'].split('|')]
-
-        if 'real_httpseeds' in params:
-            data['httpseeds'] = params['real_httpseeds']
-        elif 'httpseeds' in params and params['httpseeds']:
-            data['httpseeds'] = params['httpseeds'].split('|')
-
-        # Write file
-        with open(target, 'wb') as fhandle:
-            fhandle.write(bencode(data))
-
-    def uniconvert(self, srclist):
+    def _uniconvert(self, srclist):
         """Convert a list of strings to utf-8
 
         Parameters
@@ -338,8 +387,12 @@ class MetaInfo(dict):
         elif httpseeds:
             self['httpseeds'] = httpseeds.split('|')
 
-        super(MetaInfo, self).__init__((k, params[k]) for k in params
-                                       if k in self.validKeys)
+        self.info = params.pop('info', None)
+
+        if 'creation date' not in params:
+            self['creation date'] = long(time.time())
+        super(MetaInfo, self).__init__((k, v) for k, v in params.iteritems()
+                                       if k in self.validKeys and v != '')
 
     def __setitem__(self, key, value):
         """Set value associated with key if key is in MetaInfo.validKeys"""
@@ -380,3 +433,21 @@ class MetaInfo(dict):
         """Read MetaInfo from a torrent file"""
         with open(torrent, 'rb') as torrentfile:
             return cls(**bdecode(torrentfile.read()))
+
+    @property
+    def info(self):             #pylint: disable=E0202
+        """Access and set Info struct through attribute"""
+        return self['info']
+
+    @info.setter                #pylint: disable=E1101
+    def info(self, newinfo):    #pylint: disable=E0102,E0202
+        """Access and set Info struct through attribute"""
+        # Allow no Info
+        if newinfo is None:
+            self.pop('info', None)
+            return
+
+        check_info(newinfo)
+        if not isinstance(newinfo, Info):
+            newinfo = Info(**newinfo)
+        self['info'] = newinfo

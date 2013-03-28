@@ -247,7 +247,7 @@ class Connecter:
         elif t == UNCHOKE:
             c.download.got_unchoke()
         elif t == INTERESTED:
-            if not c.download.have.complete():
+            if not c.download.have.complete:
                 c.upload.got_interested()
         elif t == NOT_INTERESTED:
             c.upload.got_not_interested()

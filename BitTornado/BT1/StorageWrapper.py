@@ -428,7 +428,7 @@ class StorageWrapper:
             self.request_lost(index, begin, length)
 
     def get_have_list(self):
-        return self.have.tostring()
+        return str(self.have)
 
     def get_have_list_cloaked(self):
         if self.have_cloaked_data is None:
@@ -442,7 +442,7 @@ class StorageWrapper:
                 if not unhave in unhaves:
                     unhaves.append(unhave)
                     newhave[unhave] = False
-            self.have_cloaked_data = (newhave.tostring(), unhaves)
+            self.have_cloaked_data = (str(newhave), unhaves)
         return self.have_cloaked_data
 
     def do_I_have(self, index):
@@ -859,7 +859,7 @@ class StorageWrapper:
                     reserved so it doesn't need to be hash-checked.
     '''
     def pickle(self):
-        if self.have.complete():
+        if self.have.complete:
             return {'pieces': 1}
         pieces = Bitfield(len(self.hashes))
         places = []
@@ -888,7 +888,7 @@ class StorageWrapper:
                     del pp[0]
             r.extend(pp[0])
             partials.extend([p, r])
-        return {'pieces': pieces.tostring(), 'places': places,
+        return {'pieces': str(pieces), 'places': places,
                 'partials': partials}
 
     def unpickle(self, data, valid_places):
@@ -911,7 +911,7 @@ class StorageWrapper:
                 have = Bitfield(len(self.hashes))
                 for i in xrange(len(self.hashes)):
                     have[i] = True
-                assert have.complete()
+                assert have.complete
                 _places = []
                 _partials = []
             else:

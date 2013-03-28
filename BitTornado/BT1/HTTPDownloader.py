@@ -1,4 +1,5 @@
 from BitTornado.CurrentRateMeasure import Measure
+from BitTornado.bitfield import TrueBitfield
 from random import randint
 from urlparse import urlparse
 from httplib import HTTPConnection
@@ -11,14 +12,7 @@ EXPIRE_TIME = 60 * 60
 VERSION = product_name + '/' + version_short
 
 
-class haveComplete:
-    def complete(self):
-        return True
-
-    def __getitem__(self, x):
-        return True
-
-haveall = haveComplete()
+haveall = TrueBitfield()
 
 
 class SingleDownload:

@@ -164,7 +164,7 @@ class PiecePicker:
 
     def next(self, haves, wantfunc, complete_first=False):
         cutoff = self.numgot < self.rarest_first_cutoff
-        complete_first = (complete_first or cutoff) and not haves.complete()
+        complete_first = (complete_first or cutoff) and not haves.complete
         best = None
         bestnum = 2 ** 30
         for i in self.started:
@@ -175,7 +175,7 @@ class PiecePicker:
         if best is not None:
             if complete_first or cutoff and len(self.interests) > self.cutoff:
                 return best
-        if haves.complete():
+        if haves.complete:
             r = [(0, min(bestnum, len(self.interests)))]
         elif cutoff and len(self.interests) > self.cutoff:
             r = [(self.cutoff, min(bestnum, len(self.interests))),

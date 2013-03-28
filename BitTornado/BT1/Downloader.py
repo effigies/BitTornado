@@ -74,13 +74,13 @@ class SingleDownload:
 
     def disconnected(self):
         self.downloader.lost_peer(self)
-        if self.have.complete():
+        if self.have.complete:
             self.downloader.picker.lost_seed()
         else:
             for i in xrange(len(self.have)):
                 if self.have[i]:
                     self.downloader.picker.lost_have(i)
-        if self.have.complete() and self.downloader.storage.is_endgame():
+        if self.have.complete and self.downloader.storage.is_endgame():
             self.downloader.add_disconnected_seed(
                 self.connection.get_readable_id())
         self._letgo()
@@ -277,7 +277,7 @@ class SingleDownload:
         if not self.have[index]:
             self.have[index] = True
             self.downloader.picker.got_have(index)
-            if self.have.complete():
+            if self.have.complete:
                 self.downloader.picker.became_seed()
                 if self.downloader.storage.am_I_complete():
                     self.downloader.add_disconnected_seed(
@@ -292,7 +292,7 @@ class SingleDownload:
                     self._request_more()
                 else:
                     self.send_interested()
-        return self.have.complete()
+        return self.have.complete
 
     def _check_interests(self):
         if self.interested or self.downloader.paused:
@@ -305,16 +305,16 @@ class SingleDownload:
                 return
 
     def got_have_bitfield(self, have):
-        if self.downloader.storage.am_I_complete() and have.complete():
+        if self.downloader.storage.am_I_complete() and have.complete:
             # be nice, show you're a seed too
             if self.downloader.super_seeding:
-                self.connection.send_bitfield(have.tostring())
+                self.connection.send_bitfield(str(have))
             self.connection.close()
             self.downloader.add_disconnected_seed(
                 self.connection.get_readable_id())
             return False
         self.have = have
-        if have.complete():
+        if have.complete:
             self.downloader.picker.got_seed()
         else:
             for i in xrange(len(have)):
@@ -327,7 +327,7 @@ class SingleDownload:
                     break
         else:
             self._check_interests()
-        return have.complete()
+        return have.complete
 
     def get_rate(self):
         return self.measure.get_rate()
@@ -509,7 +509,7 @@ class Downloader:
         if self.storage.am_I_complete():
             assert not self.all_requests
             assert not self.endgamemode
-            for d in [i for i in self.downloads if i.have.complete()]:
+            for d in [i for i in self.downloads if i.have.complete]:
                 # be nice, tell the other seed you completed
                 d.connection.send_have(index)
                 self.add_disconnected_seed(d.connection.get_readable_id())

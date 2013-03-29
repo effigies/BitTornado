@@ -1,7 +1,7 @@
 import os
-import sha
 import random
 import socket
+import hashlib
 import threading
 from Info import check_type, check_info
 from zurllib import urlopen
@@ -213,7 +213,7 @@ def download(params, filefunc, statusfunc, finfunc, errorfunc, doneflag, cols,
     if not response:
         return
 
-    infohash = sha.sha(bencode(response['info'])).digest()
+    infohash = hashlib.sha1(bencode(response['info'])).digest()
 
     d = BT1Download(statusfunc, finfunc, errorfunc, exchandler, doneflag,
                     config, response, infohash, myid, rawserver, listen_port)

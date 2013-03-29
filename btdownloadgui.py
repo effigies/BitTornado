@@ -7,10 +7,10 @@
 import sys
 import os
 import re
-import sha
 import time
 import random
 import socket
+import hashlib
 import threading
 import traceback
 from binascii import hexlify
@@ -2433,7 +2433,7 @@ def _next(params, d, doneflag, configfile):
             if not response:
                 break
 
-            infohash = sha.sha(bencode(response['info'])).digest()
+            infohash = hashlib.sha1(bencode(response['info'])).digest()
 
             torrentdata = configfile.getTorrentData(infohash)
             if torrentdata:

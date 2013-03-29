@@ -1,4 +1,4 @@
-import sha
+import hashlib
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
 from random import randrange
@@ -238,7 +238,7 @@ class StorageWrapper:
             d1 = self.read_raw(i, 0, self.lastlen)
             if d1 is None:
                 return None
-            sh = sha.sha(d1[:])
+            sh = hashlib.sha1(d1[:])
             d1.release()
             sp = sh.digest()
             d2 = self.read_raw(i, self.lastlen,
@@ -304,7 +304,7 @@ class StorageWrapper:
                 old = self.read_raw(i, 0, self._piecelen(i), flush_first=True)
                 if old is None:
                     return None
-            if sha.sha(old[:]).digest() != self.hashes[i]:
+            if hashlib.sha1(old[:]).digest() != self.hashes[i]:
                 self.failed('download corrupted; please restart and resume')
                 return None
         old.release()
@@ -553,7 +553,7 @@ class StorageWrapper:
                                     flush_first=True)
                 if old is None:
                     return -1
-            if sha.sha(old[:]).digest() != self.hashes[index]:
+            if hashlib.sha1(old[:]).digest() != self.hashes[index]:
                 self.failed('download corrupted; please restart and resume')
                 return -1
         old.release()
@@ -663,7 +663,7 @@ class StorageWrapper:
                              flush_first=self.triple_check)
         if data is None:
             return True
-        hash = sha.sha(data[:]).digest()
+        hash = hashlib.sha1(data[:]).digest()
         data.release()
         if hash != self.hashes[index]:
 
@@ -720,7 +720,7 @@ class StorageWrapper:
             data = self.read_raw(self.places[index], 0, self._piecelen(index))
             if data is None:
                 return None
-            if sha.sha(data[:]).digest() != self.hashes[index]:
+            if hashlib.sha1(data[:]).digest() != self.hashes[index]:
                 self.failed('told file complete on start-up, but piece failed '
                             'hash check')
                 return None
@@ -780,7 +780,7 @@ class StorageWrapper:
                                       self._piecelen(index), flush_first=True)
                 if piece is None:
                     return False
-                if sha.sha(piece[:]).digest() != self.hashes[index]:
+                if hashlib.sha1(piece[:]).digest() != self.hashes[index]:
                     self.failed('download corrupted; please restart and '
                                 'resume')
                     return False

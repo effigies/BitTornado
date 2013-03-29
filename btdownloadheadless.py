@@ -5,10 +5,10 @@
 
 import sys
 import os
-import sha
 import time
 import random
 import socket
+import hashlib
 import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
     get_usage, get_response
@@ -192,7 +192,7 @@ def run(params):
         if not response:
             break
 
-        infohash = sha.sha(bencode(response['info'])).digest()
+        infohash = hashlib.sha1(bencode(response['info'])).digest()
 
         dow = BT1Download(
             h.display, h.finished, h.error, disp_exception, doneflag, config,

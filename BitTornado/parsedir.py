@@ -2,7 +2,7 @@
 """
 
 import os
-import sha
+import hashlib
 from bencode import bencode
 from Info import check_info, MetaInfo
 
@@ -165,7 +165,7 @@ def parse_torrent(path, return_metainfo=False):
     # Validate and hash info dict
     info = data['info']
     check_info(info)
-    infohash = sha.sha(bencode(info)).digest()
+    infohash = hashlib.sha1(bencode(info)).digest()
 
     single = 'length' in info
 

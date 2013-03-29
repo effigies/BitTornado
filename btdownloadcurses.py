@@ -7,11 +7,11 @@ SPEW_SCROLL_RATE = 1
 
 import sys
 import os
-import sha
 import time
 import signal
 import random
 import socket
+import hashlib
 import threading
 from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
     get_usage, get_response
@@ -370,7 +370,7 @@ def run(scrwin, errlist, params):
             if not response:
                 break
 
-            infohash = sha.sha(bencode(response['info'])).digest()
+            infohash = hashlib.sha1(bencode(response['info'])).digest()
 
             dow = BT1Download(
                 d.display, d.finished, d.error, d.error, doneflag, config,

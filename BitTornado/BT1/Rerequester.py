@@ -1,4 +1,5 @@
 import urllib
+import hashlib
 from BitTornado.zurllib import urlopen
 from BitTornado.Info import check_type
 from BitTornado.bencode import bdecode
@@ -7,7 +8,6 @@ from cStringIO import StringIO
 from traceback import print_exc
 from socket import error, gethostbyname
 from random import shuffle
-from sha import sha
 from time import time
 try:
     from os import getpid
@@ -21,8 +21,9 @@ basekeydata = str(getpid()) + repr(time()) + 'tracker'
 
 
 def add_key(tracker):
-    keys[tracker] = ''.join(mapbase64[ord(i) & 0x3F]
-                            for i in sha(basekeydata + tracker).digest()[-6:])
+    keys[tracker] = ''.join(
+        mapbase64[ord(i) & 0x3F]
+        for i in hashlib.sha1(basekeydata + tracker).digest()[-6:])
 
 
 def get_key(tracker):

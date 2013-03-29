@@ -1,6 +1,6 @@
 import os
-import sha
 import random
+import hashlib
 import binascii
 
 URANDOM = getattr(os, 'urandom', None)
@@ -45,12 +45,12 @@ class Crypto:
 
     def received_key(self, k):
         self.S = numtobyte(pow(bytetonum(k), self.privkey, DH_PRIME))
-        self.block3a = sha.sha('req1' + self.S).digest()
-        self.block3bkey = sha.sha('req3' + self.S).digest()
+        self.block3a = hashlib.sha1('req1' + self.S).digest()
+        self.block3bkey = hashlib.sha1('req3' + self.S).digest()
         self.block3b = None
 
     def _gen_block3b(self, SKEY):
-        req2key = sha.sha('req2' + SKEY).digest()
+        req2key = hashlib.sha1('req2' + SKEY).digest()
         return ''.join(chr(ord(a) ^ ord(b))
                        for a, b in zip(req2key, self.block3bkey))
 
@@ -66,8 +66,8 @@ class Crypto:
     def set_skey(self, SKEY):
         if not self.block3b:
             self.block3b = self._gen_block3b(SKEY)
-        crypta = ARC4.new(sha.sha('keyA' + self.S + SKEY).digest())
-        cryptb = ARC4.new(sha.sha('keyB' + self.S + SKEY).digest())
+        crypta = ARC4.new(hashlib.sha1('keyA' + self.S + SKEY).digest())
+        cryptb = ARC4.new(hashlib.sha1('keyB' + self.S + SKEY).digest())
         if self.initiator:
             self.encrypt = crypta.encrypt
             self.decrypt = cryptb.decrypt

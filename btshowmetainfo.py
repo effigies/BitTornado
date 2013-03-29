@@ -6,7 +6,7 @@
 
 import sys
 import os
-import sha
+import hashlib
 from BitTornado.Info import MetaInfo
 from BitTornado.bencode import bencode
 
@@ -24,7 +24,7 @@ if len(sys.argv) == 1:
 for metainfo_name in sys.argv[1:]:
     metainfo = MetaInfo.read(metainfo_name)
     info = metainfo['info']
-    info_hash = sha.sha(bencode(info))
+    info_hash = hashlib.sha1(bencode(info))
 
     print 'metainfo file.: %s' % os.path.basename(metainfo_name)
     print 'info hash.....: %s' % info_hash.hexdigest()

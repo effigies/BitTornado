@@ -17,7 +17,7 @@ Yejun Yang and Myers Carpenter for NAT port mapping code adapted
 """
 __version__ = version_short
 
-from sha import sha
+import hashlib
 from time import time, clock
 try:
     from os import getpid
@@ -61,7 +61,7 @@ def resetPeerIDs():
     x += '{}/{}/{}/{}/{}/{}'.format(repr(time()), time(), l1, l2, l3, getpid())
 
     s = ''
-    for i in sha(x).digest()[-11:]:
+    for i in hashlib.sha1(x).digest()[-11:]:
         s += mapbase64[ord(i) & 0x3F]
     _idrandom[0] = s
 

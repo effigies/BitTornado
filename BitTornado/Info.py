@@ -170,7 +170,7 @@ class PieceHasher(object):
         return self._hash.name
 
 
-class Info(dict):
+class Info(dict):   # pylint: disable=R0904
     """Info - information associated with a .torrent file
 
     Info attributes
@@ -310,12 +310,12 @@ class Info(dict):
             return default
 
     @property
-    def name(self):         #pylint: disable=E0202
+    def name(self):         # pylint: disable=E0202
         """Manage encoded Info name string"""
         return self['name'].decode(self.encoding)
 
-    @name.setter            #pylint: disable=E1101
-    def name(self, name):   #pylint: disable=E0102,E0202
+    @name.setter            # pylint: disable=E1101
+    def name(self, name):   # pylint: disable=E0102,E0202
         """Manage encoded Info name string"""
         try:
             self['name'] = unicode(name, self.encoding).encode('utf-8')
@@ -349,6 +349,39 @@ class Info(dict):
                         be hashed
         """
         self.hasher.update(data, self.progress)
+
+    def resume(self, location):
+        """Rehash last piece to prepare PieceHasher to accept more data
+
+        Parameters
+            str location    - base path for hashed files"""
+        excessLength = self.size % self.hasher.pieceLength
+        if self.hasher.done != 0 or excessLength == 0:
+            return
+
+        # Construct list of files needed to provide the leftover data
+        rehash = []
+        for entry in self._files[::-1]:
+            rehash.insert(0, entry)
+            excessLength -= entry['length']
+            if excessLength < 0:
+                seek = -excessLength
+                break
+
+        # Final piece digest to compare new hash digest against
+        validator = self.hasher.pieces.pop()
+
+        for entry in rehash:
+            path = os.path.join(location, *entry['path'])
+            with open(path, 'rb') as tohash:
+                tohash.seek(seek)
+                self.hasher.update(tohash.read())
+                seek = 0
+
+        if self.hasher.digest != validator:
+            self.hasher.resetHash()
+            self.hasher.pieces.append(validator)
+            raise ValueError("Location does not produce same hash")
 
     def _uniconvert(self, srclist):
         """Convert a list of strings to utf-8
@@ -440,12 +473,12 @@ class MetaInfo(dict):
             return cls(**bdecode(torrentfile.read()))
 
     @property
-    def info(self):             #pylint: disable=E0202
+    def info(self):             # pylint: disable=E0202
         """Access and set Info struct through attribute"""
         return self['info']
 
-    @info.setter                #pylint: disable=E1101
-    def info(self, newinfo):    #pylint: disable=E0102,E0202
+    @info.setter                # pylint: disable=E1101
+    def info(self, newinfo):    # pylint: disable=E0102,E0202
         """Access and set Info struct through attribute"""
         # Allow no Info
         if newinfo is None:

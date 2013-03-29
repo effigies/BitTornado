@@ -3,8 +3,8 @@
 
 import os
 import sha
-from bencode import bencode, bdecode
-from Info import check_info
+from bencode import bencode
+from Info import check_info, MetaInfo
 
 
 def _errfunc(msg):
@@ -160,8 +160,7 @@ def parse_torrent(path, return_metainfo=False):
     """
     fname = os.path.basename(path)
 
-    with open(path, 'rb') as infofile:
-        data = bdecode(infofile.read())
+    data = MetaInfo.read(path)
 
     # Validate and hash info dict
     info = data['info']

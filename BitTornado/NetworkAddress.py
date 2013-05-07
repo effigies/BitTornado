@@ -222,7 +222,8 @@ class AddrList(object):
         self.addSubnet('fec0::/16')
 
     def set_ipv4_addresses(self):
-        self.add('::ffff:0:0/96')
+        """Add the block of IPv4 addresses in the IPv6 space"""
+        self.addSubnet('::ffff:0:0/96')
 
     def read_fieldlist(self, filename):
         """Read a list from a file in the format 'ip[/len] <whatever>'

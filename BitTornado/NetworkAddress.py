@@ -157,7 +157,7 @@ class AddressRange(object):     # pylint: disable=R0903
 
 class Subnet(AddressRange):
     """Address range that operates on the logic of CIDR blocks.
-    
+
     If addition of new addresses breaks this logic, revert to AddressRange."""
     def __init__(self, address, cidr):
         self.address = address.mask(cidr)

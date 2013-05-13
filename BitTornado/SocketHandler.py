@@ -4,12 +4,10 @@ import random
 from errno import EWOULDBLOCK
 try:
     from select import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
-    timemult = 1000
 except ImportError:
-    from selectpoll import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
-    timemult = 1
-from clock import clock
-from natpunch import UPnP_open_port, UPnP_close_port
+    from .selectpoll import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
+from .clock import clock
+from .natpunch import UPnP_open_port, UPnP_close_port
 
 POLLALL = POLLIN | POLLOUT
 
@@ -324,7 +322,7 @@ class SocketHandler:
         s.handler.connection_lost(s)
 
     def do_poll(self, t):
-        r = self.poll.poll(t * timemult)
+        r = self.poll.poll(t * 1000)
         if r is None:
             connects = len(self.single_sockets)
             to_close = int(connects * 0.05) + 1   # close 5% of sockets

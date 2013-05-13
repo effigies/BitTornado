@@ -39,7 +39,7 @@ class poll:
                 return None
         else:
             if timeout:
-                time.sleep(timeout)
+                time.sleep(timeout / 1000)
             return []
         return [(s, POLLIN) for s in r] + [(s, POLLOUT) for s in w]
 

@@ -9,8 +9,8 @@ import os
 import shutil
 import threading
 import traceback
-from BitTornado.BT1.makemetafile import make_meta_file
-from BitTornado.Info import MetaInfo
+from BitTornado.Application.makemetafile import make_meta_file
+from BitTornado.Meta.Info import MetaInfo
 
 try:
     from wxPython import wx

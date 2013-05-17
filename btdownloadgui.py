@@ -16,14 +16,14 @@ import traceback
 from binascii import hexlify
 from webbrowser import open_new
 from StringIO import StringIO
-from BitTornado.download_bt1 import BT1Download, parse_params, get_usage, \
-    get_response
-from BitTornado.RawServer import RawServer
-from BitTornado.SocketHandler import UPnP_ERROR
-from BitTornado.ConnChoice import connChoices, connChoiceList
-from BitTornado.ConfigReader import configReader
-from BitTornado.bencode import bencode
-from BitTornado.natpunch import UPnP_test
+from BitTornado.Client.download_bt1 import BT1Download, parse_params, \
+    get_usage, get_response
+from BitTornado.Network.RawServer import RawServer
+from BitTornado.Network.SocketHandler import UPnP_ERROR
+from BitTornado.Application.ConnChoice import connChoices, connChoiceList
+from BitTornado.Application.ConfigReader import configReader
+from BitTornado.Meta.bencode import bencode
+from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import version, createPeerID, report_email
 

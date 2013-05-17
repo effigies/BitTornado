@@ -8,8 +8,8 @@
 import sys
 import os
 import getopt
-from BitTornado.Info import MetaInfo
-from BitTornado.reannounce import reannounce
+from BitTornado.Meta.Info import MetaInfo
+from BitTornado.Application.reannounce import reannounce
 
 
 def main(argv):

@@ -7,8 +7,8 @@
 import sys
 import os
 import getopt
-from BitTornado.BT1.makemetafile import announcelist_details
-from BitTornado.reannounce import reannounce
+from BitTornado.Application.makemetafile import announcelist_details
+from BitTornado.Application.reannounce import reannounce
 
 announce_details = """
   Where:

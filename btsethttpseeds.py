@@ -7,7 +7,7 @@
 import sys
 import os
 import getopt
-from BitTornado.Info import MetaInfo
+from BitTornado.Meta.Info import MetaInfo
 
 
 def main(argv):

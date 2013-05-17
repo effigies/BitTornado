@@ -5,11 +5,11 @@
 
 import sys
 import os
-from BitTornado.launchmanycore import LaunchMany
-from BitTornado.download_bt1 import defaults, get_usage
-from BitTornado.parseargs import parseargs
+from BitTornado.Client.launchmanycore import LaunchMany
+from BitTornado.Client.download_bt1 import defaults, get_usage
+from BitTornado.Application.parseargs import parseargs
 from BitTornado import version, report_email
-from BitTornado.ConfigDir import ConfigDir
+from BitTornado.Application.ConfigDir import ConfigDir
 
 
 def hours(n):

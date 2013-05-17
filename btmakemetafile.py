@@ -6,9 +6,9 @@
 
 import sys
 import os
-from BitTornado.BT1.makemetafile import make_meta_file, defaults, \
+from BitTornado.Application.makemetafile import make_meta_file, defaults, \
     announcelist_details
-from BitTornado.parseargs import parseargs, formatDefinitions
+from BitTornado.Application.parseargs import parseargs, formatDefinitions
 
 
 def prog(amount):

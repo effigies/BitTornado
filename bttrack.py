@@ -6,7 +6,7 @@
 PROFILE = 0
 
 import sys
-from BitTornado.BT1.track import track
+from BitTornado.Tracker.track import track
 
 if __name__ == '__main__':
     if PROFILE:

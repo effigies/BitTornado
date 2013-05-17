@@ -13,15 +13,15 @@ import random
 import socket
 import hashlib
 import threading
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
-    get_usage, get_response
-from BitTornado.RawServer import RawServer
-from BitTornado.SocketHandler import UPnP_ERROR
-from BitTornado.bencode import bencode
-from BitTornado.natpunch import UPnP_test
+from BitTornado.Client.download_bt1 import BT1Download, defaults, \
+    parse_params, get_usage, get_response
+from BitTornado.Network.RawServer import RawServer
+from BitTornado.Network.SocketHandler import UPnP_ERROR
+from BitTornado.Meta.bencode import bencode
+from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import createPeerID, version
-from BitTornado.ConfigDir import ConfigDir
+from BitTornado.Application.ConfigDir import ConfigDir
 
 try:
     import curses

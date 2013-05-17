@@ -7,8 +7,8 @@
 import sys
 import os
 import hashlib
-from BitTornado.Info import MetaInfo
-from BitTornado.bencode import bencode
+from BitTornado.Meta.Info import MetaInfo
+from BitTornado.Meta.bencode import bencode
 
 NAME, EXT = os.path.splitext(os.path.basename(sys.argv[0]))
 VERSION = '20130326'

@@ -6,7 +6,7 @@
 import sys
 import os
 import threading
-from BitTornado.BT1.makemetafile import completedir
+from BitTornado.Application.makemetafile import completedir
 try:
     from wxPython import wx
 except:

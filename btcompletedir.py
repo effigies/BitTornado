@@ -5,9 +5,9 @@
 
 import sys
 import os
-from BitTornado.BT1.makemetafile import defaults, completedir, \
+from BitTornado.Application.makemetafile import defaults, completedir, \
     announcelist_details
-from BitTornado.parseargs import parseargs, formatDefinitions
+from BitTornado.Application.parseargs import parseargs, formatDefinitions
 
 
 def main(argv):
@@ -24,8 +24,8 @@ def main(argv):
 
     try:
         config, args = parseargs(argv[1:], defaults, 2, None)
-        for dir in args[1:]:
-            completedir(dir, args[0], config)
+        for directory in args[1:]:
+            completedir(directory, args[0], config)
     except ValueError as e:
         print 'error: ' + str(e)
         print 'run with no args for parameter explanations'

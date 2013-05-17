@@ -1,4 +1,4 @@
-from socket import error as socketerror
+import socket
 from .BTcrypto import Crypto, CRYPTO_OK
 from .Encrypter import tobinary16, toint, option_pattern
 
@@ -9,7 +9,7 @@ protocol_name = 'BitTorrent protocol'
 # header, reserved, download id, my id, [length, message]
 
 
-class NatCheck:
+class NatCheck(object):
     def __init__(self, resultfunc, downloadid, peerid, ip, port, rawserver,
                  encrypted=False):
         self.resultfunc = resultfunc
@@ -32,7 +32,7 @@ class NatCheck:
                 self.encrypter = None
                 self.write(chr(len(protocol_name)) + protocol_name +
                            (chr(0) * 8) + downloadid)
-        except socketerror:
+        except socket.error:
             self.answer(False)
         except IOError:
             self.answer(False)

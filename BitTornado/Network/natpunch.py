@@ -17,9 +17,9 @@ except ImportError:
     _supported = 0
 
 
-class _UPnP1:   # derived from Myers Carpenter's code
-                # seems to use the machine's local UPnP
-                # system for its operation.  Runs fairly fast
+class _UPnP1(object):   # derived from Myers Carpenter's code
+                        # seems to use the machine's local UPnP
+                        # system for its operation.  Runs fairly fast
 
     def __init__(self):
         self.map = None
@@ -99,10 +99,10 @@ class _UPnP1:   # derived from Myers Carpenter's code
             pass
 
 
-class _UPnP2:   # derived from Yejun Yang's code
-                # apparently does a direct search for UPnP hardware
-                # may work in some cases where _UPnP1 won't, but is slow
-                # still need to implement "clean" method
+class _UPnP2(object):   # derived from Yejun Yang's code
+                        # apparently does a direct search for UPnP hardware
+                        # may work in some cases where _UPnP1 won't, but is
+                        # slow; still need to implement "clean" method
 
     def __init__(self):
         self.services = None
@@ -173,7 +173,7 @@ class _UPnP2:   # derived from Yejun Yang's code
         return success
 
 
-class _UPnP:    # master holding class
+class _UPnP(object):    # master holding class
     def __init__(self):
         self.upnp1 = _UPnP1()
         self.upnp2 = _UPnP2()

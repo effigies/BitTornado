@@ -31,7 +31,7 @@ def numtobyte(x):
     return binascii.unhexlify('{:0192x}'.format(x))
 
 
-class Crypto:
+class Crypto(object):
     def __init__(self, initiator, disable_crypto=False):
         self.initiator = initiator
         self.disable_crypto = disable_crypto

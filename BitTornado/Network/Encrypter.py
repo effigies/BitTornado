@@ -27,7 +27,7 @@ def make_readable(s):
     return '"' + s + '"'
 
 
-class IncompleteCounter:
+class IncompleteCounter(object):
     def __init__(self):
         self.c = 0
 
@@ -45,7 +45,7 @@ incompletecounter = IncompleteCounter()
 
 # header, options, download id, my id, [length, message]
 
-class Connection:
+class Connection(object):
     def __init__(self, Encoder, connection, id,
                  ext_handshake=False, encrypted=None, options=None):
         self.Encoder = Encoder
@@ -490,12 +490,12 @@ class Connection:
             self.sever()
 
 
-class _dummy_banlist:
+class _dummy_banlist(object):
     def includes(self, x):
         return False
 
 
-class Encoder:
+class Encoder(object):
     def __init__(self, connecter, raw_server, my_id, max_len,
                  schedulefunc, keepalive_delay, download_id,
                  measurefunc, config, bans=_dummy_banlist()):

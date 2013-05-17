@@ -1,28 +1,28 @@
-from httplib import HTTPConnection, HTTPSConnection, HTTPException
-from urlparse import urlparse
-from BitTornado.Meta.bencode import bdecode
-from gzip import GzipFile
+import gzip
+import httplib
+import urlparse
 from StringIO import StringIO
+from BitTornado.Meta.bencode import bdecode
 from BitTornado import product_name, version_short
 
 VERSION = product_name + '/' + version_short
 MAX_REDIRECTS = 10
 
 
-class btHTTPcon(HTTPConnection):
+class btHTTPcon(httplib.HTTPConnection):
     """Add automatic connection timeout to HTTPConnection"""
     def connect(self):
-        HTTPConnection.connect(self)
+        httplib.HTTPConnection.connect(self)
         try:
             self.sock.settimeout(30)
         except:
             pass
 
 
-class btHTTPScon(HTTPSConnection):
+class btHTTPScon(httplib.HTTPSConnection):
     """Add automatic connection timeout to HTTPSConnection"""
     def connect(self):
-        HTTPSConnection.connect(self)
+        httplib.HTTPSConnection.connect(self)
         try:
             self.sock.settimeout(30)
         except:
@@ -40,7 +40,7 @@ class urlopen:
         if self.tries > MAX_REDIRECTS:
             raise IOError(('http error', 500,
                           "Internal Server Error: Redirect Recursion"))
-        (scheme, netloc, path, pars, query, fragment) = urlparse(url)
+        (scheme, netloc, path, pars, query, fragment) = urlparse.urlparse(url)
         if scheme != 'http' and scheme != 'https':
             raise IOError(('url error', 'unknown url type', scheme, url))
         url = path
@@ -58,7 +58,7 @@ class urlopen:
                                     {'User-Agent': VERSION,
                                      'Accept-Encoding': 'gzip'})
             self.response = self.connection.getresponse()
-        except HTTPException as e:
+        except httplib.HTTPException as e:
             raise IOError(('http error', str(e)))
         status = self.response.status
         if status in (301, 302):
@@ -89,7 +89,7 @@ class urlopen:
         if self.response.getheader('Content-Encoding', '').find('gzip') >= 0:
             try:
                 compressed = StringIO(data)
-                f = GzipFile(fileobj=compressed)
+                f = gzip.GzipFile(fileobj=compressed)
                 data = f.read()
             except:
                 raise IOError(('http error', 'got corrupt response'))

@@ -5,7 +5,7 @@ from .Encrypter import protocol_name
 default_task_id = []
 
 
-class SingleRawServer:
+class SingleRawServer(object):
     def __init__(self, info_hash, multihandler, doneflag, protocol):
         self.info_hash = info_hash
         self.doneflag = doneflag
@@ -68,7 +68,7 @@ class SingleRawServer:
         return self.rawserver.get_exception_flag()
 
 
-class NewSocketHandler:     # hand a new socket off where it belongs
+class NewSocketHandler(object):     # hand a new socket off where it belongs
     def __init__(self, multihandler, connection):
         self.multihandler = multihandler
         self.connection = connection
@@ -204,7 +204,7 @@ class NewSocketHandler:     # hand a new socket off where it belongs
         self.closed = True
 
 
-class MultiHandler:
+class MultiHandler(object):
     def __init__(self, rawserver, doneflag, config):
         self.rawserver = rawserver
         self.masterdoneflag = doneflag

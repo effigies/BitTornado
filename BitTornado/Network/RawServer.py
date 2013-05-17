@@ -1,11 +1,11 @@
 import sys
-import threading
-from bisect import insort
-from .SocketHandler import SocketHandler
+import bisect
 import socket
+import select
+import threading
 from cStringIO import StringIO
 from traceback import print_exc
-import select
+from .SocketHandler import SocketHandler
 from BitTornado.clock import clock
 
 
@@ -33,7 +33,7 @@ def autodetect_socket_style():
 READSIZE = 32768
 
 
-class RawServer:
+class RawServer(object) :
     def __init__(self, doneflag, timeout_check_interval, timeout, noisy=True,
                  ipv6_enable=True, failfunc=lambda x: None, errorfunc=None,
                  sockethandler=None, excflag=threading.Event()):
@@ -63,7 +63,7 @@ class RawServer:
 
     def _add_task(self, func, delay, id=None):
         assert float(delay) >= 0
-        insort(self.funcs, (clock() + delay, func, id))
+        bisect.insort(self.funcs, (clock() + delay, func, id))
 
     def add_task(self, func, delay=0, id=None):
         assert float(delay) >= 0

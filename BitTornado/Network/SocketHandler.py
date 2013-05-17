@@ -14,7 +14,7 @@ POLLALL = POLLIN | POLLOUT
 UPnP_ERROR = "unable to forward port via UPnP"
 
 
-class SingleSocket:
+class SingleSocket(object):
     def __init__(self, socket_handler, sock, handler, ip=None):
         self.socket_handler = socket_handler
         self.socket = sock
@@ -109,7 +109,7 @@ class SingleSocket:
         self.handler = handler
 
 
-class SocketHandler:
+class SocketHandler(object):
     def __init__(self, timeout, ipv6_enable, readsize=100000):
         self.timeout = timeout
         self.ipv6_enable = ipv6_enable

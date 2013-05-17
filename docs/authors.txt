@@ -1,107 +1,124 @@
 The following list is based on comment lines in individual files as of 10 Feb
 2013, to be updated here as further contributions are made.
 
-BitTornado/bencode.py
-    - Petru Paler, Uoti Urpala, Ross Cohen, John Hoffman, and
-        Christopher J. Johnson
-BitTornado/bitfield.py
-    - Bram Cohen, Uoti Urpala, John Hoffman and Christopher J. Johnson
-BitTornado/BTcrypto.py
-    - John Hoffman
-        - based on code by Uoti Urpala
-BitTornado/BTTree.py
-    - Christopher J. Johnson
-        - based on code by Bram Cohen and John Hoffman
-BitTornado/clock.py
-    - John Hoffman
-BitTornado/ConfigDir.py
-    - John Hoffman and Christopher J. Johnson
-BitTornado/ConfigReader.py
-    - John Hoffman
-BitTornado/ConnChoice.py
-    - John Hoffman
-BitTornado/CreateIcons.py
-    - John Hoffman and Christopher J. Johnson
-BitTornado/CurrentRateMeasure.py
-    - Bram Cohen
-BitTornado/download_bt1.py
-    - Bram Cohen
-BitTornado/HTTPHandler.py
-    - Bram Cohen
-BitTornado/inifile.py
-    - John Hoffman and Christopher J. Johnson
-BitTornado/launchmanycore.py
-    - John Hoffman
-BitTornado/natpunch.py
-    - John Hoffman
-        - based on code by Yejun Yang and Myers Carpenter
-BitTornado/NetworkAddress.py
-    - Christopher J. Johnson
-        - based on code by John Hoffman
-BitTornado/parseargs.py
-    - Bill Bumgarner, Bram Cohen and Christopher J. Johnson
-BitTornado/parsedir.py
-    - John Hoffman, Uoti Urpala and Christopher J. Johnson
-BitTornado/piecebuffer.py
-    - John Hoffman
-BitTornado/RateLimiter.py
-    - Bram Cohen
-BitTornado/RateMeasure.py
-    - Bram Cohen
-BitTornado/RawServer.py
-    - Bram Cohen
-BitTornado/reannounce.py
-    - Christopher J. Johnson
-        - based on code by Henry 'Pi' James, Bram Cohen, and John Hoffman
-BitTornado/selectpoll.py
-    - Bram Cohen
-BitTornado/ServerPortHandler.py
-    - John Hoffman
-BitTornado/SocketHandler.py
-    - Bram Cohen
-BitTornado/torrentlistparse.py
-    - John Hoffman and Christopher J. Johnson
-BitTornado/zurllib.py
-    - John Hoffman
+BitTornado/
+    bitfield.py
+        - Bram Cohen, Uoti Urpala, John Hoffman and Christopher J. Johnson
+    clock.py
+        - John Hoffman
+    Application/
+        ConfigDir.py
+            - John Hoffman and Christopher J. Johnson
+        ConfigReader.py
+            - John Hoffman
+        ConnChoice.py
+            - John Hoffman
+        CreateIcons.py
+            - John Hoffman and Christopher J. Johnson
+        inifile.py
+            - John Hoffman and Christopher J. Johnson
+        makemetafile.py
+            - Bram Cohen, John Hoffman, Christopher J. Johnson
+        parseargs.py
+            - Bill Bumgarner, Bram Cohen and Christopher J. Johnson
+        parsedir.py
+            - John Hoffman, Uoti Urpala and Christopher J. Johnson
+        PeerID.py
+            - Christopher J. Johnson
+                - based on code by John Hoffman
+        reannounce.py
+            - Christopher J. Johnson
+                - based on code by Henry 'Pi' James, Bram Cohen,
+                    and John Hoffman
+    Client
+        Choker.py
+            - Bram Cohen
+        Connecter.py
+            - Bram Cohen
+        CurrentRateMeasure.py
+            - Bram Cohen
+        download_bt1.py
+            - Bram Cohen
+        DownloaderFeedback.py
+            - Bram Cohen
+        Downloader.py
+            - Bram Cohen
+        HTTPDownloader.py
+            - John Hoffman
+        launchmanycore.py
+            - John Hoffman
+        PiecePicker.py
+            - Bram Cohen
+        RateLimiter.py
+            - Bram Cohen
+        RateMeasure.py
+            - Bram Cohen
+        Rerequester.py
+            - Bram Cohen and John Hoffman
+        Statistics.py
+            - Edward Keyes
+        Uploader.py
+            - Bram Cohen
+    Meta
+        bencode.py
+            - Petru Paler, Uoti Urpala, Ross Cohen, John Hoffman, and
+                Christopher J. Johnson
+        BTTree.py
+            - Christopher J. Johnson
+                - based on code by Bram Cohen and John Hoffman
+        Info.py
+            - Christopher J. Johnson and Bram Cohen
+                - based on code by John Hoffman
+    Network
+        BTcrypto.py
+            - John Hoffman
+                - based on code by Uoti Urpala
+        Encrypter.py
+            - Bram Cohen
+        NatCheck.py
+            - Bram Cohen
+        natpunch.py
+            - John Hoffman
+                - based on code by Yejun Yang and Myers Carpenter
+        NetworkAddress.py
+            - Christopher J. Johnson
+                - based on code by John Hoffman
+        RawServer.py
+            - Bram Cohen
+        selectpoll.py
+            - Bram Cohen
+        ServerPortHandler.py
+            - John Hoffman
+        SocketHandler.py
+            - Bram Cohen
+        zurllib.py
+            - John Hoffman
+    Storage
+        FileSelector.py
+            - John Hoffman
+        piecebuffer.py
+            - John Hoffman
+        Storage.py
+            - Bram Cohen
+        StorageWrapper.py
+            - Bram Cohen
+    Tracker
+        Filter.py
+            - unknown authorship
+        HTTPHandler.py
+            - Bram Cohen
+        T2T.py
+            - John Hoffman
+        torrentlistparse.py
+            - John Hoffman and Christopher J. Johnson
+        track.py
+            - Bram Cohen
+
+Deleted Files:
 BitTornado/BT1/btformats.py
     - Bram Cohen
-BitTornado/BT1/Choker.py
-    - Bram Cohen
-BitTornado/BT1/Connecter.py
-    - Bram Cohen
-BitTornado/BT1/DownloaderFeedback.py
-    - Bram Cohen
-BitTornado/BT1/Downloader.py
-    - Bram Cohen
-BitTornado/BT1/Encrypter.py
-    - Bram Cohen
+    - Incorporated into BitTornado/Meta/Info.py
 BitTornado/BT1/fakeopen.py
     - Bram Cohen
-BitTornado/BT1/FileSelector.py
-    - John Hoffman
-BitTornado/BT1/Filter.py
-    - unknown authorship
-BitTornado/BT1/HTTPDownloader.py
-    - John Hoffman
-BitTornado/BT1/makemetafile.py
-    - Bram Cohen, John Hoffman, Christopher J. Johnson
-BitTornado/BT1/NatCheck.py
-    - Bram Cohen
-BitTornado/BT1/PiecePicker.py
-    - Bram Cohen
-BitTornado/BT1/Rerequester.py
-    - Bram Cohen and John Hoffman
-BitTornado/BT1/Statistics.py
-    - Edward Keyes
-BitTornado/BT1/Storage.py
-    - Bram Cohen
-BitTornado/BT1/StorageWrapper.py
-    - Bram Cohen
 BitTornado/BT1/StreamCheck.py
-    - Bram Cohen
-BitTornado/BT1/T2T.py
-    - John Hoffman
-BitTornado/BT1/track.py
-    - Bram Cohen
-BitTornado/BT1/Uploader.py
     - Bram Cohen

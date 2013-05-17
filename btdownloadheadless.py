@@ -17,8 +17,9 @@ from BitTornado.Network.SocketHandler import UPnP_ERROR
 from BitTornado.Meta.bencode import bencode
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
-from BitTornado import createPeerID, version
+from BitTornado import version
 from BitTornado.Application.ConfigDir import ConfigDir
+from BitTornado.Application.PeerID import createPeerID
 
 PROFILER = False
 

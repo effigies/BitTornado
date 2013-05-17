@@ -24,7 +24,8 @@ from cStringIO import StringIO
 from traceback import print_exc
 from BitTornado.clock import clock
 from binascii import hexlify
-from BitTornado import version, createPeerID
+from BitTornado import version
+from BitTornado.Application.PeerID import createPeerID
 
 defaults = [
     ('port', 80, "Port to listen on."),

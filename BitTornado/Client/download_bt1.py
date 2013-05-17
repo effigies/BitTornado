@@ -30,7 +30,7 @@ from BitTornado.Application.parseargs import parseargs, formatDefinitions, \
     defaultargs
 from BitTornado.clock import clock
 from BitTornado.Network.BTcrypto import CRYPTO_OK
-from BitTornado import createPeerID
+from BitTornado.Application.PeerID import createPeerID
 
 defaults = [
     ('max_uploads', 7,

@@ -1,13 +1,13 @@
-import BitTornado
 import socket
 from traceback import print_exc
 from .NetworkAddress import AddrList
 from BitTornado.clock import clock
+from BitTornado.Application.PeerID import createPeerID
 
 DEBUG = False
 
 EXPIRE_CACHE = 30   # seconds
-ID = "BT-" + BitTornado.createPeerID()[-4:]
+ID = "BT-" + createPeerID()[-4:]
 
 try:
     import pythoncom

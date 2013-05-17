@@ -10,7 +10,7 @@ import socket
 from threading import Event
 import os
 from BitTornado.clock import clock
-from BitTornado import createPeerID, mapbase64
+from BitTornado.Application.PeerID import createPeerID, mapbase64
 from cStringIO import StringIO
 from traceback import print_exc
 

@@ -25,7 +25,8 @@ from BitTornado.Application.ConfigReader import configReader
 from BitTornado.Meta.bencode import bencode
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
-from BitTornado import version, createPeerID, report_email
+from BitTornado import version, report_email
+from BitTornado.Application.PeerID import createPeerID
 
 try:
     from wxPython import wx

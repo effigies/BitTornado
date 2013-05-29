@@ -275,6 +275,6 @@ if __name__ == '__main__':
 
     curses_wrapper(LaunchManyWrapper, config)
     if Exceptions:
-        print '\nEXCEPTION:'
-        print Exceptions[0]
-        print 'please report this to ' + report_url
+        print('\nEXCEPTION:')
+        print(Exceptions[0])
+        print('please report this to ' + report_url)

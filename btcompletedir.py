@@ -28,8 +28,8 @@ def main(cmd, *argv):
         for directory in args[1:]:
             completedir(directory, args[0], config)
     except ValueError as error:
-        print 'error: ' + str(error)
-        print 'run with no args for parameter explanations'
+        print('error: ', error)
+        print('run with no args for parameter explanations')
         return 1
 
     return 0

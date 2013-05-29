@@ -256,7 +256,7 @@ class Storage:
         pbuf = PieceBuffer()
         for fname, pos, end in self._intervals(pos, amount):
             if DEBUG:
-                print 'reading {} from {} to {}'.format(fname, pos, end)
+                print('reading {} from {} to {}'.format(fname, pos, end))
             with self.lock:
                 fileh = self._get_file_handle(fname, False)
                 if flush_first and fname in self.whandles:
@@ -277,7 +277,7 @@ class Storage:
         total = 0
         for fname, begin, end in self._intervals(pos, len(s)):
             if DEBUG:
-                print 'writing {} from {} to {}'.format(fname, pos, end)
+                print('writing {} from {} to {}'.format(fname, pos, end))
             with self.lock:
                 fileh = self._get_file_handle(fname, True)
                 fileh.seek(begin)
@@ -486,7 +486,7 @@ class Storage:
                 files[filelist[i]] = (filelist[i + 1], filelist[i + 2])
 
             pfilelist = data.get('partial files', [])
-            for i in xrange(0, len(pfilelist), 3):
+            for i in range(0, len(pfilelist), 3):
                 pfiles[pfilelist[i]] = (pfilelist[i + 1], pfilelist[i + 2])
 
             # Build set of already potentially existing pieces, excluding
@@ -533,9 +533,9 @@ class Storage:
                 # Remove pieces unless part of unchanged completed files
                 if i not in files or changed(files[i], os.path.getsize(fname),
                                              os.path.getmtime(fname)):
-                    start, end, _, _ = self.file_ranges[i]
+                    start, end, _, fname = self.file_ranges[i]
                     if DEBUG:
-                        print 'removing ' + fname
+                        print('removing ' + fname)
                     valid_pieces.difference_update(
                         xrange(int(start / self.piece_length),
                                int((end - 1) / self.piece_length) + 1))

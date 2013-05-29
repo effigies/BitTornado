@@ -28,11 +28,11 @@ def main(argv):
         opts, args = getopt.getopt(argv[1:], "hav",
                                    ("help", "announce_list", "verbose"))
     except getopt.error as msg:
-        print msg
+        print(msg)
         return 1
 
     if len(args) < 2:
-        print helpmsg
+        print(helpmsg)
         return 2
 
     announce = args[0]
@@ -41,7 +41,7 @@ def main(argv):
 
     for opt, arg in opts:
         if opt in ('-h', '--help'):
-            print helpmsg
+            print(helpmsg)
             return 0
         elif opt in ('-a', '--announce_list'):
             announce_list = [tier.split(',') for tier in arg.split('|')]

@@ -31,41 +31,38 @@ class BTEncoder(object):
         """
         ctext = []
         self.encode(data, ctext)
-        return ''.join(ctext)
+        return b''.join(ctext)
 
     def encode(self, data, ctext):
         """Determine type of data and encode into appropriate string"""
         if isinstance(data, (list, tuple)):
             # A list takes the form lXe where X is the concatenation of the
             # encodings of all elements in the list.
-            ctext.append('l')
+            ctext.append(b'l')
             for element in data:
                 self.encode(element, ctext)
-            ctext.append('e')
+            ctext.append(b'e')
         elif isinstance(data, dict):
             # A dictionary is encoded as dXe where X is the concatenation of
             # the encodings of all key,value pairs in the dictionary, sorted by
             # key. Key, value pairs are themselves concatenations of the
             # encodings of keys and values, where keys are assumed to be
             # strings.
-            ctext.append('d')
+            ctext.append(b'd')
             ilist = data.items()
-            ilist.sort()
-            for key, data in ilist:
-                ctext.extend((str(len(key)), ':', key))
+            for key, data in sorted(ilist):
+                if not isinstance(key, (str, bytes)):
+                    raise TypeError("Dictionary keys must be (byte)strings")
+                self.encode(key, ctext)
                 self.encode(data, ctext)
-            ctext.append('e')
-        elif isinstance(data, str):
-            # A string is encoded as length:contents
-            ctext.extend((str(len(data)), ':', data))
-        elif isinstance(data, unicode):
-            # For unicode, encode as utf-8 byte string, and use its length
-            # e.g.  len(u'\u20ac') == 1,
-            # while len(u'\u20ac'.encode('utf-8')) == 3
-            string = data.encode('utf-8')
-            ctext.extend((str(len(string)), ':', string))
-        elif isinstance(data, (int, long, bool)):
-            ctext.append('i{:d}e'.format(data))
+            ctext.append(b'e')
+        elif isinstance(data, (str, bytes)):
+            # A string is encoded as nbytes:contents
+            if isinstance(data, str):
+                data = data.encode('utf-8')
+            ctext.extend((str(len(data)).encode('utf-8'), b':', data))
+        elif isinstance(data, int):
+            ctext.append('i{:d}e'.format(data).encode('utf-8'))
         elif isinstance(data, Bencached):
             assert data.marker == BENCACHED_MARKER
             ctext.append(data.bencoded)
@@ -81,7 +78,7 @@ class BTDecoder(object):
         .torrent file"""
         try:
             data, length = self.decode_func[ctext[0]](self, ctext, 0)
-        except (IndexError, KeyError, ValueError):
+        except (IndexError, KeyError, ValueError) as e:
             raise ValueError("bad bencoded data")
         if not sloppy and length != len(ctext):
             raise ValueError("bad bencoded data")
@@ -97,12 +94,12 @@ class BTDecoder(object):
         Returns (parsed integer, next token start position)
         """
         pos += 1
-        newpos = ctext.index('e', pos)
+        newpos = ctext.index(ord('e'), pos)
         data = int(ctext[pos:newpos])
 
         # '-0' is invalid and strings beginning with '0' must be == '0'
-        if ctext[pos:pos + 2] == '-0' or \
-                ctext[pos] == '0' and newpos != pos + 1:
+        if ctext[pos:pos + 2] == b'-0' or \
+                ctext[pos] == ord('0') and newpos != pos + 1:
             raise ValueError
 
         return (data, newpos + 1)
@@ -116,23 +113,19 @@ class BTDecoder(object):
 
         Returns (parsed string, next token start position)
         """
-        colon = ctext.index(':', pos)
+        colon = ctext.index(ord(':'), pos)
         length = int(ctext[pos:colon])
 
         # '0:' is the only valid string beginning with '0'
-        if ctext[pos] == '0' and colon != pos + 1:
+        if ctext[pos] == ord('0') and colon != pos + 1:
             raise ValueError
 
         colon += 1
-        return (ctext[colon:colon + length], colon + length)
-
-    def decode_unicode(self, ctext, pos):
-        """Decode unicode string in ciphertext at a given position
-
-        A unicode string is simply a string encoding preceded by a u.
-        """
-        data, pos = self.decode_string(ctext, pos + 1)
-        return (data.decode('UTF-8'), pos)
+        data, pos = (ctext[colon:colon + length], colon + length)
+        try:
+            return (data.decode('utf-8'), pos)
+        except UnicodeDecodeError:
+            return (data, pos)
 
     def decode_list(self, ctext, pos):
         """Decode list in ciphertext at a given position
@@ -143,7 +136,7 @@ class BTDecoder(object):
         Returns (parsed list, next token start position)
         """
         data, pos = [], pos + 1
-        while ctext[pos] != 'e':
+        while ctext[pos] != ord('e'):
             element, pos = self.decode_func[ctext[pos]](self, ctext, pos)
             data.append(element)
         return (data, pos + 1)
@@ -159,30 +152,30 @@ class BTDecoder(object):
         Returns (parsed dictionary, next token start position)
         """
         data, pos = {}, pos + 1
-        lastkey = None
-        while ctext[pos] != 'e':
+        lastkey = b''
+        while ctext[pos] != ord('e'):
             key, pos = self.decode_string(ctext, pos)
-            if lastkey >= key:
+            rawkey = key if isinstance(key, bytes) else key.encode()
+            if lastkey >= rawkey:
                 raise ValueError
-            lastkey = key
+            lastkey = rawkey
             data[key], pos = self.decode_func[ctext[pos]](self, ctext, pos)
         return (data, pos + 1)
 
     decode_func = {
-        'l':    decode_list,
-        'd':    decode_dict,
-        'i':    decode_int,
-        '0':    decode_string,
-        '1':    decode_string,
-        '2':    decode_string,
-        '3':    decode_string,
-        '4':    decode_string,
-        '5':    decode_string,
-        '6':    decode_string,
-        '7':    decode_string,
-        '8':    decode_string,
-        '9':    decode_string,
-        'u':    decode_unicode
+        ord('l'):   decode_list,
+        ord('d'):   decode_dict,
+        ord('i'):   decode_int,
+        ord('0'):   decode_string,
+        ord('1'):   decode_string,
+        ord('2'):   decode_string,
+        ord('3'):   decode_string,
+        ord('4'):   decode_string,
+        ord('5'):   decode_string,
+        ord('6'):   decode_string,
+        ord('7'):   decode_string,
+        ord('8'):   decode_string,
+        ord('9'):   decode_string,
     }
 
 #pylint: disable=C0103
@@ -203,20 +196,20 @@ def _test_exception(exc, func, *data):
 
 def test_bencode():
     """Test encoding of encodable and unencodable data structures"""
-    assert bencode(4) == 'i4e'
-    assert bencode(0) == 'i0e'
-    assert bencode(-10) == 'i-10e'
-    assert bencode(12345678901234567890L) == 'i12345678901234567890e'
-    assert bencode('') == '0:'
-    assert bencode('abc') == '3:abc'
-    assert bencode('1234567890') == '10:1234567890'
-    assert bencode([]) == 'le'
-    assert bencode([1, 2, 3]) == 'li1ei2ei3ee'
-    assert bencode([['Alice', 'Bob'], [2, 3]]) == 'll5:Alice3:Bobeli2ei3eee'
-    assert bencode({}) == 'de'
-    assert bencode({'age': 25, 'eyes': 'blue'}) == 'd3:agei25e4:eyes4:bluee'
+    assert bencode(4) == b'i4e'
+    assert bencode(0) == b'i0e'
+    assert bencode(-10) == b'i-10e'
+    assert bencode(12345678901234567890) == b'i12345678901234567890e'
+    assert bencode('') == b'0:'
+    assert bencode('abc') == b'3:abc'
+    assert bencode('1234567890') == b'10:1234567890'
+    assert bencode([]) == b'le'
+    assert bencode([1, 2, 3]) == b'li1ei2ei3ee'
+    assert bencode([['Alice', 'Bob'], [2, 3]]) == b'll5:Alice3:Bobeli2ei3eee'
+    assert bencode({}) == b'de'
+    assert bencode({'age': 25, 'eyes': 'blue'}) == b'd3:agei25e4:eyes4:bluee'
     assert bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}) == \
-        'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
+        b'd8:spam.mp3d6:author5:Alice6:lengthi100000eee'
     assert _test_exception(TypeError, bencode, {1: 'foo'})
     assert _test_exception(TypeError, bencode, {'foo': 1.0})
 
@@ -228,44 +221,44 @@ def test_bencode():
 
 def test_bdecode():
     """Test decoding of valid and erroneous sample strings"""
-    assert _test_exception(ValueError, bdecode, '0:0:')
-    assert _test_exception(ValueError, bdecode, 'ie')
-    assert _test_exception(ValueError, bdecode, 'i341foo382e')
-    assert bdecode('i4e') == 4L
-    assert bdecode('i0e') == 0L
-    assert bdecode('i123456789e') == 123456789L
-    assert bdecode('i-10e') == -10L
-    assert _test_exception(ValueError, bdecode, 'i-0e')
-    assert _test_exception(ValueError, bdecode, 'i123')
-    assert _test_exception(ValueError, bdecode, '')
-    assert _test_exception(ValueError, bdecode, 'i6easd')
-    assert _test_exception(ValueError, bdecode, '35208734823ljdahflajhdf')
-    assert _test_exception(ValueError, bdecode, '2:abfdjslhfld')
-    assert bdecode('0:') == ''
-    assert bdecode('3:abc') == 'abc'
-    assert bdecode('10:1234567890') == '1234567890'
-    assert _test_exception(ValueError, bdecode, '02:xy')
-    assert _test_exception(ValueError, bdecode, 'l')
-    assert bdecode('le') == []
-    assert _test_exception(ValueError, bdecode, 'leanfdldjfh')
-    assert bdecode('l0:0:0:e') == ['', '', '']
-    assert _test_exception(ValueError, bdecode, 'relwjhrlewjh')
-    assert bdecode('li1ei2ei3ee') == [1, 2, 3]
-    assert bdecode('l3:asd2:xye') == ['asd', 'xy']
-    assert bdecode('ll5:Alice3:Bobeli2ei3eee') == [['Alice', 'Bob'], [2, 3]]
-    assert _test_exception(ValueError, bdecode, 'd')
-    assert _test_exception(ValueError, bdecode, 'defoobar')
-    assert bdecode('de') == {}
-    assert bdecode('d3:agei25e4:eyes4:bluee') == {'age': 25, 'eyes': 'blue'}
-    assert bdecode('d8:spam.mp3d6:author5:Alice6:lengthi100000eee') == \
+    assert _test_exception(ValueError, bdecode, b'0:0:')
+    assert _test_exception(ValueError, bdecode, b'ie')
+    assert _test_exception(ValueError, bdecode, b'i341foo382e')
+    assert bdecode(b'i4e') == 4
+    assert bdecode(b'i0e') == 0
+    assert bdecode(b'i123456789e') == 123456789
+    assert bdecode(b'i-10e') == -10
+    assert _test_exception(ValueError, bdecode, b'i-0e')
+    assert _test_exception(ValueError, bdecode, b'i123')
+    assert _test_exception(ValueError, bdecode, b'')
+    assert _test_exception(ValueError, bdecode, b'i6easd')
+    assert _test_exception(ValueError, bdecode, b'35208734823ljdahflajhdf')
+    assert _test_exception(ValueError, bdecode, b'2:abfdjslhfld')
+    assert bdecode(b'0:') == ''
+    assert bdecode(b'3:abc') == 'abc'
+    assert bdecode(b'10:1234567890') == '1234567890'
+    assert _test_exception(ValueError, bdecode, b'02:xy')
+    assert _test_exception(ValueError, bdecode, b'l')
+    assert bdecode(b'le') == []
+    assert _test_exception(ValueError, bdecode, b'leanfdldjfh')
+    assert bdecode(b'l0:0:0:e') == ['', '', '']
+    assert _test_exception(ValueError, bdecode, b'relwjhrlewjh')
+    assert bdecode(b'li1ei2ei3ee') == [1, 2, 3]
+    assert bdecode(b'l3:asd2:xye') == ['asd', 'xy']
+    assert bdecode(b'll5:Alice3:Bobeli2ei3eee') == [['Alice', 'Bob'], [2, 3]]
+    assert _test_exception(ValueError, bdecode, b'd')
+    assert _test_exception(ValueError, bdecode, b'defoobar')
+    assert bdecode(b'de') == {}
+    assert bdecode(b'd3:agei25e4:eyes4:bluee') == {'age': 25, 'eyes': 'blue'}
+    assert bdecode(b'd8:spam.mp3d6:author5:Alice6:lengthi100000eee') == \
         {'spam.mp3': {'author': 'Alice', 'length': 100000}}
-    assert _test_exception(ValueError, bdecode, 'd3:fooe')
-    assert _test_exception(ValueError, bdecode, 'di1e0:e')
-    assert _test_exception(ValueError, bdecode, 'd1:b0:1:a0:e')
-    assert _test_exception(ValueError, bdecode, 'd1:a0:1:a0:e')
-    assert _test_exception(ValueError, bdecode, 'i03e')
-    assert _test_exception(ValueError, bdecode, 'l01:ae')
-    assert _test_exception(ValueError, bdecode, '9999:x')
-    assert _test_exception(ValueError, bdecode, 'l0:')
-    assert _test_exception(ValueError, bdecode, 'd0:0:')
-    assert _test_exception(ValueError, bdecode, 'd0:')
+    assert _test_exception(ValueError, bdecode, b'd3:fooe')
+    assert _test_exception(ValueError, bdecode, b'di1e0:e')
+    assert _test_exception(ValueError, bdecode, b'd1:b0:1:a0:e')
+    assert _test_exception(ValueError, bdecode, b'd1:a0:1:a0:e')
+    assert _test_exception(ValueError, bdecode, b'i03e')
+    assert _test_exception(ValueError, bdecode, b'l01:ae')
+    assert _test_exception(ValueError, bdecode, b'9999:x')
+    assert _test_exception(ValueError, bdecode, b'l0:')
+    assert _test_exception(ValueError, bdecode, b'd0:0:')
+    assert _test_exception(ValueError, bdecode, b'd0:')

@@ -46,7 +46,7 @@ class BTTree(object):
                 # Notify, but ignore entries that are neither
                 # files nor directories
                 except IOError as problem:
-                    print problem
+                    print(problem)
 
             # For bittorrent's purposes, size(dir) = size(subs)
             self.size = sum(sub.size for sub in self.subs)
@@ -75,7 +75,7 @@ class BTTree(object):
         """Add file information and data hash to a sequence of Info
         structures"""
         with open(self.loc, 'rb') as fhandle:
-            pos = 0L
+            pos = 0
             piece_length = 0
             for info in infos:
                 piece_length = max(piece_length, info.hasher.pieceLength)

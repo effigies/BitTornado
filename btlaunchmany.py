@@ -79,6 +79,6 @@ if __name__ == '__main__':
 
     LaunchMany(config, HeadlessDisplayer())
     if Exceptions:
-        print '\nEXCEPTION:'
-        print Exceptions[0]
-        print 'please report this to ' + report_url
+        print('\nEXCEPTION:')
+        print(Exceptions[0])
+        print('please report this to ' + report_url)

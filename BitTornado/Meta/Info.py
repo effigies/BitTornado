@@ -49,11 +49,11 @@ def check_info(info):
     berr = 'bad metainfo - '
     check_type(info, dict, berr + 'not a dictionary')
 
-    check_type(info.get('pieces'), str, berr + 'bad pieces key',
+    check_type(info.get('pieces'), bytes, berr + 'bad pieces key',
                lambda x: len(x) % 20 != 0)
 
-    check_type(info.get('piece length'), (int, long),
-               berr + 'illegal piece length', lambda x: x <= 0)
+    check_type(info.get('piece length'), int, berr + 'illegal piece length',
+               lambda x: x <= 0)
 
     name = info.get('name')
     check_type(name, str, berr + 'bad name')
@@ -64,7 +64,7 @@ def check_info(info):
         raise ValueError('single/multiple file mix')
 
     if 'length' in info:
-        check_type(info['length'], (int, long), berr + 'bad length',
+        check_type(info['length'], int, berr + 'bad length',
                    lambda x: x < 0)
     else:
         files = info.get('files')
@@ -74,7 +74,7 @@ def check_info(info):
         for finfo in files:
             check_type(finfo, dict, berr + 'bad file value')
 
-            check_type(finfo.get('length'), (int, long), berr + 'bad length',
+            check_type(finfo.get('length'), int, berr + 'bad length',
                        lambda x: x < 0)
 
             path = finfo.get('path')
@@ -98,13 +98,13 @@ class PieceHasher(object):
         self.pieceLength = pieceLength
         self._hashtype = hashtype
         self._hash = hashtype()
-        self.done = 0L
+        self.done = 0
         self.pieces = []
 
     def resetHash(self):
         """Set hash to initial state"""
         self._hash = self._hashtype()
-        self.done = 0L
+        self.done = 0
 
     def update(self, data, progress=lambda x: None):
         """Add data to PieceHasher, splitting pieces if necessary.
@@ -129,7 +129,7 @@ class PieceHasher(object):
 
             # Create a new hash for each piece of data present
             hashes = [self._hashtype(remainder[i:i + self.pieceLength])
-                      for i in xrange(0, toHash, self.pieceLength)]
+                      for i in range(0, toHash, self.pieceLength)]
             progress(toHash)
 
             self.done = toHash % self.pieceLength
@@ -151,13 +151,13 @@ class PieceHasher(object):
         return "<PieceHasher[{:d}] ({})>".format(
             len(self.pieces), self._hash.hexdigest())
 
-    def __str__(self):
+    def __bytes__(self):
         """Print concatenated digests of pieces and current digest, if
         nonzero"""
         excess = []
         if self.done > 0:
             excess.append(self._hash.digest())
-        return ''.join(self.pieces + excess)
+        return b''.join(self.pieces + excess)
 
     @property
     def digest(self):
@@ -219,7 +219,7 @@ class Info(dict):   # pylint: disable=R0904
             # 'piece length' can't be made a variable
             self.hasher = PieceHasher(params['piece length'])
             self.hasher.pieces = [pieces[i:i + 20]
-                                  for i in xrange(0, len(pieces), 20)]
+                                  for i in range(0, len(pieces), 20)]
             self.totalhashed = self.size
         elif size:
             # BitTorrent/BitTornado have traditionally allowed this parameter
@@ -229,7 +229,7 @@ class Info(dict):   # pylint: disable=R0904
             else:
                 piece_length = get_piece_len(size)
 
-            self.totalhashed = 0L
+            self.totalhashed = 0
             self.hasher = PieceHasher(piece_length)
 
         # Progress for this function updates the total amount hashed
@@ -266,7 +266,7 @@ class Info(dict):   # pylint: disable=R0904
         if key == 'piece length':
             return self.hasher.pieceLength
         elif key == 'pieces':
-            return str(self.hasher)
+            return bytes(self.hasher)
         elif key == 'files':
             if 'files' in self:
                 return self._files
@@ -278,7 +278,7 @@ class Info(dict):   # pylint: disable=R0904
         else:
             return super(Info, self).__getitem__(key)
 
-    def iterkeys(self):
+    def keys(self):
         """Return iterator over keys in Info dict"""
         keys = self.validKeys.copy()
         if 'files' in self:
@@ -287,25 +287,13 @@ class Info(dict):   # pylint: disable=R0904
             keys.remove('files')
         return iter(keys)
 
-    def itervalues(self):
+    def values(self):
         """Return iterator over values in Info dict"""
         return (self[key] for key in self.keys())
 
-    def iteritems(self):
+    def items(self):
         """Return iterator over items in Info dict"""
         return ((key, self[key]) for key in self.keys())
-
-    def keys(self):
-        """Return list of keys in Info dict"""
-        return list(self.iterkeys())
-
-    def values(self):
-        """Return list of values in Info dict"""
-        return list(self.itervalues())
-
-    def items(self):
-        """Return list of (key, value) pairs in Info dict"""
-        return list(self.iteritems())
 
     def get(self, key, default=None):
         """Return value associated with key in Info dict, or default, if
@@ -324,7 +312,7 @@ class Info(dict):   # pylint: disable=R0904
     def name(self, name):   # pylint: disable=E0102,E0202
         """Manage encoded Info name string"""
         try:
-            self['name'] = self.encode(name)
+            self['name'] = name.encode('utf-8')
         except UnicodeError:
             raise UnicodeError('bad filename: ' + name)
 
@@ -399,7 +387,7 @@ class Info(dict):   # pylint: disable=R0904
             str[]   - Converted strings
         """
         try:
-            return [self.encode(src) for src in srclist]
+            return [src.encode('utf-8') for src in srclist]
         except UnicodeError:
             raise UnicodeError('bad filename: ' + os.path.join(*srclist))
 
@@ -435,8 +423,8 @@ class MetaInfo(dict):
         self.info = params.pop('info', None)
 
         if 'creation date' not in params:
-            self['creation date'] = long(time.time())
-        super(MetaInfo, self).__init__((k, v) for k, v in params.iteritems()
+            self['creation date'] = int(time.time())
+        super(MetaInfo, self).__init__((k, v) for k, v in params.items()
                                        if k in self.validKeys and v != '')
 
     def __setitem__(self, key, value):

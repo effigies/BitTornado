@@ -38,7 +38,7 @@ class Pool(list):
 class PieceBuffer(object):
     """Non-shrinking array"""
     def __init__(self):
-        self.buf = array.array('c')
+        self.buf = array.array('B')
         self.length = 0
 
     def init(self):
@@ -48,7 +48,7 @@ class PieceBuffer(object):
     def append(self, string):
         """Extend buffer with characters in string"""
         length = self.length + len(string)
-        self.buf[self.length:length] = array.array('c', string)
+        self.buf[self.length:length] = array.array('B', string)
         self.length = length
 
     def __len__(self):

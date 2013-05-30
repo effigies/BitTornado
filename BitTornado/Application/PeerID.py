@@ -33,14 +33,14 @@ class PeerID(object):
 
         tic = time.clock()
         toc1 = countwhile(lambda x: tic == time.clock())
-        tic = long(time.time() * 100)
-        toc2 = countwhile(lambda x: tic == long(time.time() * 100))
-        tic = long(time.time() * 10)
+        tic = int(time.time() * 100)
+        toc2 = countwhile(lambda x: tic == int(time.time() * 100))
+        tic = int(time.time() * 10)
         toc3 = 0 if toc2 >= 1000 else \
-            countwhile(lambda x: tic == long(time.time() * 10))
+            countwhile(lambda x: tic == int(time.time() * 10))
 
         x += '{}/{}/{}/{}/{}/{}'.format(repr(time.time()), time.time(),
-                                        toc1, toc2, toc3, os.getpid())
+                                        toc1, toc2, toc3, os.getpid()).encode()
 
         self.randstr = base64.urlsafe_b64encode(
             hashlib.sha1(x).digest()[-9:])[:11]

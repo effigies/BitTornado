@@ -30,13 +30,13 @@ class Statistics:
         self.filelistupdated = threading.Event()
         self.filelistupdated.set()
         nfiles = len(files)
-        frange = xrange(nfiles)
+        frange = range(nfiles)
         self.filepieces = [[] for _ in frange]
         self.filepieces2 = [[] for _ in frange]
         self.fileamtdone = [0.0] * nfiles
         self.filecomplete = [False] * nfiles
         self.fileinplace = [False] * nfiles
-        start = 0L
+        start = 0
         for i in frange:
             l = files[i][1]
             if l == 0:

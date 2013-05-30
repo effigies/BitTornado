@@ -11,7 +11,7 @@ def parsetorrentlist(filename, parsed):
         for line in listfile:
             l = line.strip()
             if len(l) != 40:
-                print base_error + 'incorrect length: ' + l
+                print(base_error + 'incorrect length: ' + l)
                 continue
 
             try:
@@ -20,5 +20,5 @@ def parsetorrentlist(filename, parsed):
                     added[h] = True
                 new_parsed[h] = True
             except TypeError:
-                print base_error + 'has non-hex digits: ' + l
+                print(base_error + 'has non-hex digits: ' + l)
     return (new_parsed, added)

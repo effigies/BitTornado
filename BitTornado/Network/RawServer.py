@@ -3,7 +3,7 @@ import bisect
 import socket
 import select
 import threading
-from cStringIO import StringIO
+from io import StringIO
 from traceback import print_exc
 from .SocketHandler import SocketHandler
 from BitTornado.clock import clock

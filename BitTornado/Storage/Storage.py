@@ -10,8 +10,8 @@ if DEBUG:
     import traceback
 
 MAXREADSIZE = 32768
-MAXLOCKSIZE = 1000000000L
-MAXLOCKRANGE = 3999999999L   # only lock first 4 gig of file
+MAXLOCKSIZE = 1000000000
+MAXLOCKRANGE = 3999999999   # only lock first 4 gig of file
 
 
 class Storage:
@@ -26,8 +26,8 @@ class Storage:
         self.disabled_ranges = []
         self.working_ranges = []
         numfiles = 0
-        total = 0l
-        #so_far = 0l
+        total = 0
+        #so_far = 0
         self.handles = {}       # {fname: fileh}
         self.whandles = set()   # {fname}
         self.tops = {}          # {fname: length}
@@ -153,12 +153,13 @@ class Storage:
                     assert newmtime >= oldmtime - 1
             except AssertionError:
                 if DEBUG:
-                    print '{} modified: ({}) != ({}) ?'.format(
+                    print('{} modified: ({}) != ({}) ?'.format(
                         fname,
                         time.strftime('%x %X',
                                       time.localtime(self.mtimes[fname])),
                         time.strftime('%x %X',
-                                      time.localtime(os.path.getmtime(fname))))
+                                      time.localtime(os.path.getmtime(fname)))
+                        ))
                 raise IOError('modified during download')
         try:
             return open(fname, mode)
@@ -300,7 +301,7 @@ class Storage:
                 self.handles[fname].flush()
 
     def close(self):
-        for fname, fileh in self.handles.iteritems():
+        for fname, fileh in self.handles.items():
             try:
                 self.unlock_file(fname, fileh)
             except IOError:
@@ -321,11 +322,11 @@ class Storage:
             return r
         start, end, offset, fname = self.file_ranges[fileidx]
         if DEBUG:
-            print 'calculating disabled range for ' + self.files[fileidx][0]
-            print 'bytes: ' + str(start) + '-' + str(end)
-            print 'file spans pieces {}-{}'.format(
+            print('calculating disabled range for ' + self.files[fileidx][0])
+            print('bytes: ' + str(start) + '-' + str(end))
+            print('file spans pieces {}-{}'.format(
                 int(start / self.piece_length),
-                int((end - 1) / self.piece_length) + 1)
+                int((end - 1) / self.piece_length) + 1))
         pieces = range(int(start / self.piece_length),
                        int((end - 1) / self.piece_length) + 1)
         offset = 0
@@ -383,8 +384,8 @@ class Storage:
             working_range = working_range_b + working_range_m + working_range_e
 
         if DEBUG:
-            print str(working_range)
-            print str(update_pieces)
+            print(working_range)
+            print(update_pieces)
         r = (tuple(working_range), tuple(update_pieces), tuple(disabled_files))
         self.disabled_ranges[fileidx] = r
         return r
@@ -482,7 +483,7 @@ class Storage:
             pfiles = {}
 
             filelist = data['files']
-            for i in xrange(0, len(filelist), 3):
+            for i in range(0, len(filelist), 3):
                 files[filelist[i]] = (filelist[i + 1], filelist[i + 2])
 
             pfilelist = data.get('partial files', [])
@@ -497,13 +498,13 @@ class Storage:
                     continue
                 start, end, _, fname = frange
                 if DEBUG:
-                    print 'adding ' + fname
+                    print('adding ' + fname)
                 valid_pieces.update(
-                    xrange(int(start / self.piece_length),
-                           int((end - 1) / self.piece_length) + 1))
+                    range(int(start / self.piece_length),
+                          int((end - 1) / self.piece_length) + 1))
 
             if DEBUG:
-                print list(valid_pieces)
+                print(list(valid_pieces))
 
             def changed(old, size, mtime):
                 oldsize, oldmtime = old
@@ -524,10 +525,10 @@ class Storage:
                                 changed(pfiles[f1], os.path.getsize(fname),
                                         os.path.getmtime(fname)):
                             if DEBUG:
-                                print 'removing ' + fname
+                                print('removing ' + fname)
                             valid_pieces.difference_update(
-                                xrange(int(start / self.piece_length),
-                                       int((end - 1) / self.piece_length) + 1))
+                                range(int(start / self.piece_length),
+                                      int((end - 1) / self.piece_length) + 1))
                     continue
 
                 # Remove pieces unless part of unchanged completed files
@@ -537,13 +538,13 @@ class Storage:
                     if DEBUG:
                         print('removing ' + fname)
                     valid_pieces.difference_update(
-                        xrange(int(start / self.piece_length),
-                               int((end - 1) / self.piece_length) + 1))
+                        range(int(start / self.piece_length),
+                              int((end - 1) / self.piece_length) + 1))
         except Exception:
             if DEBUG:
                 traceback.print_exc()
             return []
 
         if DEBUG:
-            print list(valid_pieces)
+            print(list(valid_pieces))
         return valid_pieces

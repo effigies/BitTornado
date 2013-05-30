@@ -7,7 +7,7 @@ DEBUG = True
 
 
 def excfunc(x):
-    print x
+    print(x)
 
 R_0 = lambda: 0
 R_1 = lambda: 1
@@ -59,8 +59,8 @@ class T2TConnection:
         self.lastsuccessful = True
         self.newpeerdata = []
         if DEBUG:
-            print 'contacting %s for info_hash=%s' % (self.tracker,
-                                                      urllib.quote(self.hash))
+            print('contacting %s for info_hash=%s' %
+                  (self.tracker, urllib.parse.quote(self.hash)))
         self.rerequester.snoop(self.peers, self.callback)
 
     def callback(self):
@@ -76,9 +76,9 @@ class T2TConnection:
                     (self.rerequester.announce_interval / self.interval))
             self.operatinginterval = self.rerequester.announce_interval
             if DEBUG:
-                print "{} with info_hash={} returned {:d} peers".format(
-                    self.tracker, urllib.quote(self.hash),
-                    len(self.newpeerdata))
+                print("{} with info_hash={} returned {:d} peers".format(
+                      self.tracker, urllib.parse.quote(self.hash),
+                      len(self.newpeerdata)))
             self.peerlists.append(self.newpeerdata)
             # keep up to the last 10 announces
             self.peerlists = self.peerlists[-10:]
@@ -92,11 +92,11 @@ class T2TConnection:
     def errorfunc(self, r):
         self.lastsuccessful = False
         if DEBUG:
-            print "{} with info_hash={} gives error: '{}'".format(
-                self.tracker, urllib.quote(self.hash), r)
+            print("{} with info_hash={} gives error: '{}'".format(
+                  self.tracker, urllib.parse.quote(self.hash), r))
         if r == self.rerequester.rejectedmessage + 'disallowed':   # whoops!
             if DEBUG:
-                print ' -- disallowed - deactivating'
+                print(' -- disallowed - deactivating')
             self.deactivate()
             # signal other torrents on this tracker
             self.disallow(self.tracker)
@@ -106,15 +106,15 @@ class T2TConnection:
             self.rejected += 1
             if self.rejected == 3:     # rejected 3 times
                 if DEBUG:
-                    print ' -- rejected 3 times - deactivating'
+                    print(' -- rejected 3 times - deactivating')
                 self.deactivate()
             return
         self.errors += 1
         if self.errors >= 3:    # three or more errors in a row
             self.operatinginterval += self.interval  # lengthen the interval
             if DEBUG:
-                print ' -- lengthening interval to {} seconds'.format(
-                    self.operatinginterval)
+                print(' -- lengthening interval to {} seconds'.format(
+                      self.operatinginterval))
 
     def harvest(self):
         x = []
@@ -145,7 +145,7 @@ class T2TList:
         # step 1:  Create a new list with all tracker/torrent combinations in
         # allowed_dir
         newlist = {}
-        for hash, data in allowed_list.iteritems():
+        for hash, data in allowed_list.items():
             for tier in data.get('announce-list', []):
                 for tracker in tier:
                     self.disallowed.setdefault(tracker, False)
@@ -154,8 +154,8 @@ class T2TList:
 
         # step 2:  Go through and copy old data to the new list.
         # if the new list has no place for it, then it's old, so deactivate it
-        for tracker, hashdata in self.list.iteritems():
-            for hash, t2t in hashdata.iteritems():
+        for tracker, hashdata in self.list.items():
+            for hash, t2t in hashdata.items():
                 if tracker not in newlist or hash not in newlist[tracker]:
                     t2t.deactivate()    # this connection is no longer current
                     self.oldtorrents += [t2t]
@@ -173,8 +173,8 @@ class T2TList:
         # step 3:  If there are any entries that haven't been initialized yet,
         # do so.
         # At the same time, copy all entries onto the by-torrent list.
-        for tracker, hashdata in newlist.iteritems():
-            for hash, t2t in hashdata.iteritems():
+        for tracker, hashdata in newlist.items():
+            for hash, t2t in hashdata.items():
                 if t2t is None:
                     hashdata[hash] = T2TConnection(
                         self.trackerid, tracker, hash, self.interval,

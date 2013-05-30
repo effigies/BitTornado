@@ -1,6 +1,3 @@
-from types import NoneType
-
-
 def formatDefinitions(options, COLS, presets={}):
     """Format command-line options and documentation to fit into a given
     column width
@@ -101,10 +98,10 @@ def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
 
         # Coerce value type to the type of default arg
         try:
-            if isinstance(config[key], (NoneType, str)):
+            if config[key] is None or isinstance(config[key], str):
                 config[key] = value
-            elif isinstance(config[key], (int, long)):
-                config[key] = long(value)
+            elif isinstance(config[key], int):
+                config[key] = int(value)
             elif isinstance(config[key], float):
                 config[key] = float(value)
             else:
@@ -113,7 +110,7 @@ def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
             raise ValueError('wrong format of --%s - %s' % (key, str(e)))
 
     # Non-optional flags are denoted by a None default argument
-    for key, value in config.iteritems():
+    for key, value in config.items():
         if value is None:
             raise ValueError("Option --%s is required." % key)
 

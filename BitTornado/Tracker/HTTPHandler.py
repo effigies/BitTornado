@@ -1,7 +1,7 @@
 import sys
 import time
 import gzip
-from cStringIO import StringIO
+from io import StringIO, BytesIO
 from BitTornado.clock import clock
 
 DEBUG = False
@@ -74,14 +74,15 @@ class HTTPConnection:
             return None
         self.headers[data[:i].strip().lower()] = data[i + 1:].strip()
         if DEBUG:
-            print data[:i].strip() + ": " + data[i + 1:].strip()
+            print(data[:i].strip() + ": " + data[i + 1:].strip())
         return self.read_header
 
-    def answer(self, (responsecode, responsestring, headers, data)):
+    def answer(self, rrhd):
+        responsecode, responsestring, headers, data = rrhd
         if self.closed:
             return
         if self.encoding == 'gzip':
-            compressed = StringIO()
+            compressed = BytesIO()
             gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=9)
             gz.write(data)
             gz.close()
@@ -90,8 +91,8 @@ class HTTPConnection:
                 self.encoding = 'identity'
             else:
                 if DEBUG:
-                    print "Compressed: %i  Uncompressed: %i\n".format(
-                        len(cdata), len(data))
+                    print("Compressed: %i  Uncompressed: %i\n".format(
+                          len(cdata), len(data)))
                 data = cdata
                 headers['Content-Encoding'] = 'gzip'
 
@@ -109,7 +110,7 @@ class HTTPConnection:
         r.write('HTTP/1.0 {} {}\r\n'.format(responsecode, responsestring))
         if not self.pre1:
             headers['Content-Length'] = len(data)
-            for key, value in headers.iteritems():
+            for key, value in headers.items():
                 r.write(key + ': ' + str(value) + '\r\n')
             r.write('\r\n')
         if self.command != 'HEAD':
@@ -148,9 +149,10 @@ class HTTPHandler:
     def log(self, ip, ident, username, header, responsecode, length, referrer,
             useragent):
         year, month, day, hour, minute, second = time.localtime()[:6]
-        print '%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"' \
-            '' % (ip, ident, username, day, months[month], year, hour, minute,
-                  second, header, responsecode, length, referrer, useragent)
+        print('%s %s %s [%02d/%3s/%04d:%02d:%02d:%02d] "%s" %i %i "%s" "%s"'
+              '' % (ip, ident, username, day, months[month], year, hour,
+                    minute, second, header, responsecode, length, referrer,
+                    useragent))
         t = clock()
         if t - self.lastflush > self.minflush:
             self.lastflush = t

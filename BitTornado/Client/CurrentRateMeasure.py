@@ -7,7 +7,7 @@ class Measure:
         self.ratesince = clock() - fudge
         self.last = self.ratesince
         self.rate = 0.0
-        self.total = 0l
+        self.total = 0
 
     def update_rate(self, amount):
         self.total += amount

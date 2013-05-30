@@ -9,7 +9,7 @@ import hashlib
 from BitTornado.Network.zurllib import urlopen
 from BitTornado.Meta.Info import check_type
 from BitTornado.Meta.bencode import bdecode
-from cStringIO import StringIO
+from io import StringIO
 from traceback import print_exc
 
 keys = {}
@@ -50,7 +50,7 @@ def check_peers(message):
         for peer in peers:
             check_type(peer, dict)
             check_type(peer.get('ip'), str)
-            check_type(peer.get('port'), (int, long), pred=lambda x: x <= 0)
+            check_type(peer.get('port'), int, pred=lambda x: x <= 0)
             if 'peer id' in peer:
                 check_type(peer.get('peer id'), str,
                            pred=lambda x: len(x) != 20)
@@ -58,13 +58,13 @@ def check_peers(message):
     elif not isinstance(peers, str) or len(peers) % 6 != 0:
         raise ValueError
 
-    check_type(message.get('interval', 1), (int, long), pred=lambda x: x <= 0)
-    check_type(message.get('min interval', 1), (int, long),
+    check_type(message.get('interval', 1), int, pred=lambda x: x <= 0)
+    check_type(message.get('min interval', 1), int,
                pred=lambda x: x <= 0)
     check_type(message.get('tracker id', ''), str)
-    check_type(message.get('num peers', 0), (int, long), pred=lambda x: x < 0)
-    check_type(message.get('done peers', 0), (int, long), pred=lambda x: x < 0)
-    check_type(message.get('last', 0), (int, long), pred=lambda x: x < 0)
+    check_type(message.get('num peers', 0), int, pred=lambda x: x < 0)
+    check_type(message.get('done peers', 0), int, pred=lambda x: x < 0)
+    check_type(message.get('last', 0), int, pred=lambda x: x < 0)
 
 
 class Rerequester:
@@ -107,7 +107,7 @@ class Rerequester:
         self.rejectedmessage = 'rejected by tracker - '
 
         self.url = ('info_hash=%s&peer_id=%s' %
-                    (urllib.quote(infohash), urllib.quote(myid)))
+                    (urllib.parse.quote(infohash), urllib.parse.quote(myid)))
         if not config.get('crypto_allowed'):
             self.url += "&port="
         else:
@@ -124,7 +124,7 @@ class Rerequester:
 
         seed_id = config.get('dedicated_seed_id')
         if seed_id:
-            self.url += '&seed_id=' + urllib.quote(seed_id)
+            self.url += '&seed_id=' + urllib.parse.quote(seed_id)
         if self.seededfunc:
             self.url += '&check_seeded=1'
 
@@ -193,9 +193,9 @@ class Rerequester:
             s = '{}&uploaded={}&downloaded={}&left={}'.format(
                 self.url, self.up(), self.down(), self.amount_left())
         if self.last is not None:
-            s += '&last=' + urllib.quote(str(self.last))
+            s += '&last=' + urllib.parse.quote(str(self.last))
         if self.trackerid is not None:
-            s += '&trackerid=' + urllib.quote(str(self.trackerid))
+            s += '&trackerid=' + urllib.parse.quote(str(self.trackerid))
         if self.howmany() >= self.maxpeers:
             s += '&numwant=0'
         else:
@@ -390,7 +390,7 @@ class Rerequester:
         else:
             cflags = map(ord, cflags)
         if isinstance(p, str):
-            for x in xrange(0, len(p), 6):
+            for x in range(0, len(p), 6):
                 ip = '.'.join([str(ord(i)) for i in p[x:x + 4]])
                 port = (ord(p[x + 4]) << 8) | ord(p[x + 5])
                 peers.append(((ip, port), 0, cflags[int(x / 6)]))
@@ -422,7 +422,7 @@ class Rerequester:
             if self.excfunc:
                 self.excfunc(s)
             else:
-                print s
+                print(s)
             callback()
         self.externalsched(r)
 
@@ -431,7 +431,7 @@ class SuccessLock:
     def __init__(self):
         self.lock = threading.Lock()
         self.pause = threading.Lock()
-        self.code = 0L
+        self.code = 0
         self.success = False
         self.finished = True
 
@@ -444,7 +444,7 @@ class SuccessLock:
             if not self.pause.locked():
                 self.pause.acquire()
             self.first = True
-            self.code += 1L
+            self.code += 1
         return self.code
 
     def trip(self, code, success=False):

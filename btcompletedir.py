@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 "Make a .torrent file for every file or directory in each given directory."
 
 # Written by Bram Cohen
@@ -18,9 +18,9 @@ def main(cmd, *argv):
     desc = __doc__
 
     if len(argv) < 2:
-        print "{}\n{}\n{}{}".format(usage, desc,
+        print("{}\n{}\n{}{}".format(usage, desc,
                                     formatDefinitions(defaults, 80),
-                                    announcelist_details)
+                                    announcelist_details))
         return 2
 
     try:

@@ -3,7 +3,7 @@ import socket
 import threading
 from BitTornado.Meta.Info import check_type, check_info
 from BitTornado.Network.zurllib import urlopen
-from urlparse import urlparse
+from urllib.parse import urlparse
 from .Choker import Choker
 from BitTornado.Storage.Storage import Storage
 from BitTornado.Storage.StorageWrapper import StorageWrapper
@@ -170,7 +170,7 @@ argslistheader = 'Arguments are:\n\n'
 
 
 def _failfunc(x):
-    print x
+    print(x)
 
 
 def parse_params(params, presets={}):
@@ -269,7 +269,7 @@ class BT1Download:
 
         self.info = self.response['info']
         self.pieces = [self.info['pieces'][x:x + 20]
-                       for x in xrange(0, len(self.info['pieces']), 20)]
+                       for x in range(0, len(self.info['pieces']), 20)]
         self.len_pieces = len(self.pieces)
         self.argslistheader = argslistheader
         self.unpauseflag = threading.Event()
@@ -530,7 +530,7 @@ class BT1Download:
             self.config['crypto_only'] = 0
             self.config['crypto_stealth'] = 0
 
-        for i in xrange(self.len_pieces):
+        for i in range(self.len_pieces):
             if self.storagewrapper.do_I_have(i):
                 self.picker.complete(i)
         self.upmeasure = Measure(self.config['max_rate_period'],
@@ -669,7 +669,7 @@ class BT1Download:
             try:
                 self.appdataobj.writeTorrentData(self.infohash, torrentdata)
             except Exception as e:
-                print e
+                print(e)
                 self.appdataobj.deleteTorrentData(self.infohash)  # clear it
         return not self.failed and not self.excflag.isSet()
         # if returns false, you may wish to auto-restart the torrent

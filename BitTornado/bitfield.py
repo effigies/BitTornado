@@ -5,9 +5,9 @@ def _int_to_booleans(integer):
     """Produce a tuple of booleans corresponding to 8 least significant bits
     in an integer
     """
-    return tuple(bool((integer << nbits) & 0x80) for nbits in xrange(8))
+    return tuple(bool((integer << nbits) & 0x80) for nbits in range(8))
 
-CHARBITMAP = [_int_to_booleans(_chr) for _chr in xrange(256)]
+CHARBITMAP = [_int_to_booleans(_chr) for _chr in range(256)]
 
 BITCHARMAP = dict((_bits, chr(_chr)) for _chr, _bits in enumerate(CHARBITMAP))
 
@@ -51,7 +51,7 @@ class Bitfield(list):
         """Produce a bytestring corresponding to the current bitfield"""
         bits = self + [False] * (-len(self) % 8)
         return ''.join(BITCHARMAP[tuple(bits[x:x + 8])]
-                       for x in xrange(0, len(bits), 8))
+                       for x in range(0, len(bits), 8))
 
     @property
     def complete(self):

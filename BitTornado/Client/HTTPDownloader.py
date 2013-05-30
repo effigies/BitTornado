@@ -1,8 +1,7 @@
 import threading
 import random
-import httplib
+import http.client
 import urllib
-from urlparse import urlparse
 from .CurrentRateMeasure import Measure
 from BitTornado.bitfield import TrueBitfield
 from BitTornado import product_name, version_short
@@ -20,7 +19,8 @@ class SingleDownload:
         self.downloader = downloader
         self.baseurl = url
         try:
-            (scheme, self.netloc, path, pars, query, _) = urlparse(url)
+            (scheme, self.netloc, path, pars, query, _) = \
+                urllib.parse.urlparse(url)
         except ValueError:
             self.downloader.errorfunc('cannot parse http seed address: ' + url)
             return
@@ -28,7 +28,7 @@ class SingleDownload:
             self.downloader.errorfunc('http seed url not http: ' + url)
             return
         try:
-            self.connection = httplib.HTTPConnection(self.netloc)
+            self.connection = http.client.HTTPConnection(self.netloc)
         except Exception:
             self.downloader.errorfunc('cannot connect to http seed: ' + url)
             return
@@ -38,7 +38,8 @@ class SingleDownload:
         self.seedurl += '?'
         if query:
             self.seedurl += query + '&'
-        self.seedurl += 'info_hash=' + urllib.quote(self.downloader.infohash)
+        self.seedurl += 'info_hash=' + \
+            urllib.parse.quote(self.downloader.infohash)
 
         self.measure = Measure(downloader.max_rate_period)
         self.index = None
@@ -112,7 +113,7 @@ class SingleDownload:
             except Exception:
                 pass
             try:
-                self.connection = httplib.HTTPConnection(self.netloc)
+                self.connection = http.client.HTTPConnection(self.netloc)
             except Exception:
                 # will cause an exception and retry next cycle
                 self.connection = None
@@ -170,7 +171,7 @@ class SingleDownload:
 
     def _get_requests(self):
         self.requests = []
-        self.request_size = 0L
+        self.request_size = 0
         while self.downloader.storage.do_I_have_requests(self.index):
             r = self.downloader.storage.new_request(self.index)
             self.requests.append(r)
@@ -178,7 +179,7 @@ class SingleDownload:
         self.requests.sort()
 
     def _fulfill_requests(self):
-        start = 0L
+        start = 0
         success = True
         while self.requests:
             begin, length = self.requests.pop(0)

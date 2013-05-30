@@ -1,7 +1,7 @@
 import socket
 import urllib
 from binascii import hexlify, unhexlify
-from .BTcrypto import Crypto
+from .BTcrypto import Crypto, padding
 
 DEBUG = False
 
@@ -12,7 +12,7 @@ option_pattern = chr(0) * 8
 
 
 def toint(s):
-    return long(hexlify(s), 16)
+    return int(hexlify(s), 16)
 
 
 def tobinary16(i):
@@ -22,7 +22,7 @@ def tobinary16(i):
 def make_readable(s):
     if not s:
         return ''
-    if urllib.quote(s).find('%') >= 0:
+    if urllib.parse.quote(s).find('%') >= 0:
         return hexlify(s).upper()
     return '"' + s + '"'
 
@@ -69,7 +69,7 @@ class Connection(object):
             if encrypted:
                 self.encrypted = True
                 self.encrypter = Crypto(True)
-                self.write(self.encrypter.pubkey + self.encrypter.padding())
+                self.write(self.encrypter.padded_pubkey())
             else:
                 self.encrypted = False
                 self.write(chr(len(protocol_name)) + protocol_name +
@@ -168,7 +168,7 @@ class Connection(object):
                 cryptmode = '\x00\x00\x00\x02'    # full stream encryption
             else:
                 cryptmode = '\x00\x00\x00\x03'    # header or full stream
-            padc = self.encrypter.padding()
+            padc = padding()
             self.write(self.encrypter.block3a +
                        self.encrypter.block3b +
                        self.encrypter.encrypt(
@@ -179,7 +179,7 @@ class Connection(object):
                            + '\x00\x00'))        # no initial payload data
             self._max_search = 520
             return 1, self.read_crypto_block4a
-        self.write(self.encrypter.pubkey + self.encrypter.padding())
+        self.write(self.encrypter.padded_pubkey())
         self._max_search = 520
         return 0, self.read_crypto_block3a
 
@@ -233,7 +233,7 @@ class Connection(object):
             cryptmode = '\x00\x00\x00\x01'    # header only encryption
         else:
             cryptmode = '\x00\x00\x00\x02'    # full stream encryption
-        padd = self.encrypter.padding()
+        padd = padding()
         self.write(('\x00' * 8)            # VC
                    + cryptmode             # encryption mode
                    + tobinary16(len(padd))
@@ -523,7 +523,7 @@ class Encoder(object):
         self.schedulefunc(self.send_keepalives, self.keepalive_delay)
         if self.paused:
             return
-        for c in self.connections.itervalues():
+        for c in self.connections.values():
             c.keepalive()
 
     def start_connections(self, list):
@@ -557,7 +557,7 @@ class Encoder(object):
                 encrypted = True
             else:
                 return True
-        for v in self.connections.itervalues():
+        for v in self.connections.values():
             if v is None:
                 continue
             if id and v.id == id:
@@ -593,7 +593,7 @@ class Encoder(object):
             self.connecter.external_connection_made -= 1
             return False
         ip = connection.get_ip(True)
-        for v in self.connections.itervalues():
+        for v in self.connections.values():
             if connection is not v:
                 if connection.id == v.id:
                     if ip == v.get_ip(True):
@@ -629,7 +629,7 @@ class Encoder(object):
         return True
 
     def close_all(self):
-        for c in self.connections.itervalues():
+        for c in self.connections.values():
             c.close()
         self.connections = {}
 

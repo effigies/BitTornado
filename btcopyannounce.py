@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 'Copy announce URLs from one torrent to others'
 
 # btreannounce.py written by Henry 'Pi' James and Bram Cohen
@@ -21,11 +21,11 @@ def main(argv):
         opts, args = getopt.getopt(argv[1:], "hv",
                                    ("help", "verbose"))
     except getopt.error as msg:
-        print msg
+        print(msg)
         return 1
 
     if len(args) < 2:
-        print "%s\n%s\n" % (usage, main.__doc__)
+        print("{}\n{}\n".format(usage, main.__doc__))
         return 2
 
     source_metainfo = MetaInfo.read(args[0])
@@ -34,7 +34,7 @@ def main(argv):
 
     for opt, _ in opts:
         if opt in ('-h', '--help'):
-            print "%s\n%s\n" % (usage, main.__doc__)
+            print("{}\n{}\n".format(usage, main.__doc__))
             return 0
         elif opt in ('-v', '--verbose'):
             verbose = True
@@ -43,10 +43,10 @@ def main(argv):
     announce_list = source_metainfo.get('announce-list')
 
     if verbose:
-        print 'new announce: ' + announce
+        print('new announce: ', announce)
         if announce_list:
-            print 'new announce-list: ' + \
-                '|'.join(','.join(tier) for tier in announce_list)
+            print('new announce-list: ',
+                  '|'.join(','.join(tier) for tier in announce_list))
 
     for fname in args[1:]:
         reannounce(fname, announce, announce_list, verbose)

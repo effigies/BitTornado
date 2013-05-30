@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Written by Henry 'Pi' James and Bram Cohen
 # multitracker extensions by John Hoffman

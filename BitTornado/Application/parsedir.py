@@ -8,7 +8,7 @@ from BitTornado.Meta.Info import check_info, MetaInfo
 
 
 def _errfunc(msg):
-    print ":: " + msg
+    print(":: ", msg)
 
 
 def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
@@ -52,7 +52,7 @@ def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
 
     # Missing files are removed
     removed = {}
-    for _, filehash in removed_files.itervalues():
+    for ((_mtime, _length), filehash) in removed_files.values():
         removed[filehash] = parsed[filehash]
 
     # unchanged_files = files \ removed_files
@@ -73,7 +73,7 @@ def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
 
     # Keep old parsed files
     new_parsed = {infohash: parsed[infohash]
-                  for ((_m, _l), infohash) in unchanged_files.itervalues()}
+                  for ((_m, _l), infohash) in unchanged_files.values()}
 
     # Attempt to parse new files
     added = {}

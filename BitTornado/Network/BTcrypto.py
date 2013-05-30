@@ -6,7 +6,7 @@ import binascii
 URANDOM = getattr(os, 'urandom', None)
 if not URANDOM:
     random.seed()
-    urandom = lambda x: ''.join(chr(random.randint(0, 255)) for i in xrange(x))
+    URANDOM = lambda x: ''.join(chr(random.randint(0, 255)) for _ in range(x))
 
 try:
     from Crypto.Cipher import ARC4
@@ -23,15 +23,32 @@ PAD_MAX = 200   # less than protocol maximum, and later assumed to be < 256
 DH_BYTES = 96
 
 
-def bytetonum(x):
-    return long(binascii.hexlify(x), 16)
+def bytetonum(bytestr):
+    """Convert a byte string to an equivalent integer"""
+    return int(binascii.hexlify(bytestr), 16)
 
 
-def numtobyte(x):
-    return binascii.unhexlify('{:0192x}'.format(x))
+def numtobyte(integer):
+    """Convert an integer to a 96-byte byte string"""
+    return binascii.unhexlify('{:0192x}'.format(integer))
 
 
+def padding():
+    """Return 16-200 random bytes"""
+    return URANDOM(random.randrange(PAD_MAX - 16) + 16)
+
+
+#pylint: disable=E1101
 class Crypto(object):
+    encrypt = None
+    decrypt = None
+    block3a = None
+    block3b = None
+    block3bkey = None
+    S = None
+    _read = None
+    _write = None
+
     def __init__(self, initiator, disable_crypto=False):
         self.initiator = initiator
         self.disable_crypto = disable_crypto
@@ -82,15 +99,19 @@ class Crypto(object):
             self._VC_pattern = self.decrypt('\x00' * 8)
         return self._VC_pattern
 
-    def read(self, s):
-        self._read(self.decrypt(s))
+    def read(self, string):
+        """Decrypt string and read"""
+        self._read(self.decrypt(string))
 
-    def write(self, s):
-        self._write(self.encrypt(s))
+    def write(self, string):
+        """Encrypt string and write"""
+        self._write(self.encrypt(string))
 
     def setrawaccess(self, _read, _write):
+        """Set read/write functions to mediate with decryption/encryption"""
         self._read = _read
         self._write = _write
 
-    def padding(self):
-        return URANDOM(random.randrange(PAD_MAX - 16) + 16)
+    def padded_pubkey(self):
+        """Return public key followed by 16-200 bytes of padding"""
+        return self.pubkey + padding()

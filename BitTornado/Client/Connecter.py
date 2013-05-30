@@ -7,7 +7,7 @@ DEBUG2 = False
 
 
 def toint(s):
-    return long(hexlify(s), 16)
+    return int(hexlify(s), 16)
 
 
 def tobinary(i):
@@ -222,7 +222,7 @@ class Connecter:
             self.ratelimiter.queue(conn)
 
     def got_piece(self, i):
-        for co in self.connections.itervalues():
+        for co in self.connections.values():
             co.send_have(i)
 
     def got_message(self, connection, message):

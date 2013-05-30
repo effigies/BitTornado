@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Written by Henry 'Pi' James and Bram Cohen
 # multitracker extensions by John Hoffman
@@ -23,11 +23,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv[1:], "hv", ("help", "verbose"))
     except getopt.error as msg:
-        print msg
+        print(msg)
         return 1
 
     if len(args) < 2:
-        print usage
+        print(usage)
         return 2
 
     http_seeds = None
@@ -38,7 +38,7 @@ def main(argv):
 
     for opt, _ in opts:
         if opt in ('-h', '--help'):
-            print usage
+            print(usage)
             return 0
         elif opt in ('-v', '--verbose'):
             verbose = True
@@ -48,8 +48,8 @@ def main(argv):
 
         if 'httpseeds' in metainfo:
             if verbose:
-                print 'old http-seed list for {}: {}'.format(
-                    fname, '|'.join(metainfo['httpseeds']))
+                print('old http-seed list for {}: {}'.format(
+                    fname, '|'.join(metainfo['httpseeds'])))
             if http_seeds is None:
                 del metainfo['httpseeds']
 

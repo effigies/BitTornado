@@ -1,8 +1,8 @@
 import gzip
 import socket
-import httplib
-import urlparse
-from StringIO import StringIO
+import http.client
+import urllib
+from io import BytesIO
 from BitTornado.Meta.bencode import bdecode
 from BitTornado import product_name, version_short
 
@@ -10,20 +10,20 @@ VERSION = product_name + '/' + version_short
 MAX_REDIRECTS = 10
 
 
-class btHTTPcon(httplib.HTTPConnection):
+class btHTTPcon(http.client.HTTPConnection):
     """Add automatic connection timeout to HTTPConnection"""
     def connect(self):
-        httplib.HTTPConnection.connect(self)
+        http.client.HTTPConnection.connect(self)
         try:
             self.sock.settimeout(30)
         except socket.error:
             pass
 
 
-class btHTTPScon(httplib.HTTPSConnection):
+class btHTTPScon(http.client.HTTPSConnection):
     """Add automatic connection timeout to HTTPSConnection"""
     def connect(self):
-        httplib.HTTPSConnection.connect(self)
+        http.client.HTTPSConnection.connect(self)
         try:
             self.sock.settimeout(30)
         except socket.error:
@@ -60,7 +60,7 @@ class urlopen:
                                     {'User-Agent': VERSION,
                                      'Accept-Encoding': 'gzip'})
             self.response = self.connection.getresponse()
-        except httplib.HTTPException as e:
+        except http.client.HTTPException as e:
             raise IOError(('http error', str(e)))
         status = self.response.status
         if status in (301, 302):
@@ -90,7 +90,7 @@ class urlopen:
         data = self.response.read()
         if self.response.getheader('Content-Encoding', '').find('gzip') >= 0:
             try:
-                compressed = StringIO(data)
+                compressed = BytesIO(data)
                 f = gzip.GzipFile(fileobj=compressed)
                 data = f.read()
             except IOError:

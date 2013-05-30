@@ -2,7 +2,7 @@ import os
 import socket
 import threading
 import random
-from cStringIO import StringIO
+from io import StringIO
 from traceback import print_exc
 from .download_bt1 import BT1Download
 from BitTornado.Network.RawServer import RawServer
@@ -191,10 +191,10 @@ class LaunchMany:
         (self.torrent_cache, self.file_cache, self.blocked_files, added,
          removed) = r
 
-        for hash, data in removed.iteritems():
+        for hash, data in removed.items():
             self.Output.message('dropped "{}"'.format(data['path']))
             self.remove(hash)
-        for hash, data in added.iteritems():
+        for hash, data in added.items():
             self.Output.message('added "{}"'.format(data['path']))
             self.add(hash, data)
 
@@ -273,7 +273,7 @@ class LaunchMany:
         c = self.counter
         self.counter += 1
         x = ''
-        for _ in xrange(3):
+        for _ in range(3):
             x = mapbase64[c & 0x3F] + x
             c >>= 6
         peer_id = createPeerID(x)

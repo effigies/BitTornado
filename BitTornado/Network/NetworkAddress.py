@@ -22,9 +22,10 @@ import struct
 import socket
 import bisect
 import operator
+from functools import reduce
 
 
-class Address(long):
+class Address(int):
     """Integer representations of network addresses, building on the socket
     library.
 
@@ -35,8 +36,8 @@ class Address(long):
     def __str__(self):
         """Use socket library formatting"""
         words = (0xffffffff & (self >> i)
-                 for i in xrange(self.bits - 32, -1, -32))
-        structdesc = ">{:d}L".format(self.bits / 32)
+                 for i in range(self.bits - 32, -1, -32))
+        structdesc = ">{:d}L".format(self.bits // 32)
         return socket.inet_ntop(self.af, struct.pack(structdesc, *words))
 
     @classmethod
@@ -45,7 +46,7 @@ class Address(long):
 
         Raises socket.error on failure"""
         shiftword = lambda x, y: (2 ** 32) * x + y
-        structdesc = ">{:d}L".format(cls.bits / 32)
+        structdesc = ">{:d}L".format(cls.bits // 32)
         return cls(reduce(shiftword, struct.unpack(structdesc,
                    socket.inet_pton(cls.af, address))))
 
@@ -263,7 +264,7 @@ class AddrList(object):
                 try:
                     self.addSubnet(fields[0])
                 except ValueError:
-                    print '*** WARNING *** could not parse IP range: ' + line
+                    print('*** WARNING *** could not parse IP range: ', line)
 
     def read_rangelist(self, filename):
         """Read a list from a file in the format 'whatever:whatever:ip[-ip]
@@ -277,7 +278,7 @@ class AddrList(object):
                 try:
                     self.addRange(fields[0].split(':')[-1])
                 except ValueError:
-                    print '*** WARNING *** could not parse IP range: ' + line
+                    print('*** WARNING *** could not parse IP range: ', line)
 
 IPV4ADDRMASK = IPv6.fromString('::ffff:0:0')
 

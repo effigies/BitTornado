@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Written by Bram Cohen
 # multitracker extensions by John Hoffman
@@ -12,7 +12,7 @@ from BitTornado.Application.parseargs import parseargs, formatDefinitions
 
 
 def prog(amount):
-    print '%.1f%% complete\r' % (amount * 100),
+    print('%.1f%% complete\r' % (amount * 100))
 
 
 def main(argv):
@@ -20,8 +20,8 @@ def main(argv):
     usage = "Usage: %s <trackerurl> <file> [file...] [params...]" % program
 
     if len(argv) < 3:
-        print "{}\n\n{}{}".format(usage, formatDefinitions(defaults, 80),
-                                  announcelist_details)
+        print("{}\n\n{}{}".format(usage, formatDefinitions(defaults, 80),
+                                  announcelist_details))
         return 2
 
     try:
@@ -29,8 +29,8 @@ def main(argv):
         for file in args[1:]:
             make_meta_file(file, args[0], config.copy(), progress=prog)
     except ValueError as e:
-        print 'error: ' + str(e)
-        print 'run with no args for parameter explanations'
+        print('error: ', e)
+        print('run with no args for parameter explanations')
 
     return 0
 

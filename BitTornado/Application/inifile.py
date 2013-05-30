@@ -27,7 +27,7 @@ def ini_write(fname, data, comment=''):
     config = {'': {}}
 
     # Bring data dictionary into line with expectations
-    for key, value in data.iteritems():
+    for key, value in data.items():
         if isinstance(value, dict):
             config[key.lower()] = value
         else:

@@ -1,5 +1,5 @@
 import socket
-from .BTcrypto import Crypto, CRYPTO_OK
+from .BTcrypto import Crypto, CRYPTO_OK, padding
 from .Encrypter import tobinary16, toint, option_pattern
 
 CHECK_PEER_ID_ENCRYPTED = True
@@ -27,7 +27,7 @@ class NatCheck(object):
             if encrypted:
                 self._dc = not(CRYPTO_OK and CHECK_PEER_ID_ENCRYPTED)
                 self.encrypter = Crypto(True, disable_crypto=self._dc)
-                self.write(self.encrypter.pubkey + self.encrypter.padding())
+                self.write(self.encrypter.padded_pubkey())
             else:
                 self.encrypter = None
                 self.write(chr(len(protocol_name)) + protocol_name +
@@ -76,7 +76,7 @@ class NatCheck(object):
         self.encrypter.received_key(s)
         self.encrypter.set_skey(self.downloadid)
         cryptmode = '\x00\x00\x00\x02'    # full stream encryption
-        padc = self.encrypter.padding()
+        padc = padding()
         self.write(self.encrypter.block3a +
                    self.encrypter.block3b +
                    self.encrypter.encrypt(

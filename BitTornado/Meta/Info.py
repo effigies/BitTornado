@@ -4,7 +4,6 @@ These data structures are generalizations of the original BitTorrent and
 BitTornado makemetafile.py behaviors.
 """
 
-import sys
 import os
 import re
 import time
@@ -193,23 +192,14 @@ class Info(dict):   # pylint: disable=R0904
         """
         super(Info, self).__init__()
 
-        encoding = params.get('encoding', sys.getfilesystemencoding())
-        if encoding == 'UTF-8':
-            self.encode = lambda x: x.encode('utf-8')
-            self.decode = lambda x: x.decode('utf-8')
-        else:
-            self.encode = lambda x: unicode(x, encoding).encode('utf-8')
-            self.decode = lambda x: x.decode(encoding)
-
-        # Use encoding to set name
-        self.name = name
+        self['name'] = name
 
         if 'files' in params:
             self._files = params['files']
             self.size = sum(entry['length'] for entry in self._files)
         elif 'length' in params:
             self.size = params['length']
-            self._files = [{'path': self.name, 'length': self.size}]
+            self._files = [{'path': self['name'], 'length': self.size}]
         else:
             self._files = []
             self.size = size
@@ -303,19 +293,6 @@ class Info(dict):   # pylint: disable=R0904
         except KeyError:
             return default
 
-    @property
-    def name(self):         # pylint: disable=E0202
-        """Manage encoded Info name string"""
-        return self.decode(self['name'])
-
-    @name.setter            # pylint: disable=E1101
-    def name(self, name):   # pylint: disable=E0102,E0202
-        """Manage encoded Info name string"""
-        try:
-            self['name'] = name.encode('utf-8')
-        except UnicodeError:
-            raise UnicodeError('bad filename: ' + name)
-
     def add_file_info(self, size, path):
         """Add file information to torrent.
 
@@ -323,8 +300,7 @@ class Info(dict):   # pylint: disable=R0904
             long        size    size of file (in bytes)
             str[]       path    file path e.g. ['path','to','file.ext']
         """
-        self._files.append({'length': size,
-                            'path': self._uniconvert(path)})
+        self._files.append({'length': size, 'path': path})
 
     def add_data(self, data):
         """Process a segment of data.
@@ -376,20 +352,6 @@ class Info(dict):   # pylint: disable=R0904
             self.hasher.resetHash()
             self.hasher.pieces.append(validator)
             raise ValueError("Location does not produce same hash")
-
-    def _uniconvert(self, srclist):
-        """Convert a list of strings to utf-8
-
-        Parameters
-            str[]   - Strings to be converted
-
-        Return
-            str[]   - Converted strings
-        """
-        try:
-            return [src.encode('utf-8') for src in srclist]
-        except UnicodeError:
-            raise UnicodeError('bad filename: ' + os.path.join(*srclist))
 
 
 class MetaInfo(dict):

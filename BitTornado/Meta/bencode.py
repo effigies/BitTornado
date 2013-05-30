@@ -78,7 +78,7 @@ class BTDecoder(object):
         .torrent file"""
         try:
             data, length = self.decode_func[ctext[0]](self, ctext, 0)
-        except (IndexError, KeyError, ValueError) as e:
+        except (IndexError, KeyError, ValueError):
             raise ValueError("bad bencoded data")
         if not sloppy and length != len(ctext):
             raise ValueError("bad bencoded data")

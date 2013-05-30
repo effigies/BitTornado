@@ -370,7 +370,7 @@ class Downloader:
         self.endgamemode = False
         self.endgame_queued_pieces = []
         self.all_requests = []
-        self.discarded = 0L
+        self.discarded = 0
 #        self.download_rate = 25000  # 25K/s test rate
         self.download_rate = 0
         self.bytes_requested = 0
@@ -467,7 +467,7 @@ class Downloader:
     def num_disconnected_seeds(self):
         # first expire old ones
         expired = []
-        for id, t in self.disconnectedseeds.iteritems():
+        for id, t in self.disconnectedseeds.items():
             if clock() - t > EXPIRE_TIME:     # Expire old seeds after so long
                 expired.append(id)
         for id in expired:

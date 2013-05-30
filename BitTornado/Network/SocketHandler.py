@@ -124,7 +124,7 @@ class SocketHandler(object):
 
     def scan_for_timeouts(self):
         t = clock() - self.timeout
-        for s in self.single_sockets.values():
+        for s in list(self.single_sockets.values()):
             if s.last_hit < t and s.socket is not None:
                 self._close_socket(s)
 
@@ -167,7 +167,7 @@ class SocketHandler(object):
             except socket.error as e:
                 # servers is a dict of sockets, so there's no danger of
                 # altering self.servers in this loop
-                for server in self.servers.itervalues():
+                for server in self.servers.values():
                     try:
                         server.close()
                     except socket.error:
@@ -183,7 +183,7 @@ class SocketHandler(object):
             if not UPnP_open_port(port):
                 # servers is a dict of sockets, so there's no danger of
                 # altering self.servers in this loop
-                for server in self.servers.itervalues():
+                for server in self.servers.values():
                     try:
                         server.close()
                     except socket.error:
@@ -273,7 +273,7 @@ class SocketHandler(object):
                     self.poll.unregister(s)
                     s.close()
                     del self.servers[sock]
-                    print "lost server socket"
+                    print("lost server socket")
                 elif len(self.single_sockets) < self.max_connects:
                     try:
                         newsock, _ = s.accept()
@@ -341,12 +341,12 @@ class SocketHandler(object):
                 'upnp': self.port_forwarded is not None}
 
     def shutdown(self):
-        for ss in self.single_sockets.values():
+        for ss in list(self.single_sockets.values()):
             try:
                 ss.close()
             except (AssertionError, KeyError, ValueError, socket.error):
                 pass
-        for server in self.servers.itervalues():
+        for server in self.servers.values():
             try:
                 server.close()
             except socket.error:

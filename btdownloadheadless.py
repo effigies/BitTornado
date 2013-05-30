@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Written by Bram Cohen
 # see LICENSE.txt for license information
@@ -94,18 +94,18 @@ class HeadlessDisplayer:
                 ''.format(statistics.numPeers,
                           statistics.percentDone / 100,
                           float(statistics.torrentRate) / (1 << 10))
-        print '\n\n\n\n'
+        print('\n\n\n\n')
         for err in self.errors:
-            print 'ERROR:\n' + err + '\n'
-        print 'saving:        ', self.file
-        print 'percent done:  ', self.percentDone
-        print 'time left:     ', self.timeEst
-        print 'download to:   ', self.downloadTo
-        print 'download rate: ', self.downRate
-        print 'upload rate:   ', self.upRate
-        print 'share rating:  ', self.shareRating
-        print 'seed status:   ', self.seedStatus
-        print 'peer status:   ', self.peerStatus
+            print('ERROR:\n' + err + '\n')
+        print('saving:        ', self.file)
+        print('percent done:  ', self.percentDone)
+        print('time left:     ', self.timeEst)
+        print('download to:   ', self.downloadTo)
+        print('download rate: ', self.downRate)
+        print('upload rate:   ', self.upRate)
+        print('share rating:  ', self.shareRating)
+        print('seed status:   ', self.seedStatus)
+        print('peer status:   ', self.peerStatus)
         sys.stdout.flush()
         dpflag.set()
 
@@ -133,11 +133,11 @@ def run(params):
         try:
             config = parse_params(params, configdefaults)
         except ValueError as e:
-            print 'error: {}\nrun with no args for parameter explanations' \
-                ''.format(e)
+            print('error: {}\n'.format(e),
+                  'run with no args for parameter explanations')
             break
         if not config:
-            print get_usage(defaults, 80, configdefaults)
+            print(get_usage(defaults, 80, configdefaults))
             break
         if config['save_options']:
             configdir.saveConfig(config)
@@ -149,7 +149,7 @@ def run(params):
         doneflag = threading.Event()
 
         def disp_exception(text):
-            print text
+            print(text)
         rawserver = RawServer(
             doneflag, config['timeout_check_interval'], config['timeout'],
             ipv6_enable=config['ipv6_enabled'], failfunc=h.failed,
@@ -164,10 +164,10 @@ def run(params):
                 break
             except socket.error as e:
                 if upnp_type and e == UPnP_ERROR:
-                    print 'WARNING: COULD NOT FORWARD VIA UPnP'
+                    print('WARNING: COULD NOT FORWARD VIA UPnP')
                     upnp_type = 0
                     continue
-                print "error: Couldn't listen - " + str(e)
+                print("error: Couldn't listen - ", e)
                 h.failed()
                 return
 
@@ -207,7 +207,7 @@ def run(params):
 
 if __name__ == '__main__':
     if sys.argv[1:] == ['--version']:
-        print version
+        print(version)
         sys.exit(0)
 
     if PROFILER:

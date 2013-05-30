@@ -19,7 +19,7 @@ class FileSelector:
         self.new_priority = None
         self.new_partials = None
         self.filepieces = []
-        total = 0L
+        total = 0
         for _, length in files:
             if not length:
                 self.filepieces.append(())
@@ -35,14 +35,14 @@ class FileSelector:
         try:
             assert len(new_priority) == self.numfiles
             for v in new_priority:
-                assert isinstance(v, (int, long))
+                assert isinstance(v, int)
                 assert v >= -1
                 assert v <= 2
         except AssertionError:
             return False
         try:
             files_updated = False
-            for f in xrange(self.numfiles):
+            for f in range(self.numfiles):
                 if new_priority[f] < 0:
                     self.storage.disable_file(f)
                     files_updated = True
@@ -93,7 +93,7 @@ class FileSelector:
         old_disabled = [p == -1 for p in old_priority]
         new_disabled = [p == -1 for p in new_priority]
         data_to_update = []
-        for f in xrange(self.numfiles):
+        for f in range(self.numfiles):
             if new_disabled[f] != old_disabled[f]:
                 data_to_update.extend(self.storage.get_piece_update_list(f))
         buffer = []
@@ -106,7 +106,7 @@ class FileSelector:
 
         files_updated = False
         try:
-            for f in xrange(self.numfiles):
+            for f in range(self.numfiles):
                 if new_disabled[f] and not old_disabled[f]:
                     self.storage.disable_file(f)
                     files_updated = True
@@ -136,7 +136,7 @@ class FileSelector:
 
     def _get_piece_priority_list(self, file_priority_list):
         l = [-1] * self.numpieces
-        for f in xrange(self.numfiles):
+        for f in range(self.numfiles):
             if file_priority_list[f] == -1:
                 continue
             for i in self.filepieces[f]:
@@ -208,7 +208,7 @@ class FileSelector:
             return self.priority[index]
 
     def finish(self):
-        for f in xrange(self.numfiles):
+        for f in range(self.numfiles):
             if self.priority[f] == -1:
                 self.storage.delete_file(f)
 

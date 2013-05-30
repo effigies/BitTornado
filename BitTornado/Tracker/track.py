@@ -2,13 +2,12 @@ import sys
 import os
 import re
 import time
-import socket
 import signal
 import random
 import threading
 import urllib
-from urlparse import urlparse
-from cStringIO import StringIO
+import socket
+from io import StringIO
 from traceback import print_exc
 from binascii import hexlify
 
@@ -123,15 +122,15 @@ defaults = [
 def statefiletemplate(x):
     if not isinstance(x, dict):
         raise ValueError
-    for cname, cinfo in x.iteritems():
+    for cname, cinfo in x.items():
         if cname == 'peers':
             # The 'peers' key is a dictionary of SHA hashes (torrent ids)
-            for y in cinfo.itervalues():
+            for y in cinfo.values():
                 # ... for the active torrents, and each is a dictionary
                 if not isinstance(y, dict):
                     raise ValueError
                 # ... of client ids interested in that torrent
-                for id, info in y.iteritems():
+                for id, info in y.items():
                     if len(id) != 20:
                         raise ValueError
                     # ... each of which is also a dictionary
@@ -142,14 +141,14 @@ def statefiletemplate(x):
                     if not isinstance(info.get('ip', ''), str):
                         raise ValueError
                     port = info.get('port')
-                    if not isinstance(port, (int, long)) or port < 0:
+                    if not isinstance(port, int) or port < 0:
                         raise ValueError
                     left = info.get('left')
-                    if not isinstance(left, (int, long)) or left < 0:
+                    if not isinstance(left, int) or left < 0:
                         raise ValueError
-                    if not isinstance(info.get('supportcrypto'), (int, long)):
+                    if not isinstance(info.get('supportcrypto'), int):
                         raise ValueError
-                    if not isinstance(info.get('requirecrypto'), (int, long)):
+                    if not isinstance(info.get('requirecrypto'), int):
                         raise ValueError
         elif cname == 'completed':
             # The 'completed' key is a dictionary of SHA hashes (torrent ids)
@@ -157,16 +156,16 @@ def statefiletemplate(x):
             if not isinstance(cinfo, dict):
                 raise ValueError
             # ... each torrent has an integer value
-            for y in cinfo.itervalues():
+            for y in cinfo.values():
                 # ... for the number of reported completions for that torrent
-                if not isinstance(y, (int, long)):
+                if not isinstance(y, int):
                     raise ValueError
         elif cname == 'allowed':
             # a list of info_hashes and included data
             if not isinstance(cinfo, dict):
                 raise ValueError
             if 'allowed_dir_files' in x:
-                adlist = set(z[1] for z in x['allowed_dir_files'].itervalues())
+                adlist = set(z[1] for z in x['allowed_dir_files'].values())
                 # and each should have a corresponding key here
                 for y in cinfo:
                     if not y in adlist:
@@ -177,7 +176,7 @@ def statefiletemplate(x):
                 raise ValueError
             dirkeys = set()
             # each entry should have a corresponding info_hash
-            for y in cinfo.itervalues():
+            for y in cinfo.values():
                 if not y[1]:
                     continue
                 if y[1] not in x['allowed']:
@@ -260,8 +259,8 @@ class Tracker:
                 with open(favicon, 'r') as h:
                     self.favicon = h.read()
             except IOError:
-                print "**warning** specified favicon file -- %s -- does not " \
-                    "exist." % favicon
+                print("**warning** specified favicon file -- %s -- does not "
+                      "exist." % favicon)
         self.rawserver = rawserver
         self.cached = {}    # format: infohash: [[time1, l1, s1], ...]
         self.cached_t = {}  # format: infohash: [time, cache]
@@ -281,8 +280,8 @@ class Tracker:
             self.only_local_override_ip = not config['nat_check']
 
         if CHECK_PEER_ID_ENCRYPTED and not CRYPTO_OK:
-            print '**warning** crypto library not installed, cannot ' \
-                'completely verify encrypted peers'
+            print('**warning** crypto library not installed, cannot '
+                  'completely verify encrypted peers')
 
         if os.path.exists(self.dfile):
             try:
@@ -294,8 +293,8 @@ class Tracker:
                 statefiletemplate(tempstate)
                 self.state = tempstate
             except (IOError, ValueError, TypeError):
-                print '**warning** statefile ' + self.dfile + \
-                    ' corrupt; resetting'
+                print('**warning** statefile ' + self.dfile +
+                      ' corrupt; resetting')
         self.downloads = self.state.setdefault('peers', {})
         self.completed = self.state.setdefault('completed', {})
 
@@ -312,10 +311,10 @@ class Tracker:
             x = 3
         else:
             x = 5
-        self.cache_default = [({}, {}) for _ in xrange(x)]
-        for infohash, ds in self.downloads.iteritems():
+        self.cache_default = [({}, {}) for _ in range(x)]
+        for infohash, ds in self.downloads.items():
             self.seedcount[infohash] = 0
-            for x, y in ds.iteritems():
+            for x, y in ds.items():
                 ip = y['ip']
                 if self.allowed_IPs and ip not in self.allowed_IPs \
                         or self.banned_IPs and ip in self.banned_IPs:
@@ -355,10 +354,10 @@ class Tracker:
                 self.logfile = config['logfile']
                 self.log = open(self.logfile, 'a')
                 sys.stdout = self.log
-                print "# Log Started: ", isotime()
+                print("# Log Started: ", isotime())
             except IOError:
-                print "**warning** could not redirect stdout to log file: " + \
-                    sys.exc_info()[0]
+                print("**warning** could not redirect stdout to log file:",
+                      sys.exc_info()[0])
 
         if config['hupmonitor']:
             def huphandler(signum, frame, self=self):
@@ -366,9 +365,9 @@ class Tracker:
                     self.log.close()
                     self.log = open(self.logfile, 'a')
                     sys.stdout = self.log
-                    print "# Log reopened: ", isotime()
+                    print("# Log reopened: ", isotime())
                 except IOError:
-                    print "**warning** could not reopen logfile"
+                    print("**warning** could not reopen logfile")
 
             signal.signal(signal.SIGHUP, huphandler)
 
@@ -382,9 +381,9 @@ class Tracker:
 
         if config['allowed_list']:
             if config['allowed_dir']:
-                print '**warning** allowed_dir and allowed_list options ' \
-                    'cannot be used together'
-                print '**warning** disregarding allowed_dir'
+                print('**warning** allowed_dir and allowed_list options '
+                      'cannot be used together')
+                print('**warning** disregarding allowed_dir')
                 config['allowed_dir'] = ''
             self.allowed = self.state.setdefault('allowed_list', {})
             self.allowed_list_mtime = 0
@@ -410,7 +409,7 @@ class Tracker:
                 config['multitracker_allowed'] = 'none'
             config['allowed_controls'] = 0
 
-        self.uq_broken = urllib.unquote('+') != ' '
+        self.uq_broken = urllib.parse.unquote('+') != ' '
         self.keep_dead = config['keep_dead']
         self.Filter = Filter(rawserver.add_task)
 
@@ -530,7 +529,8 @@ class Tracker:
                             tt = tt + szt
                             if self.allow_get == 1:
                                 linkname = '<a href="/file?info_hash=' + \
-                                    urllib.quote(hash) + '">' + name + '</a>'
+                                    urllib.parse.quote(hash) + '">' + name + \
+                                    '</a>'
                             else:
                                 linkname = name
                             s.write('<tr><td><code>%s</code></td><td>%s</td>'
@@ -612,9 +612,9 @@ class Tracker:
                         bencode({'failure reason': 'full scrape function is '
                                  'not available with this tracker.'}))
             if self.allowed is not None:
-                keys = self.allowed.iterkeys()
+                keys = self.allowed.keys()
             else:
-                keys = self.downloads.iterkeys()
+                keys = self.downloads.keys()
             for hash in keys:
                 fs[hash] = self.scrapedata(hash)
 
@@ -695,10 +695,10 @@ class Tracker:
         port = params('cryptoport')
         if port is None:
             port = params('port', '')
-        port = long(port)
+        port = int(port)
         if not 0 <= port <= 65535:
             raise ValueError('invalid port')
-        left = long(params('left', ''))
+        left = int(params('left', ''))
         if left < 0:
             raise ValueError('invalid amount left')
         #uploaded = long(params('uploaded',''))
@@ -948,17 +948,17 @@ class Tracker:
             return default
 
         try:
-            (_, _, path, _, query, _) = urlparse(path)
+            (_, _, path, _, query, _) = urllib.parse.urlparse(path)
             if self.uq_broken == 1:
                 path = path.replace('+', ' ')
                 query = query.replace('+', ' ')
-            path = urllib.unquote(path)[1:]
+            path = urllib.parse.unquote(path)[1:]
             for s in query.split('&'):
                 if s:
                     i = s.index('=')
-                    kw = urllib.unquote(s[:i])
+                    kw = urllib.parse.unquote(s[:i])
                     paramslist.setdefault(kw, [])
-                    paramslist[kw] += [urllib.unquote(s[i + 1:])]
+                    paramslist[kw] += [urllib.parse.unquote(s[i + 1:])]
 
             if path == '' or path == 'index.html':
                 return self.get_infopage()
@@ -1061,9 +1061,9 @@ class Tracker:
 
     def natchecklog(self, peerid, ip, port, result):
         year, month, day, hour, minute, second = time.localtime()[:6]
-        print '%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i ' \
-            '0 - -' % (ip, urllib.quote(peerid), day, months[month], year,
-                       hour, minute, second, ip, port, result)
+        print('%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i '
+              '0 - -' % (ip, urllib.parse.quote(peerid), day, months[month],
+                         year, hour, minute, second, ip, port, result))
 
     def connectback_result(self, result, downloadid, peerid, ip, port):
         record = self.downloads.get(downloadid, {}).get(peerid)
@@ -1121,7 +1121,7 @@ class Tracker:
                 (self.allowed, added) = r
                 self.state['allowed_list'] = self.allowed
             except (IOError, OSError):
-                print '**warning** unable to read allowed torrent list'
+                print('**warning** unable to read allowed torrent list')
                 return
             self.allowed_list_mtime = os.path.getmtime(f)
 
@@ -1140,7 +1140,7 @@ class Tracker:
                 self.allowed_IPs.read_fieldlist(f)
                 self.allowed_ip_mtime = os.path.getmtime(f)
             except (IOError, OSError):
-                print '**warning** unable to read allowed_IP list'
+                print('**warning** unable to read allowed_IP list')
 
         f = self.config['banned_ips']
         if f and self.banned_ip_mtime != os.path.getmtime(f):
@@ -1149,7 +1149,7 @@ class Tracker:
                 self.banned_IPs.read_rangelist(f)
                 self.banned_ip_mtime = os.path.getmtime(f)
             except (IOError, OSError):
-                print '**warning** unable to read banned_IP list'
+                print('**warning** unable to read banned_IP list')
 
     def delete_peer(self, infohash, peerid):
         dls = self.downloads[infohash]
@@ -1167,12 +1167,12 @@ class Tracker:
 
     def expire_downloaders(self):
         for x in self.times:
-            for myid, t in self.times[x].items():
+            for myid, t in list(self.times[x].items()):
                 if t < self.prevtime:
                     self.delete_peer(x, myid)
         self.prevtime = clock()
         if not self.keep_dead:
-            for key, value in self.downloads.items():
+            for key, value in list(self.downloads.items()):
                 if len(value) == 0 and (self.allowed is None or
                                         key not in self.allowed):
                     del self.times[key]
@@ -1184,13 +1184,13 @@ class Tracker:
 
 def track(args):
     if len(args) == 0:
-        print formatDefinitions(defaults, 80)
+        print(formatDefinitions(defaults, 80))
         return
     try:
         config, _ = parseargs(args, defaults, 0, 0)
     except ValueError as e:
-        print 'error: ' + str(e)
-        print 'run with no arguments for parameter explanations'
+        print('error: ', str(e))
+        print('run with no arguments for parameter explanations')
         return
     r = RawServer(threading.Event(), config['timeout_check_interval'],
                   config['socket_timeout'], ipv6_enable=config['ipv6_enabled'])
@@ -1200,4 +1200,4 @@ def track(args):
     r.listen_forever(
         HTTPHandler(t.get, config['min_time_between_log_flushes']))
     t.save_state()
-    print '# Shutting down: ' + isotime()
+    print('# Shutting down: ', isotime())

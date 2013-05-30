@@ -30,12 +30,12 @@ class PiecePicker:
         self._init_interests()
 
     def _init_interests(self):
-        self.interests = [[] for _ in xrange(self.priority_step)]
+        self.interests = [[] for _ in range(self.priority_step)]
         self.level_in_interests = [self.priority_step] * self.numpieces
         interests = range(self.numpieces)
         random.shuffle(interests)
         self.pos_in_interests = [0] * self.numpieces
-        for i in xrange(self.numpieces):
+        for i in range(self.numpieces):
             self.pos_in_interests[interests[i]] = i
         self.interests.append(interests)
 
@@ -183,7 +183,7 @@ class PiecePicker:
         else:
             r = [(0, min(bestnum, len(self.interests)))]
         for lo, hi in r:
-            for i in xrange(lo, hi):
+            for i in range(lo, hi):
                 for j in self.interests[i]:
                     if haves[j] and wantfunc(j):
                         return j

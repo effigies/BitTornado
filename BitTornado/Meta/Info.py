@@ -405,6 +405,8 @@ class MetaInfo(dict):
                      'announce-list', 'httpseeds'))
 
     def __init__(self, **params):
+        self.skip_check = params.pop('skip_check', False)
+
         real_announce_list = params.pop('real_announce_list', None)
         announce_list = params.pop('announce_list', None)
         real_httpseeds = params.pop('real_httpseeds', None)
@@ -467,10 +469,10 @@ class MetaInfo(dict):
             torrentfile.write(bencode(self))
 
     @classmethod
-    def read(cls, torrent):
+    def read(cls, torrent, skip_check=False):
         """Read MetaInfo from a torrent file"""
         with open(torrent, 'rb') as torrentfile:
-            return cls(**bdecode(torrentfile.read()))
+            return cls(skip_check=skip_check, **bdecode(torrentfile.read()))
 
     @property
     def info(self):             # pylint: disable=E0202
@@ -485,7 +487,8 @@ class MetaInfo(dict):
             self.pop('info', None)
             return
 
-        check_info(newinfo)
+        if not self.skip_check:
+            check_info(newinfo)
         if not isinstance(newinfo, Info):
             newinfo = Info(**newinfo)
         self['info'] = newinfo

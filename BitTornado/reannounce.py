@@ -6,9 +6,10 @@ def reannounce(fname, announce, announce_list=None, verbose=False):
     metainfo = MetaInfo.read(fname)
 
     if verbose:
-        try:
+        # Accept torrents with no announce
+        if 'announce' in metainfo:
             print 'old announce for %s: %s' % (fname, metainfo['announce'])
-        except KeyError:
+        else:
             print 'No announce found.'
 
     metainfo['announce'] = announce

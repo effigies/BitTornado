@@ -202,11 +202,11 @@ def _get_forwarded_ip(headers):
     if header:
         try:
             x, y = header.split(',')
+            if is_valid_ip(x) and x not in local_IPs:
+                return x
+            return y
         except:
             return header
-        if is_valid_ip(x) and x not in local_IPs:
-            return x
-        return y
     header = headers.get('client-ip')
     if header:
         return header
@@ -226,7 +226,7 @@ def _get_forwarded_ip(headers):
 
 def get_forwarded_ip(headers):
     x = _get_forwarded_ip(headers)
-    if not is_valid_ip(x) or x in local_IPs:
+    if not x or not is_valid_ip(x) or x in local_IPs:
         return None
     return x
 
@@ -322,8 +322,8 @@ class Tracker:
                 if y.get('nat', -1):
                     continue
                 gip = y.get('given_ip')
-                if is_valid_ip(gip) and (not self.only_local_override_ip or
-                                         ip in local_IPs):
+                if gip and is_valid_ip(gip) and \
+                        (not self.only_local_override_ip or ip in local_IPs):
                     ip = gip
                 self.natcheckOK(infohash, x, ip, y['port'], y)
 
@@ -718,7 +718,8 @@ class Tracker:
             auth = peer.get('key', -1) == mykey or peer.get('ip') == ip
 
         gip = params('ip')
-        if is_valid_ip(gip) and (islocal or not self.only_local_override_ip):
+        if gip and is_valid_ip(gip) and (islocal or
+                                         not self.only_local_override_ip):
             ip1 = gip
         else:
             ip1 = ip

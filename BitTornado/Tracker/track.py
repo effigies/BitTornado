@@ -1172,12 +1172,12 @@ class Tracker:
 
     def expire_downloaders(self):
         for x in self.times:
-            for myid, t in self.times[x].iteritems():
+            for myid, t in self.times[x].items():
                 if t < self.prevtime:
                     self.delete_peer(x, myid)
         self.prevtime = clock()
         if (self.keep_dead != 1):
-            for key, value in self.downloads.iteritems():
+            for key, value in self.downloads.items():
                 if len(value) == 0 and (self.allowed is None or
                                         key not in self.allowed):
                     del self.times[key]

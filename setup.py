@@ -12,6 +12,7 @@ setup(
     author="Bram Cohen, John Hoffman, Uoti Arpala et. al.",
     author_email="<theshadow@degreez.net>",
     url="http://www.bittornado.com",
+    description="John Hoffman's fork of the original bittorrent",
     license="MIT",
 
     packages=["BitTornado", "BitTornado.BT1"],

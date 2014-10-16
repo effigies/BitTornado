@@ -26,3 +26,5 @@ if sys.platform != 'win32':
 
     def clock():
         return _RTIME.get_time()
+else:
+    from time import clock

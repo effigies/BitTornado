@@ -69,7 +69,7 @@ class SingleDownload:
             2 + int(4 * self.measure.get_rate() / self.downloader.chunksize),
             2 * just_unchoked + self.downloader.queue_limit())
         if self.backlog > 50:
-            self.backlog = max(50, self.backlog * 0.075)
+            self.backlog = int(max(50, self.backlog * 0.075))
         return self.backlog
 
     def disconnected(self):
@@ -283,7 +283,8 @@ class SingleDownload:
                     self.downloader.add_disconnected_seed(
                         self.connection.get_readable_id())
                     self.connection.close()
-            elif self.downloader.endgamemode:
+                    return
+            if self.downloader.endgamemode:
                 self.fix_download_endgame()
             elif (not self.downloader.paused and
                   not self.downloader.picker.is_blocked(index) and

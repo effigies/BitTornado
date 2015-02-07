@@ -178,7 +178,7 @@ class CursesDisplayer:
                     break
             (name, status, progress, peers, seeds, seedsmsg, dist,
              uprate, dnrate, upamt, dnamt, size, t, msg) = data[ii]
-            t = time.fmttime(t)
+            t = fmttime(t)
             if t:
                 status = t
             name = ljust(name, self.mainwinw - 32)

@@ -7,8 +7,8 @@
 import sys
 import os
 import threading
-from BitTornado.BT1.makemetafile import make_meta_file, completedir
-from BitTornado.Info import MetaInfo
+from BitTornado.Application.makemetafile import make_meta_file, completedir
+from BitTornado.Meta.Info import MetaInfo
 try:
     from wxPython import wx
 except:

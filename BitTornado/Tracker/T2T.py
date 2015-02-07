@@ -40,10 +40,11 @@ class T2TConnection:
             rawserver.add_task, self.errorfunc, excfunc, self.addtolist, R_0,
             R_1, R_0, R_0, R_0, R_0, threading.Event())
 
+        # stagger announces
         if self.isactive():
             rawserver.add_task(self.refresh,
                                random.randrange(int(self.interval / 10),
-                               self.interval))  # stagger announces
+                                                self.interval))
 
     def isactive(self):
         if self.isdisallowed(self.tracker):    # whoops!

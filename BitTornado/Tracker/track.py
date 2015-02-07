@@ -31,7 +31,7 @@ defaults = [
     ('port', 80, "Port to listen on."),
     ('dfile', None, 'file to store recent downloader info in'),
     ('bind', '', 'comma-separated list of ips/hostnames to bind to locally'),
-#    ('ipv6_enabled', autodetect_ipv6(),
+    #('ipv6_enabled', autodetect_ipv6(),
     ('ipv6_enabled', 0, 'allow the client to connect to peers via IPv6'),
     ('ipv6_binds_v4', autodetect_socket_style(),
      'set if an IPv6 server socket will also field IPv4 connections'),

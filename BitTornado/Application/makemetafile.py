@@ -72,6 +72,7 @@ def make_meta_file(loc, url, params=None, flag=None,
     metainfo = MetaInfo(announce=url, info=info, **params)
     metainfo.write(params['target'])
 
+
 def completedir(directory, url, params=None, flag=None,
                 progress=lambda x: None, filestat=lambda x: None):
     """Make a .torrent file for each entry in a directory"""

@@ -72,6 +72,7 @@ class BTEncoder(object):
         else:
             raise TypeError('Unknown type for bencode: ' + str(type(data)))
 
+
 #pylint: disable=R0201
 class BTDecoder(object):
     """Stateless object that decodes bencoded strings into data structures"""
@@ -223,6 +224,7 @@ def test_bencode():
     assert bencode(cached) == cached.bencoded
 
     assert bencode(u'') == bencode('')
+
 
 def test_bdecode():
     """Test decoding of valid and erroneous sample strings"""

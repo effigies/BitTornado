@@ -210,7 +210,7 @@ class CursesDisplayer:
             self.seedStatus = seeds + copies
             self.peerStatus = '{:d} seen now, {:.1f}% done at {:.1f} kB/s' \
                 ''.format(statistics.numPeers, statistics.percentDone,
-                float(statistics.torrentRate) / (1 << 10))
+                          float(statistics.torrentRate) / (1 << 10))
 
         self.fieldwin.erase()
         self.fieldwin.addnstr(0, 0, self.file, self.fieldw, curses.A_BOLD)

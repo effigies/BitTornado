@@ -1,5 +1,6 @@
 """Manipulable boolean list structure and related functions"""
 
+
 def _int_to_booleans(integer):
     """Produce a tuple of booleans corresponding to 8 least significant bits
     in an integer

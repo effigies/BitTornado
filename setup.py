@@ -14,10 +14,9 @@ setup(
 
     packages=["BitTornado"],
 
-    scripts=["btdownloadgui.py", "btdownloadheadless.py", "bttrack.py",
-             "btmakemetafile.py", "btlaunchmany.py", "btcompletedir.py",
-             "btdownloadcurses.py", "btlaunchmanycurses.py",
-             "btmakemetafile.py", "btreannounce.py", "btrename.py",
-             "btshowmetainfo.py", 'btmaketorrentgui.py', 'btcopyannounce.py',
-             'btsethttpseeds.py', 'bt-t-make.py']
+    scripts=["btdownloadheadless.py", "bttrack.py", "btmakemetafile.py",
+             "btlaunchmany.py", "btcompletedir.py", "btdownloadcurses.py",
+             "btlaunchmanycurses.py", "btmakemetafile.py", "btreannounce.py",
+             "btrename.py", "btshowmetainfo.py",
+             "btcopyannounce.py", "btsethttpseeds.py"]
 )

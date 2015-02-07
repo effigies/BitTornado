@@ -23,7 +23,6 @@ A single file can be downloaded with any of the following commands:
 
     btdownloadheadless.py myfile.torrent
     btdownloadcurses.py myfile.torrent
-    btdownloadgui.py myfile.torrent
 
 A directory of files can be downloaded with any of the following commands:
 
@@ -77,11 +76,6 @@ You can use either a dns name or an IP address in the tracker url.
     btcompletedir.py http://my.tracker:6969/announce mydir
 
 This will generate a torrent file for each file in `mydir`.
-
-### GUI interface
-
-`btmaketorrentgui.py` and `bt-t-make.py` provide GUI interfaces for
-creating single torrent files or directories of files.
 
 ## Editing torrent files
 

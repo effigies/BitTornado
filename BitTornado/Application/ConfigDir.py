@@ -5,25 +5,16 @@ import BitTornado
 import sys
 import os
 import time
-import shutil
 from binascii import hexlify, unhexlify
 from .inifile import ini_write, ini_read
 from BitTornado.Meta.bencode import bencode, bdecode
-from .CreateIcons import GetIcons, CreateIcon
 from .parseargs import defaultargs
-
-try:
-    OLDICONPATH = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])))
-except AttributeError:
-    OLDICONPATH = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])))
-
-OLDICONPATH = os.path.join(OLDICONPATH, 'icons')
 
 DIRNAME = '.' + BitTornado.product_name
 
 
 class ConfigDir(object):
-    """Class for managing configuration data, icons and caches"""
+    """Class for managing configuration data and caches"""
 
     def __init__(self, config_type=None):
         # Figure out a sensible application data location
@@ -44,19 +35,11 @@ class ConfigDir(object):
             os.mkdir(dir_root, 0700)
 
         # Create subdirectories if missing, and reference with self.dir_*
-        for attr in ('icons', 'torrentcache', 'datacache', 'piececache'):
+        for attr in ('torrentcache', 'datacache', 'piececache'):
             path = os.path.join(dir_root, attr)
             if not os.path.isdir(path):
                 os.mkdir(path)
             setattr(self, 'dir_' + attr, path)
-
-        # Try copying icons or generate from CreateIcons
-        for icon in GetIcons():
-            old_icon = os.path.join(OLDICONPATH, icon)
-            new_icon = os.path.join(self.dir_icons, icon)
-            if not (os.path.exists(new_icon) or
-                    shutil.copyfile(old_icon, new_icon)):
-                CreateIcon(icon, self.dir_icons)
 
         # Allow caller-specific config and state data
         ext = '' if config_type is None else ('.' + config_type)
@@ -281,8 +264,3 @@ class ConfigDir(object):
     def deleteOldTorrents(self, days, still_active=()):
         """Synonym for deleteOldCacheData with delete_torrents set"""
         self.deleteOldCacheData(days, still_active, True)
-
-    ###### OTHER ######
-    def getIconDir(self):
-        """Return application specific icon directory"""
-        return self.dir_icons

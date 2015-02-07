@@ -7,20 +7,16 @@ bittorrent-downloader \- download files using a scatter-gather network
 .B btdownloadheadless [ option ... ] \fIfilename\fB
 .B btdownloadcurses   [ option ... ] \fIURL\fB
 .B btdownloadcurses   [ option ... ] \fIfilename\fB
-.B btdownloadgui      [ option ... ] \fIURL\fB
-.B btdownloadgui      [ option ... ] \fIfilename\fB
 .fi
 .br
 .B 
 .SH DESCRIPTION
 This manual page documents briefly the \fBbtdownloadheadless\fP,
-\fBbtdownloadcurses\fP, and \fBbtdownloadgui\fP commands.
-This manual page was written for the Debian distribution
-because the original program does not have a manual page.
+and \fBbtdownloadcurses\fP commands. This manual page was written for the
+Debian distribution because the original program does not have a manual page.
 .PP
-These are all programs that allow a user to download files using
-bittorrent, a peer to peer, scatter-gather network protocol.
-They all have the same options.
+These are all programs that allow a user to download files using bittorrent, a
+peer to peer, scatter-gather network protocol. They all have the same options.
 .SH OPTIONS
 These programs follow the usual GNU command line syntax, with long
 options starting with two dashes (`-').
@@ -47,8 +43,8 @@ set \fIportnum\fP as the minimum port to listen on, counts up if unavailable (de
 set \fIportnum\fP as the maximum port to listen on (default 60000)
 .TP
 .B \-\-saveas \fIfilename\fP
-store the downloaded file to \fIfilename\fP, instead of querying user (gui) or 
-using the filename stored in the torrent info file
+store the downloaded file to \fIfilename\fP, instead of using the filename
+stored in the torrent info file
 .TP
 .B \-\-max_uploads \fInum\fP
 Only allow \fInum\fP uploads at once (default 4)
@@ -103,7 +99,7 @@ wait \fIsecs\fP seconds for data to come in over a connection before assuming it
 .TP
 .B \-\-spew \fI 1 | 0 \fP
 whether to display diagnostic info to stdout.  This option is not useful when
-using btdownloadcurses or btdownloadgui. (default 0)
+using btdownloadcurses. (default 0)
 .B \-\-max_initiate \fInum\fP
 stop initiating new connections when we have \fInum\fP peers (default 40)
 .TP
@@ -123,5 +119,6 @@ priority over rarest first (default 3)
 .BR btlaunchmany (1).
 .br
 .SH AUTHOR
-This manual page was written by Michael Janssen <jamuraa@debian.org>, and modified by Micah Anderson <micah@debian.org>
-for the Debian GNU/Linux system (but may be used by others).
+This manual page was written by Michael Janssen <jamuraa@debian.org>, modified
+by Micah Anderson <micah@debian.org> for the Debian GNU/Linux system, and
+modified further by Chris Markiewicz (but may be used by others).

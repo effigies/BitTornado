@@ -25,7 +25,7 @@ from BitTornado.Application.ConfigReader import configReader
 from BitTornado.Meta.bencode import bencode
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
-from BitTornado import version, report_email
+from BitTornado import version, report_url
 from BitTornado.Application.PeerID import createPeerID
 
 try:
@@ -2304,17 +2304,14 @@ class DownloadInfoFrame:
             sizer.Add(wx.wxStaticText(panel, -1,
                       '\nHelp us iron out the bugs in the engine!'))
             linkMail = wx.wxStaticText(
-                panel, -1, 'Please report this error to ' + report_email)
+                panel, -1, 'Please report this error to ' + report_url)
             linkMail.SetFont(wx.wxFont(self.FONT, wx.wxDEFAULT, wx.wxNORMAL,
                              wx.wxNORMAL, True))
             linkMail.SetForegroundColour('Blue')
             sizer.Add(linkMail)
 
             def maillink(self):
-                threading.Thread(
-                    target=open_new(
-                        "mailto:{}?subject=autobugreport".format(report_email))
-                ).start()
+                threading.Thread(target=open_new(report_url)).start()
             wx.EVT_LEFT_DOWN(linkMail, maillink)
 
             border = wx.wxBoxSizer(wx.wxHORIZONTAL)

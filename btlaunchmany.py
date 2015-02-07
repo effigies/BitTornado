@@ -8,7 +8,7 @@ import os
 from BitTornado.Client.launchmanycore import LaunchMany
 from BitTornado.Client.download_bt1 import defaults, get_usage
 from BitTornado.Application.parseargs import parseargs
-from BitTornado import version, report_email
+from BitTornado import version, report_url
 from BitTornado.Application.ConfigDir import ConfigDir
 
 
@@ -97,4 +97,4 @@ if __name__ == '__main__':
     if Exceptions:
         print '\nEXCEPTION:'
         print Exceptions[0]
-        print 'please report this to ' + report_email
+        print 'please report this to ' + report_url

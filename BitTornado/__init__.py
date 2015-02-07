@@ -1,11 +1,11 @@
 product_name = 'BitTornado'
-version_short = 'T-0.3.19'
+version_short = 'T-0.4.0'
 
 version = version_short + ' (' + product_name + ')'
-report_email = version_short + '@degreez.net'
+report_url = 'https://github.com/effigies/BitTornado/issues/new'
 
 __author__ = """
-Christopher J. Johnson <effigies@gmail.com>
+Christopher J. Markiewicz <effigies@gmail.com>
 
 Original BitTornado code by:
 Bram Cohen, Henry 'Pi' James, Bill Bumgarner, Petru Paler,

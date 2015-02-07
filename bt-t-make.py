@@ -279,6 +279,11 @@ class BasicDownloadInfo:
         self.invokeLater(self.on_buildfailed, [e])
 
     def on_buildfailed(self, e):
+        dlg = wx.wxMessageDialog(self.frame, message='Error - ' + e,
+                                 caption='Error',
+                                 style=wx.wxOK | wx.wxICON_ERROR)
+        dlg.ShowModal()
+        dlg.Destroy()
         self.gauge.SetValue(0)
         self.statustext.SetLabel('ERROR')
         self.calls['dropTargetError']()
@@ -902,11 +907,6 @@ class MakeMetafile:
     def failed(self, e):
         e = str(e)
         self.call.build_failed(e)
-        dlg = wx.wxMessageDialog(self.frame, message='Error - ' + e,
-                                 caption='Error',
-                                 style=wx.wxOK | wx.wxICON_ERROR)
-        dlg.ShowModal()
-        dlg.Destroy()
 
 
 class T_make:

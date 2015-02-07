@@ -193,7 +193,13 @@ class Info(dict):   # pylint: disable=R0904
         """
         super(Info, self).__init__()
 
-        self.encoding = params.get('encoding', sys.getfilesystemencoding())
+        encoding = params.get('encoding', sys.getfilesystemencoding())
+        if encoding == 'UTF-8':
+            self.encode = lambda x: x.encode('utf-8')
+            self.decode = lambda x: x.decode('utf-8')
+        else:
+            self.encode = lambda x: unicode(x, encoding).encode('utf-8')
+            self.decode = lambda x: x.decode(encoding)
 
         # Use encoding to set name
         self.name = name
@@ -312,13 +318,13 @@ class Info(dict):   # pylint: disable=R0904
     @property
     def name(self):         # pylint: disable=E0202
         """Manage encoded Info name string"""
-        return self['name'].decode(self.encoding)
+        return self.decode(self['name'])
 
     @name.setter            # pylint: disable=E1101
     def name(self, name):   # pylint: disable=E0102,E0202
         """Manage encoded Info name string"""
         try:
-            self['name'] = unicode(name, self.encoding).encode('utf-8')
+            self['name'] = self.encode(name)
         except UnicodeError:
             raise UnicodeError('bad filename: ' + name)
 
@@ -393,8 +399,7 @@ class Info(dict):   # pylint: disable=R0904
             str[]   - Converted strings
         """
         try:
-            return [unicode(src, self.encoding).encode('utf-8')
-                    for src in srclist]
+            return [self.encode(src) for src in srclist]
         except UnicodeError:
             raise UnicodeError('bad filename: ' + os.path.join(*srclist))
 

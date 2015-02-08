@@ -991,7 +991,7 @@ class DownloadInfoFrame:
                 size_format(file_length), comma_format(file_length))))
             detailSizer.Add(StaticText('pieces : '))
             if num_pieces > 1:
-                detailSizer.Add(StaticText('{:i} ({} bytes each)'.format(
+                detailSizer.Add(StaticText('{:d} ({} bytes each)'.format(
                     num_pieces, comma_format(piece_length))))
             else:
                 detailSizer.Add(StaticText('1'))
@@ -1443,7 +1443,7 @@ class DownloadInfoFrame:
             spinnerSizer.AddGrowableCol(0)
             spinnerSizer.Add(StaticText('Max download rate (kB/s) '), 0,
                              wx.wxALIGN_CENTER_VERTICAL)
-            self.downrateSpinner = wx.wxSpinCtrl(panel, -1, "", (-1, -1)
+            self.downrateSpinner = wx.wxSpinCtrl(panel, -1, "", (-1, -1),
                                                  (50, -1))
             self.downrateSpinner.SetFont(self.default_font)
             self.downrateSpinner.SetRange(0, 5000)

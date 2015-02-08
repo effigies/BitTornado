@@ -1,28 +1,14 @@
 import threading
 from array import array
-# import inspect
-
-DEBUG = False
 
 
-class SingleBuffer:
+class SingleBuffer(object):
+    """Non-shrinking array"""
     def __init__(self, pool):
         self.pool = pool
         self.buf = array('c')
 
     def init(self):
-        if DEBUG:
-            print self.count
-            '''
-            for x in xrange(6,1,-1):
-                try:
-                    f = inspect.currentframe(x).f_code
-                    print (f.co_filename,f.co_firstlineno,f.co_name)
-                    del f
-                except:
-                    pass
-            print ''
-            '''
         self.length = 0
 
     def append(self, s):
@@ -38,7 +24,7 @@ class SingleBuffer:
             b = self.length
         if b < 0:
             b += self.length
-        if a == 0 and b == self.length and len(self.buf) == b:
+        if a == 0 and b == self.length == len(self.buf):
             return self.buf  # optimization
         return self.buf[a:b]
 
@@ -46,34 +32,27 @@ class SingleBuffer:
         return self.buf[:self.length]
 
     def release(self):
-        if DEBUG:
-            print -self.count
         self.pool.release(self)
 
 
-class BufferPool:
+class BufferPool(list):
+    """Thread-safe stack of buffers not currently in use, generates new buffer
+    when empty"""
+    release = list.append
+
     def __init__(self):
-        self.pool = []
         self.lock = threading.Lock()
-        if DEBUG:
-            self.count = 0
+        super(BufferPool, self).__init__()
 
     def new(self):
-        self.lock.acquire()
-        if self.pool:
-            x = self.pool.pop()
-        else:
-            x = SingleBuffer(self)
-            if DEBUG:
-                self.count += 1
-                x.count = self.count
-        x.init()
-        self.lock.release()
-        return x
-
-    def release(self, x):
-        self.pool.append(x)
-
+        "Get buffer from pool, generating a new one if empty"
+        with self.lock:
+            if self:
+                buf = self.pop()
+            else:
+                buf = SingleBuffer(self)
+            buf.init()
+        return buf
 
 _pool = BufferPool()
 PieceBuffer = _pool.new

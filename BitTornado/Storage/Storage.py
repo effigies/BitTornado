@@ -17,10 +17,6 @@ MAXLOCKSIZE = 1000000000L
 MAXLOCKRANGE = 3999999999L   # only lock first 4 gig of file
 
 
-def dummy_status(fractionDone=None, activity=None):
-    pass
-
-
 class Storage:
     def __init__(self, files, piece_length, doneflag, config,
                  disabled_files=None):
@@ -473,86 +469,82 @@ class Storage:
     def pickle(self):
         files = []
         pfiles = []
-        for i in xrange(len(self.files)):
-            if not self.files[i][1]:    # length == 0
+        for i, (fname, size) in enumerate(self.files):
+            if not size:
                 continue
-            if self.disabled[i]:
-                for file, start, end in self._get_disabled_ranges(i)[2]:
-                    pfiles.extend([basename(file), getsize(file),
-                                   int(getmtime(file))])
-                continue
-            file = self.files[i][0]
-            files.extend([i, getsize(file), int(getmtime(file))])
+            if not self.disabled[i]:
+                files.extend([i, getsize(fname), int(getmtime(fname))])
+            else:
+                for fname, start, end in self._get_disabled_ranges(i)[2]:
+                    pfiles.extend([basename(fname), getsize(fname),
+                                   int(getmtime(fname))])
         return {'files': files, 'partial files': pfiles}
 
     def unpickle(self, data):
         # assume all previously-disabled files have already been disabled
         try:
+            # Extract file and pfile sequences
             files = {}
             pfiles = {}
-            l = data['files']
-            assert len(l) % 3 == 0
-            l = [l[x:x + 3] for x in xrange(0, len(l), 3)]
-            for f, size, mtime in l:
-                files[f] = (size, mtime)
-            l = data.get('partial files', [])
-            assert len(l) % 3 == 0
-            l = [l[x:x + 3] for x in xrange(0, len(l), 3)]
-            for file, size, mtime in l:
-                pfiles[file] = (size, mtime)
 
+            filelist = data['files']
+            for i in xrange(0, len(filelist), 3):
+                files[filelist[i]] = (filelist[i + 1], filelist[i + 2])
+
+            pfilelist = data.get('partial files', [])
+            for i in xrange(0, len(pfilelist), 3):
+                pfiles[pfilelist[i]] = (pfilelist[i + 1], pfilelist[i + 2])
+
+            # Build set of already potentially existing pieces, excluding
+            # disabled files
             valid_pieces = set()
-            for i in xrange(len(self.files)):
-                if self.disabled[i]:
+            for frange, disabled in zip(self.file_ranges, self.disabled):
+                if disabled or not frange:
                     continue
-                r = self.file_ranges[i]
-                if not r:
-                    continue
-                start, end, offset, file = r
+                start, end, offset, fname = frange
                 if DEBUG:
-                    print 'adding ' + file
-                for p in xrange(int(start / self.piece_length),
-                                int((end - 1) / self.piece_length) + 1):
-                    valid_pieces.add(p)
+                    print 'adding ' + fname
+                valid_pieces.update(
+                    xrange(int(start / self.piece_length),
+                           int((end - 1) / self.piece_length) + 1))
 
             if DEBUG:
                 print list(valid_pieces)
 
-            def test(old, size, mtime):
+            def changed(old, size, mtime):
                 oldsize, oldmtime = old
                 if size != oldsize:
-                    return False
-                if mtime > oldmtime + 1:
-                    return False
-                if mtime < oldmtime - 1:
-                    return False
-                return True
+                    return True
+                return not oldmtime - 1 < mtime < oldmtime + 1
 
-            for i in xrange(len(self.files)):
-                if self.disabled[i]:
-                    for file, start, end in self._get_disabled_ranges(i)[2]:
-                        f1 = basename(file)
-                        if f1 not in pfiles or not test(pfiles[f1],
-                                                        getsize(file),
-                                                        getmtime(file)):
-                            if DEBUG:
-                                print 'removing ' + file
-                            for p in xrange(int(start / self.piece_length),
-                                            int((end - 1) / self.piece_length)
-                                            + 1):
-                                valid_pieces.discard(p)
-                    continue
-                file, size = self.files[i]
+            for i, (fname, size) in enumerate(self.files):
                 if not size:
                     continue
-                if i not in files or not test(files[i], getsize(file),
-                                              getmtime(file)):
-                    start, end, offset, file = self.file_ranges[i]
+
+                # Remove pieces from disabled files unless also containing
+                # part of unchanged partial files
+                if self.disabled[i]:
+                    for fname, start, end in self._get_disabled_ranges(i)[2]:
+                        f1 = basename(fname)
+                        if f1 not in pfiles or changed(pfiles[f1],
+                                                       getsize(fname),
+                                                       getmtime(fname)):
+                            if DEBUG:
+                                print 'removing ' + file
+                            valid_pieces.difference_update(
+                                xrange(int(start / self.piece_length),
+                                       int((end - 1) / self.piece_length) + 1))
+                    continue
+
+                # Remove pieces unless part of unchanged completed files
+                if i not in files or changed(files[i], getsize(fname),
+                                             getmtime(fname)):
+                    start, end, offset, fname2 = self.file_ranges[i]
                     if DEBUG:
                         print 'removing ' + file
-                    for p in xrange(int(start / self.piece_length),
-                                    int((end - 1) / self.piece_length) + 1):
-                        valid_pieces.discard(p)
+                    valid_pieces.difference_update(
+                        xrange(int(start / self.piece_length),
+                               int((end - 1) / self.piece_length) + 1))
         except:
             if DEBUG:
                 print_exc()

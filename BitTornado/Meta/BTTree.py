@@ -5,10 +5,10 @@ BitTornado makemetafile.py behaviors.
 """
 
 import os
-from .Info import Info
+from .Info import Info, MetaInfo
 
 
-class BTTree:
+class BTTree(object):
     """BTTree - Recursive data structure that tracks the total size of a
     file or directory, which can then be used to create torrent files.
 
@@ -134,4 +134,5 @@ class BTTree:
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 
-        info.write(os.path.join(target, *self.path) + '.torrent', tracker)
+        metainfo = MetaInfo(announce=tracker, info=info, **params)
+        metainfo.write(os.path.join(target, *self.path) + '.torrent')

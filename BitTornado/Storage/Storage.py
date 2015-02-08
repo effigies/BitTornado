@@ -1,4 +1,4 @@
-from .piecebuffer import BufferPool
+from .PieceBuffer import PieceBuffer
 from threading import Lock
 from time import strftime, localtime
 import os
@@ -15,9 +15,6 @@ DEBUG = False
 MAXREADSIZE = 32768
 MAXLOCKSIZE = 1000000000L
 MAXLOCKRANGE = 3999999999L   # only lock first 4 gig of file
-
-_pool = BufferPool()
-PieceBuffer = _pool.new
 
 
 def dummy_status(fractionDone=None, activity=None):

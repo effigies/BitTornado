@@ -59,14 +59,12 @@ class Bitfield(list):
         return not self.numfalse
 
 
-class TrueBitfield:
+class TrueBitfield(object):     # pylint: disable=R0903
     """A trivial structure that acts like an infinitely long field of
     True bits"""
-    def __getitem__(self, x):
-        return True
+    complete = True
 
-    @property
-    def complete(self):
+    def __getitem__(self, index):
         return True
 
 

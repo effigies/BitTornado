@@ -46,9 +46,10 @@ def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
     new_files, torrent_type = get_files(directory, exts)
 
     # removed_files = (files \ new_files) U changed_files
-    removed_files = {path: files[path] for path in files
-                     if path not in new_files
-                     or files[path][0] != new_files[path][0]}
+    removed_files = {}
+    for path in files:
+	if path not in new_file or files[path][0] != new_files[path][0]:
+		removed_files[path] = files[path]
 
     # Missing files are removed
     removed = {}
@@ -56,8 +57,10 @@ def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
         removed[filehash] = parsed[filehash]
 
     # unchanged_files = files \ removed_files
-    unchanged_files = {path: files[path] for path in files
-                       if path not in removed_files}
+    unchanged_file = {}
+    for path in files:
+	if path not in removed_files:
+	    unchanged_files[path] = files[path]
 
     # Parse new files and those whose mtime or length has change
     # Block those that are unmodified but unparsed (indicates error)
@@ -72,8 +75,9 @@ def parsedir(directory, parsed, files, blocked, exts=('.torrent',),
     new_files.update(unchanged_files)
 
     # Keep old parsed files
-    new_parsed = {infohash: parsed[infohash]
-                  for ((_m, _l), infohash) in unchanged_files.itervalues()}
+    new_parsed = {}
+    for ((_m, _l), infohash) in unchanged_files.itervalues():
+	new_parsed[infohash] = parsed[infohash]
 
     # Attempt to parse new files
     added = {}

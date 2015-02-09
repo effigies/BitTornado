@@ -58,7 +58,7 @@ def resetPeerIDs():
         t = long(time() * 10)
         while t == long(clock() * 10):
             l3 += 1
-    x += '{}/{}/{}/{}/{}/{}'.format(repr(time()), time(), l1, l2, l3, getpid())
+    x += '{0}/{1}/{2}/{3}/{4}/{5}'.format(repr(time()), time(), l1, l2, l3, getpid())
 
     s = ''
     for i in hashlib.sha1(x).digest()[-11:]:

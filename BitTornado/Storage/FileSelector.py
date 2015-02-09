@@ -38,7 +38,7 @@ class FileSelector:
                 assert isinstance(v, (int, long))
                 assert v >= -1
                 assert v <= 2
-        except:
+        except AssertionError:
             return False
         try:
             files_updated = False
@@ -204,7 +204,7 @@ class FileSelector:
     def __getitem__(self, index):
         try:
             return self.new_priority[index]
-        except:
+        except TypeError:
             return self.priority[index]
 
     def finish(self):

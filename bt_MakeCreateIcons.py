@@ -48,7 +48,7 @@ def CreateIcon(icon, savedir):
         with open(os.path.join(savedir, icon), "wb") as f:
             f.write(zlib.decompress(binascii.a2b_base64(icons[icon])))
         return True
-    except:
+    except IOError:
         return False
 """.format(time=time.strftime('%x %X'),
             version=BitTornado.version,

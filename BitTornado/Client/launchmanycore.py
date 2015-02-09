@@ -19,7 +19,7 @@ def fmttime(n):
     try:
         n = int(n)  # n may be None or too large
         assert n < 5184000  # 60 days
-    except:
+    except (TypeError, ValueError, AssertionError):
         return 'downloading'
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
@@ -186,7 +186,7 @@ class LaunchMany:
                 self.downloads[hash].shutdown()
             self.rawserver.shutdown()
 
-        except:
+        except Exception:
             data = StringIO()
             print_exc(file=data)
             Output.exception(data.getvalue())
@@ -304,7 +304,7 @@ class LaunchMany:
                 if not os.path.isdir(saveas):
                     try:
                         os.mkdir(saveas)
-                    except:
+                    except OSError:
                         raise OSError("couldn't create directory for {} ({})"
                                       ''.format(x['path'], saveas))
                 if not isdir:
@@ -318,7 +318,7 @@ class LaunchMany:
         if isdir and not os.path.isdir(saveas):
             try:
                 os.mkdir(saveas)
-            except:
+            except OSError:
                 raise OSError("couldn't create directory for {} ({})".format(
                               x['path'], saveas))
         return saveas
@@ -349,7 +349,7 @@ class LaunchMany:
     def was_stopped(self, hash):
         try:
             self.hashcheck_queue.remove(hash)
-        except:
+        except ValueError:
             pass
         if self.hashcheck_current == hash:
             self.hashcheck_current = None

@@ -9,7 +9,7 @@ import threading
 from BitTornado.Application.makemetafile import completedir
 try:
     from wxPython import wx
-except:
+except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
@@ -92,7 +92,7 @@ class DownloadInfo:
         try:
             ps = 2 ** (21 - self.piece_length.GetSelection())
             CompleteDir(self.dirCtl.GetValue(), self.annCtl.GetValue(), ps)
-        except:
+        except Exception:
             print_exc()
 
 from traceback import print_exc

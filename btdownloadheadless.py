@@ -30,7 +30,7 @@ def hours(n):
     try:
         n = int(n)
         assert n >= 0 and n < 5184000  # 60 days
-    except:
+    except (AssertionError, ValueError):
         return '<unknown>'
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
@@ -218,7 +218,7 @@ def run(params):
         break
     try:
         rawserver.shutdown()
-    except:
+    except Exception:
         pass
     if not h.done:
         h.failed()

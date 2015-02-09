@@ -2,6 +2,8 @@ import os
 import time
 import base64
 import threading
+import socket
+import random
 import urllib
 import hashlib
 from BitTornado.Network.zurllib import urlopen
@@ -9,8 +11,6 @@ from BitTornado.Meta.Info import check_type
 from BitTornado.Meta.bencode import bdecode
 from cStringIO import StringIO
 from traceback import print_exc
-from socket import error, gethostbyname
-from random import shuffle
 
 mapbase64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 keys = {}
@@ -101,7 +101,7 @@ class Rerequester:
         newtrackerlist = []
         for tier in trackerlist:
             if len(tier) > 1:
-                shuffle(tier)
+                random.shuffle(tier)
             newtrackerlist += [tier]
         self.trackerlist = newtrackerlist
 
@@ -231,8 +231,8 @@ class Rerequester:
                 self._fail(callback)
             if self.ip:
                 try:
-                    s += '&ip=' + gethostbyname(self.ip)
-                except:
+                    s += '&ip=' + socket.gethostbyname(self.ip)
+                except socket.error:
                     self.errorcodes['troublecode'] = 'unable to resolve: ' + \
                         self.ip
                     self.externalsched(fail)
@@ -254,7 +254,7 @@ class Rerequester:
                     return
             # no success from any tracker
             self.externalsched(fail)
-        except:
+        except Exception:
             self.exception(callback)
 
     def _fail(self, callback):
@@ -305,7 +305,7 @@ class Rerequester:
                     self.lock.unwait(l)
                 try:
                     closer[0]()
-                except:
+                except Exception:
                     pass
 
             self.externalsched(timedout, self.timeout)
@@ -314,20 +314,20 @@ class Rerequester:
             try:
                 url, q = t.split('?', 1)
                 q += '&' + s
-            except:
+            except ValueError:
                 url = t
                 q = s
             try:
                 h = urlopen(url + '?' + q)
                 closer[0] = h.close
                 data = h.read()
-            except (IOError, error) as e:
+            except (IOError, socket.error) as e:
                 err = 'Problem connecting to tracker - ' + str(e)
-            except:
+            except Exception:
                 err = 'Problem connecting to tracker'
             try:
                 h.close()
-            except:
+            except socket.error:
                 pass
             if err:
                 if self.lock.trip(l):
@@ -368,7 +368,7 @@ class Rerequester:
             def add(self=self, r=r, callback=callback):
                 self.postrequest(r, callback)
             self.externalsched(add)
-        except:
+        except Exception:
             self.exception(callback)
 
     def postrequest(self, r, callback):
@@ -414,7 +414,7 @@ class Rerequester:
         if self.seededfunc and r.get('seeded'):
             self.seededfunc()
         elif peers:
-            shuffle(peers)
+            random.shuffle(peers)
             self.connect(peers)
         callback()
 

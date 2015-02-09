@@ -155,7 +155,7 @@ class Storage:
                     oldmtime = self.mtimes[file]
                     assert newmtime <= oldmtime + 1
                     assert newmtime >= oldmtime - 1
-            except:
+            except AssertionError:
                 if DEBUG:
                     print '{} modified: ({}) != ({}) ?'.format(
                         file,
@@ -166,10 +166,10 @@ class Storage:
                 raise IOError('modified during download')
         try:
             return open(file, mode)
-        except:
+        except IOError as e:
             if DEBUG:
                 traceback.print_exc()
-            raise
+            raise e
 
     def _close(self, file):
         f = self.handles[file]
@@ -307,11 +307,11 @@ class Storage:
         for file, f in self.handles.iteritems():
             try:
                 self.unlock_file(file, f)
-            except:
+            except IOError:
                 pass
             try:
                 f.close()
-            except:
+            except IOError:
                 pass
         self.handles = {}
         self.whandles = set()
@@ -440,7 +440,7 @@ class Storage:
     def delete_file(self, f):
         try:
             os.remove(self.files[f][0])
-        except:
+        except OSError:
             pass
 
     '''
@@ -543,7 +543,7 @@ class Storage:
                     valid_pieces.difference_update(
                         xrange(int(start / self.piece_length),
                                int((end - 1) / self.piece_length) + 1))
-        except:
+        except Exception:
             if DEBUG:
                 traceback.print_exc()
             return []

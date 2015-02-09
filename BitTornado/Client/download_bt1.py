@@ -268,7 +268,7 @@ def parse_params(params, presets={}):
         else:
             try:
                 urlparse(args[0])
-            except:
+            except ValueError:
                 raise ValueError('bad filename or url')
             config['url'] = args[0]
     elif (config['responsefile'] == '') == (config['url'] == ''):
@@ -291,21 +291,21 @@ def get_response(file, url, errorfunc):
                 front = line.split(':', 1)[0]
                 assert front[0] == 'd'
                 int(front[1:])
-            except:
+            except (AssertionError, IOError):
                 errorfunc(file + ' is not a valid responsefile')
                 return None
             try:
                 h.seek(0)
-            except:
+            except IOError:
                 try:
                     h.close()
-                except:
+                except IOError:
                     pass
                 h = open(file, 'rb')
         else:
             try:
                 h = urlopen(url)
-            except:
+            except socket.error:
                 errorfunc(url + ' bad url')
                 return None
         response = h.read()
@@ -315,12 +315,12 @@ def get_response(file, url, errorfunc):
         return None
     try:
         h.close()
-    except:
+    except (IOError, socket.error):
         pass
     try:
         try:
             response = bdecode(response)
-        except:
+        except ValueError:
             errorfunc("warning: bad data in responsefile")
             response = bdecode(response, sloppy=1)
         check_type(response, dict)
@@ -507,7 +507,7 @@ class BT1Download:
                     for p in self.priority:
                         assert p >= -1
                         assert p <= 2
-                except:
+                except (AssertionError, ValueError):
                     self.errorfunc('bad priority list given, ignored')
                     self.priority = None
 
@@ -516,10 +516,10 @@ class BT1Download:
                 d = data['resume data']['priority']
                 assert len(d) == len(self.files)
                 disabled_files = [x == -1 for x in d]
-            except:
+            except (KeyError, TypeError, AssertionError):
                 try:
                     disabled_files = [x == -1 for x in self.priority]
-                except:
+                except TypeError:
                     pass
 
         try:
@@ -750,7 +750,8 @@ class BT1Download:
                 torrentdata['resume data'] = self.fileselector.pickle()
             try:
                 self.appdataobj.writeTorrentData(self.infohash, torrentdata)
-            except:
+            except Exception as e:
+                print e
                 self.appdataobj.deleteTorrentData(self.infohash)  # clear it
         return not self.failed and not self.excflag.isSet()
         # if returns false, you may wish to auto-restart the torrent
@@ -823,7 +824,7 @@ class BT1Download:
     def getResponse(self):
         try:
             return self.response
-        except:
+        except Exception:   # How?
             return None
 
     def Pause(self):

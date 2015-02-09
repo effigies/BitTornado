@@ -27,7 +27,7 @@ class SingleSocket(object):
 #        self.check = StreamCheck()
         try:
             self.ip = self.socket.getpeername()[0]
-        except:
+        except socket.error:
             if ip is None:
                 self.ip = 'unknown'
             else:
@@ -37,7 +37,7 @@ class SingleSocket(object):
         if real:
             try:
                 self.ip = self.socket.getpeername()[0]
-            except:
+            except socket.error:
                 pass
         return self.ip
 
@@ -92,7 +92,7 @@ class SingleSocket(object):
             except socket.error as e:
                 try:
                     dead = e[0] != EWOULDBLOCK
-                except:
+                except Exception:
                     dead = True
                 self.skipped += 1
             if self.skipped >= 3:
@@ -170,7 +170,7 @@ class SocketHandler(object):
                 for server in self.servers.itervalues():
                     try:
                         server.close()
-                    except:
+                    except socket.error:
                         pass
                 if self.ipv6_enable and ipv6_socket_style == 0 and \
                         self.servers:
@@ -186,7 +186,7 @@ class SocketHandler(object):
                 for server in self.servers.itervalues():
                     try:
                         server.close()
-                    except:
+                    except socket.error:
                         pass
                 self.servers = None
                 self.interfaces = None
@@ -258,7 +258,7 @@ class SocketHandler(object):
                 s = self.start_connection_raw(addrinfo[4], addrinfo[0],
                                               handler)
                 break
-            except:
+            except socket.error:
                 pass
         else:
             raise socket.error('unable to connect')
@@ -348,12 +348,12 @@ class SocketHandler(object):
         for ss in self.single_sockets.values():
             try:
                 ss.close()
-            except:
+            except (AssertionError, KeyError, ValueError, socket.error):
                 pass
         for server in self.servers.itervalues():
             try:
                 server.close()
-            except:
+            except socket.error:
                 pass
         if self.port_forwarded is not None:
             UPnP_close_port(self.port_forwarded)

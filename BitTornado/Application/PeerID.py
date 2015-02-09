@@ -27,7 +27,7 @@ class PeerID(object):
         try:
             with open('/dev/urandom', 'rb') as f:
                 x = f.read(20)
-        except:
+        except IOError:
             x = ''
 
         tic = time.clock()

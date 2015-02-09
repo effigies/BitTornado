@@ -412,9 +412,9 @@ class Connection(object):
                 return
             try:
                 x = self.next_func(m)
-            except:
+            except Exception as e:
                 self.next_len, self.next_func = 1, self.read_dead
-                raise
+                raise e
             if x is None:
                 self.close()
                 return
@@ -471,9 +471,9 @@ class Connection(object):
                 return
             try:
                 x = self.next_func(m)
-            except:
+            except Exception as e:
                 self.next_len, self.next_func = 1, self.read_dead
-                raise
+                raise e
             if x is None:
                 self.close()
                 return

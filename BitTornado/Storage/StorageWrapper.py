@@ -510,15 +510,11 @@ class StorageWrapper:
         return True
 
     def sync(self):
-        spots = {}
-        for p in self.write_buf_list:
-            spots[self.places[p]] = p
-        l = spots.keys()
-        l.sort()
-        for i in l:
+        spots = {self.places[p]: p for p in self.write_buf_list}
+        for place, write_buf in sorted(spots.items()):
             try:
-                self._flush_buffer(spots[i])
-            except:
+                self._flush_buffer(write_buf)
+            except IOError:
                 pass
         try:
             self.storage.sync()
@@ -631,7 +627,7 @@ class StorageWrapper:
                 try:
                     self.failed_pieces[index].add(
                         self.download_history[index][begin])
-                except:
+                except KeyError:
                     self.failed_pieces[index].add(None)
             old.release()
         self.download_history.setdefault(index, {})[begin] = source
@@ -988,7 +984,7 @@ class StorageWrapper:
                 restored_partials.append(index)
 
             assert amount_obtained + amount_inactive == self.amount_desired
-        except:
+        except Exception:
 #            print_exc()
             return []   # invalid data, discard everything
 

@@ -111,7 +111,7 @@ class Statistics:
         try:
             s.upRate = int(self.ratelimiter.upload_rate / 1000)
             assert s.upRate < 5000
-        except:
+        except AssertionError:
             s.upRate = 0
         s.upSlots = self.ratelimiter.slots
 

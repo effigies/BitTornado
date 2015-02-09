@@ -7,11 +7,12 @@
 import sys
 import os
 import threading
+from traceback import print_exc
 from BitTornado.Application.makemetafile import make_meta_file, completedir
 from BitTornado.Meta.Info import MetaInfo
 try:
     from wxPython import wx
-except:
+except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
@@ -155,7 +156,7 @@ class DownloadInfo:
                                   metainfo['announce-list']) + '\n' * 3)
                 else:
                     self.annListCtl.SetValue('')
-            except:
+            except (IOError, ValueError):
                 return
 
     def getannouncelist(self):
@@ -183,11 +184,8 @@ class DownloadInfo:
             params['comment'] = comment
         try:
             CompleteDir(self.dirCtl.GetValue(), self.annCtl.GetValue(), params)
-        except:
+        except Exception:
             print_exc()
-
-
-from traceback import print_exc
 
 
 class CompleteDir:

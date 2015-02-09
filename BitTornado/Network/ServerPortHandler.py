@@ -184,9 +184,9 @@ class NewSocketHandler(object):     # hand a new socket off where it belongs
                 return
             try:
                 x = self.next_func(m)
-            except:
+            except Exception as e:
                 self.next_len, self.next_func = 1, self.read_dead
-                raise
+                raise e
             if x is None:
                 self.close()
                 return

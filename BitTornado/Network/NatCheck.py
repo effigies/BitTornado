@@ -187,7 +187,7 @@ class NatCheck(object):
                 return
             try:
                 x = self.next_func(m)
-            except:
+            except Exception:
                 if not self.closed:
                     self.answer(False)
                 return

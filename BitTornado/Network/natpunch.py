@@ -31,7 +31,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
                 dispatcher = win32com.client.Dispatch("HNetCfg.NATUPnP")
                 self.map = dispatcher.StaticPortMappingCollection
                 self.last_got_map = clock()
-            except:
+            except Exception:
                 self.map = None
         return self.map
 
@@ -39,7 +39,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
         try:
             assert self._get_map()     # make sure a map was found
             success = True
-        except:
+        except AssertionError:
             success = False
         return success
 
@@ -50,7 +50,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
             if DEBUG:
                 print 'port opened: {}:{}'.format(ip, p)
             success = True
-        except:
+        except Exception:
             if DEBUG:
                 print "COULDN'T OPEN " + str(p)
                 print_exc()
@@ -64,7 +64,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
             success = True
             if DEBUG:
                 print 'port closed: ' + str(p)
-        except:
+        except Exception:
             if DEBUG:
                 print 'ERROR CLOSING ' + str(p)
                 print_exc()
@@ -83,7 +83,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
                     port = mapping.ExternalPort
                     prot = str(mapping.Protocol).lower()
                     desc = str(mapping.Description).lower()
-                except:
+                except Exception:
                     port = None
                 if port and prot == 'tcp' and desc[:3] == 'bt-':
                     ports_in_use.append(port)
@@ -91,11 +91,11 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
             for port in ports_in_use:
                 try:
                     map.Remove(port, 'TCP')
-                except:
+                except Exception:
                     success = False
             if not success and not retry:
                 self.clean(retry=True)
-        except:
+        except Exception:
             pass
 
 
@@ -116,21 +116,9 @@ class _UPnP2(object):   # derived from Yejun Yang's code
                 f = win32com.client.Dispatch("UPnP.UPnPDeviceFinder")
                 for t in ("urn:schemas-upnp-org:service:WANIPConnection:1",
                           "urn:schemas-upnp-org:service:WANPPPConnection:1"):
-                    try:
-                        conns = f.FindByType(t, 0)
-                        for c in xrange(len(conns)):
-                            try:
-                                svcs = conns[c].Services
-                                for s in xrange(len(svcs)):
-                                    try:
-                                        self.services.append(svcs[s])
-                                    except:
-                                        pass
-                            except:
-                                pass
-                    except:
-                        pass
-            except:
+                    for conn in f.FindByType(t, 0):
+                        self.services.extend(conn.Services)
+            except Exception:
                 pass
             self.last_got_services = clock()
         return self.services
@@ -139,7 +127,7 @@ class _UPnP2(object):   # derived from Yejun Yang's code
         try:
             assert self._get_services()  # make sure some services can be found
             success = True
-        except:
+        except AssertionError:
             success = False
         return success
 
@@ -151,7 +139,7 @@ class _UPnP2(object):   # derived from Yejun Yang's code
                 s.InvokeAction('AddPortMapping',
                                ['', p, 'TCP', p, ip, True, ID, 0], '')
                 success = True
-            except:
+            except Exception:
                 pass
         if DEBUG and not success:
             print "COULDN'T OPEN " + str(p)
@@ -165,7 +153,7 @@ class _UPnP2(object):   # derived from Yejun Yang's code
             try:
                 s.InvokeAction('DeletePortMapping', ['', p, 'TCP'], '')
                 success = True
-            except:
+            except Exception:
                 pass
         if DEBUG and not success:
             print "COULDN'T OPEN " + str(p)
@@ -198,7 +186,7 @@ class _UPnP(object):    # master holding class
                         break
                 else:
                     raise ValueError('couldn\'t find intranet IP')
-            except:
+            except (ValueError, socket.error):
                 self.local_ip = None
                 if DEBUG:
                     print 'Error finding local IP'

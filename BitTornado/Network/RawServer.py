@@ -13,7 +13,7 @@ def autodetect_ipv6():
     try:
         assert socket.has_ipv6
         socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    except:
+    except (AssertionError, socket.error):
         return 0
     return 1
 
@@ -26,7 +26,7 @@ def autodetect_socket_style():
             with open('/proc/sys/net/ipv6/bindv6only', 'r') as f:
                 dual_socket_style = int(f.read())
             return int(not dual_socket_style)
-        except:
+        except (IOError, ValueError):
             return 0
 
 
@@ -125,7 +125,7 @@ class RawServer(object):
                         except KeyboardInterrupt:
 #                            self.exception(True)
                             return
-                        except:
+                        except Exception:
                             if self.noisy:
                                 self.exception()
                     self.sockethandler.close_dead()
@@ -142,7 +142,7 @@ class RawServer(object):
                 except KeyboardInterrupt:
 #                    self.exception(True)
                     return
-                except:
+                except Exception:
                     self.exception()
                 if self.exccount > 10:
                     return

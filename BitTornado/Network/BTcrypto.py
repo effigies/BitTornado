@@ -11,7 +11,7 @@ if not URANDOM:
 try:
     from Crypto.Cipher import ARC4
     CRYPTO_OK = True
-except:
+except ImportError:
     CRYPTO_OK = False
 
 KEY_LENGTH = 160

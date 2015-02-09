@@ -28,7 +28,7 @@ try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-except:
+except ImportError:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
@@ -46,7 +46,7 @@ def fmttime(n):
     try:
         n = int(n)
         assert n >= 0 and n < 5184000  # 60 days
-    except:
+    except (AssertionError, ValueError):
         return '<unknown>'
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
@@ -126,7 +126,7 @@ class CursesDisplayer:
         self.spewpan = curses.panel.new_panel(self.spewwin)
         try:
             self.scrwin.border(*map(ord, '||--    '))
-        except:
+        except Exception:
             pass
         self.labelwin.addstr(0, 0, 'file:')
         self.labelwin.addstr(1, 0, 'size:')
@@ -400,7 +400,7 @@ def run(scrwin, errlist, params):
         pass
     try:
         rawserver.shutdown()
-    except:
+    except Exception:
         pass
     if not d.done:
         d.failed()

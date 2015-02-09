@@ -207,7 +207,7 @@ def _get_forwarded_ip(headers):
             if is_valid_ip(x) and x not in local_IPs:
                 return x
             return y
-        except:
+        except ValueError:
             return header
     header = headers.get('client-ip')
     if header:
@@ -217,7 +217,7 @@ def _get_forwarded_ip(headers):
         x = http_via_filter.search(header)
         try:
             return x.group(1)
-        except:
+        except AttributeError:
             pass
     header = headers.get('from')
     #if header:
@@ -239,7 +239,7 @@ def compact_peer_info(ip, port):
             chr((port & 0xFF00) >> 8) + chr(port & 0xFF)
         if len(s) != 6:
             raise ValueError
-    except:
+    except (ValueError, TypeError):
         s = ''  # not a valid IP, must be a domain name
     return s
 
@@ -257,7 +257,7 @@ class Tracker:
             try:
                 with open(favicon, 'r') as h:
                     self.favicon = h.read()
-            except:
+            except IOError:
                 print "**warning** specified favicon file -- %s -- does not " \
                     "exist." % favicon
         self.rawserver = rawserver
@@ -291,7 +291,7 @@ class Tracker:
                     tempstate = {'peers': tempstate}
                 statefiletemplate(tempstate)
                 self.state = tempstate
-            except:
+            except (IOError, ValueError, TypeError):
                 print '**warning** statefile ' + self.dfile + \
                     ' corrupt; resetting'
         self.downloads = self.state.setdefault('peers', {})
@@ -354,7 +354,7 @@ class Tracker:
                 self.log = open(self.logfile, 'a')
                 sys.stdout = self.log
                 print "# Log Started: ", isotime()
-            except:
+            except IOError:
                 print "**warning** could not redirect stdout to log file: " + \
                     sys.exc_info()[0]
 
@@ -365,7 +365,7 @@ class Tracker:
                     self.log = open(self.logfile, 'a')
                     sys.stdout = self.log
                     print "# Log reopened: ", isotime()
-                except:
+                except IOError:
                     print "**warning** could not reopen logfile"
 
             signal.signal(signal.SIGHUP, huphandler)
@@ -457,7 +457,7 @@ class Tracker:
             h = urlopen(url)
             h.read()
             h.close()
-        except:
+        except (IOError, socket.error):
             return
 
     def get_infopage(self):
@@ -573,7 +573,7 @@ class Tracker:
             return (200, 'OK',
                     {'Content-Type': 'text/html; charset=iso-8859-1'},
                     s.getvalue())
-        except:
+        except Exception:
             print_exc()
             return (500, 'Internal Server Error',
                     {'Content-Type': 'text/html; charset=iso-8859-1'},
@@ -706,7 +706,7 @@ class Tracker:
             try:
                 s = int(params['requirecrypto'])
                 chr(s)
-            except:
+            except KeyError, ValueError:
                 s = 0
             requirecrypto = s
         else:
@@ -889,7 +889,7 @@ class Tracker:
                 if rr != return_type:
                     try:
                         self.cached[infohash][rr][1].extend(vv[rr])
-                    except:
+                    except (KeyError, IndexError, TypeError, AttributeError):
                         pass
         if len(cache[1]) < l_get_size:
             peerdata = cache[1]

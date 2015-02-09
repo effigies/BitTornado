@@ -7,11 +7,6 @@ from .ConfigDir import ConfigDir
 from .parseargs import defaultargs
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 
-try:
-    wx.wxFULL_REPAINT_ON_RESIZE
-except:
-    wx.wxFULL_REPAINT_ON_RESIZE = 0        # fix for wx pre-2.5
-
 if (sys.platform == 'win32'):
     _FONT = 9
 else:
@@ -112,7 +107,7 @@ class configReader:
                   'gui_seedingcolor'):
             try:
                 HexToColor(self.config[c])
-            except:
+            except (ValueError, OverflowError):
                 self.config[c] = self.defaults[c]
                 updated = True
 
@@ -140,7 +135,7 @@ class configReader:
                     elif t == 4:
                         assert isinstance(self.config[s], float)
                         self.config[s] = oldconfig.ReadFloat(s)
-                except:
+                except Exception:
                     pass
             cont, s, i = oldconfig.GetNextEntry(i)
 
@@ -586,7 +581,7 @@ class configReader:
                                 'crypto_only', 'crypto_stealth']:
                         self.cryptoConfig[key] = self.config[key]
                     self.CloseAdvanced()
-                except:
+                except Exception:
                     self.parent.exception()
 
             def saveConfigs(evt, self=self):
@@ -651,7 +646,7 @@ class configReader:
                     self.writeConfigFile()
                     self._configReset = True
                     self.Close()
-                except:
+                except Exception:
                     self.parent.exception()
 
             def cancelConfigs(evt, self=self):
@@ -667,7 +662,7 @@ class configReader:
                         style=wx.wxDD_DEFAULT_STYLE | wx.wxDD_NEW_DIR_BUTTON)
                     if dl.ShowModal() == wx.wxID_OK:
                         self.gui_default_savedir_ctrl.SetValue(dl.GetPath())
-                except:
+                except Exception:
                     self.parent.exception()
 
             def checkingcoloricon_set(evt, self=self):
@@ -677,7 +672,7 @@ class configReader:
                     self.setColorIcon(self.checkingcolor_icon,
                                       self.checkingcolor_iconptr, newcolor)
                     self.checkingcolor = newcolor
-                except:
+                except Exception:
                     self.parent.exception()
 
             def downloadcoloricon_set(evt, self=self):
@@ -687,7 +682,7 @@ class configReader:
                     self.setColorIcon(self.downloadcolor_icon,
                                       self.downloadcolor_iconptr, newcolor)
                     self.downloadcolor = newcolor
-                except:
+                except Exception:
                     self.parent.exception()
 
             def seedingcoloricon_set(evt, self=self):
@@ -698,7 +693,7 @@ class configReader:
                                       self.seedingcolor_iconptr,
                                       newcolor)
                     self.seedingcolor = newcolor
-                except:
+                except Exception:
                     self.parent.exception()
 
             wx.EVT_BUTTON(self.configMenuBox, saveButton.GetId(), saveConfigs)
@@ -719,7 +714,7 @@ class configReader:
             self.configMenuBox.Show()
             border.Fit(panel)
             self.configMenuBox.Fit()
-        except:
+        except Exception:
             self.parent.exception()
 
     def Close(self):
@@ -1021,7 +1016,7 @@ class configReader:
                     if setval not in self.expirecache_choices:
                         setval = self.expirecache_choices[0]
                     self.expirecache_data.SetStringSelection(setval)
-                except:
+                except Exception:
                     self.parent.exception()
 
             def saveConfigs(evt, self=self):
@@ -1050,7 +1045,7 @@ class configReader:
                     try:
                         self.advancedConfig['max_files_open'] = int(
                             self.maxfilesopen_data.GetStringSelection())
-                    except:       # if it ain't a number, it must be "no limit"
+                    except ValueError:  # Non-numeric interpreted as no "limit"
                         self.advancedConfig['max_files_open'] = 0
                     try:
                         self.advancedConfig['max_connections'] = int(
@@ -1058,7 +1053,7 @@ class configReader:
                         self.advancedConfig['max_initiate'] = min(
                             2 * self.advancedConfig['min_peers'],
                             self.advancedConfig['max_connections'])
-                    except:       # if it ain't a number, it must be "no limit"
+                    except ValueError:  # Non-numeric interpreted as no "limit"
                         self.advancedConfig['max_connections'] = 0
                         self.advancedConfig['max_initiate'] = \
                             2 * self.advancedConfig['min_peers']
@@ -1067,10 +1062,10 @@ class configReader:
                     try:
                         self.advancedConfig['expire_cache_data'] = int(
                             self.expirecache_data.GetStringSelection())
-                    except:
+                    except ValueError:
                         self.advancedConfig['expire_cache_data'] = 0
                     self.advancedMenuBox.Close()
-                except:
+                except Exception:
                     self.parent.exception()
 
             def cancelConfigs(evt, self=self):
@@ -1216,7 +1211,7 @@ class configReader:
             self.advancedMenuBox.Show()
             border.Fit(panel)
             self.advancedMenuBox.Fit()
-        except:
+        except Exception:
             self.parent.exception()
 
     def CloseAdvanced(self):
@@ -1331,7 +1326,7 @@ class configReader:
                     self.cryptomode_data.SetSelection(m)
                     self.security_checkbox.SetValue(self.defaults['security'])
                     self.autokick_checkbox.SetValue(self.defaults['auto_kick'])
-                except:
+                except Exception:
                     self.parent.exception()
 
             def saveConfigs(evt, self=self):
@@ -1345,7 +1340,7 @@ class configReader:
                     self.cryptoConfig['auto_kick'] = int(
                         self.autokick_checkbox.GetValue())
                     self.cryptoMenuBox.Close()
-                except:
+                except Exception:
                     self.parent.exception()
 
             def cancelConfigs(evt, self=self):
@@ -1360,7 +1355,7 @@ class configReader:
             self.cryptoMenuBox.Show()
             border.Fit(panel)
             self.cryptoMenuBox.Fit()
-        except:
+        except Exception:
             self.parent.exception()
 
     def CloseCrypt(self):

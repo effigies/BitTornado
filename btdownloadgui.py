@@ -30,17 +30,12 @@ from BitTornado.Application.PeerID import createPeerID
 
 try:
     from wxPython import wx
-except:
+except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
 PROFILER = False
 WXPROFILER = False
-
-try:
-    wx.wxFULL_REPAINT_ON_RESIZE
-except:
-    wx.wxFULL_REPAINT_ON_RESIZE = 0        # fix for wx pre-2.5
 
 # Note to packagers: edit OLDICONPATH in BitTornado/ConfigDir.py
 
@@ -51,7 +46,7 @@ def hours(n):
     try:
         n = int(n)
         assert n >= 0 and n < 5184000  # 60 days
-    except:
+    except (AssertionError, ValueError):
         return '<unknown>'
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
@@ -184,7 +179,7 @@ class DownloadInfoFrame:
             self.frame = frame
             try:
                 self.frame.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(frame, -1)
@@ -459,7 +454,7 @@ class DownloadInfoFrame:
             self.colSizer.SetMinSize(minsize)
             self.colSizer.Fit(self.frame)
             colSizer.Fit(frame)
-        except:
+        except Exception:
             self.exception()
 
     if sys.platform == 'win32':     # windows-only optimization
@@ -470,7 +465,7 @@ class DownloadInfoFrame:
                     return
                 try:
                     apply(func, args, kwargs)
-                except:
+                except Exception:
                     self.exception()
                 del self.invokeLaterList[0]
 
@@ -484,7 +479,7 @@ class DownloadInfoFrame:
             if not self.uiflag.isSet():
                 try:
                     apply(event.func, event.args, event.kwargs)
-                except:
+                except Exception:
                     self.exception()
 
         def invokeLater(self, func, args=[], kwargs={}):
@@ -512,7 +507,7 @@ class DownloadInfoFrame:
         statidata.BeginDrawing()
         try:
             statidata.DrawIcon(self.getStatusIcon(name), 0, 0)
-        except:
+        except Exception:
             statidata.DrawBitmap(self.getStatusIcon(name, True), 0, 0, True)
         statidata.EndDrawing()
         statidata.SelectObject(wx.wxNullBitmap)
@@ -527,7 +522,7 @@ class DownloadInfoFrame:
         bbdata.DrawRectangle(0, 0, 32, 32)
         try:
             bbdata.DrawIcon(self.getStatusIcon(name), 0, 0)
-        except:
+        except Exception:
             bbdata.DrawBitmap(self.getStatusIcon(name, True), 0, 0, True)
         return iconbuffer
 
@@ -561,7 +556,7 @@ class DownloadInfoFrame:
                 self.taskbaricon = True
             else:
                 return
-        except:
+        except Exception:
             self.exception()
 
     def onTaskBarActivate(self, evt):
@@ -575,7 +570,7 @@ class DownloadInfoFrame:
             self.taskbaricon = False
         except wx.wxPyDeadObjectError:
             pass
-        except:
+        except Exception:
             self.exception()
 
     TBMENU_RESTORE = 1000
@@ -592,7 +587,7 @@ class DownloadInfoFrame:
         if self.config is None:
             try:
                 self.config = self.dow.getConfig()
-            except:
+            except Except:
                 pass
         return self.config is not None
 
@@ -610,7 +605,7 @@ class DownloadInfoFrame:
                                            self.connChoice.GetSelection()
                                        ]['rate'].get('div', 1))
                 self.scrollock = 0
-        except:
+        except Exception:
             self.exception()
 
     def onConnScroll(self, event):
@@ -621,7 +616,7 @@ class DownloadInfoFrame:
                 return
             self.connSpinner.SetValue(self.connslider.GetValue())
             self.dow.setConns(self.connslider.GetValue())
-        except:
+        except Exception:
             self.exception()
 
     def onRateSpinner(self, event=None):
@@ -648,7 +643,7 @@ class DownloadInfoFrame:
                 self.dow.setUploadRate(newValue)
                 self.updateSliderFlag = 1
                 self.spinlock = 0
-        except:
+        except Exception:
             self.exception()
 
     def onDownRateSpinner(self, event=None):
@@ -656,7 +651,7 @@ class DownloadInfoFrame:
             if not self._try_get_config():
                 return
             self.dow.setDownloadRate(self.downrateSpinner.GetValue())
-        except:
+        except Exception:
             self.exception()
 
     def onConnSpinner(self, event=None):
@@ -667,7 +662,7 @@ class DownloadInfoFrame:
                 return
             self.connslider.SetValue(self.connSpinner.GetValue())
             self.dow.setConns(self.connslider.GetValue())
-        except:
+        except Exception:
             self.exception()
 
     def onConnChoice(self, event, cons=None, rate=None):
@@ -719,7 +714,7 @@ class DownloadInfoFrame:
                     self.connSpinner.Enable(True)
                     self.onRateSpinner()
                     self.onConnSpinner()
-        except:
+        except Exception:
             self.exception()
 
     def about(self, event):
@@ -735,7 +730,7 @@ class DownloadInfoFrame:
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.aboutBox.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(self.aboutBox, -1)
@@ -839,7 +834,7 @@ class DownloadInfoFrame:
             def kill(e, self=self):
                 try:
                     self.aboutBox.RemoveIcon()
-                except:
+                except Exception:
                     pass
                 self.aboutBox.Destroy()
                 self.aboutBox = None
@@ -848,7 +843,7 @@ class DownloadInfoFrame:
             self.aboutBox.Show()
             border.Fit(panel)
             self.aboutBox.Fit()
-        except:
+        except Exception:
             self.exception()
 
     def details(self, event):
@@ -877,7 +872,7 @@ class DownloadInfoFrame:
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.detailBox.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(self.detailBox, -1, size=wx.wxSize(400, 220))
@@ -1049,10 +1044,10 @@ class DownloadInfoFrame:
                 try:
                     detailSizer.Add(StaticText(time.strftime(
                         '%x %X', time.localtime(metainfo['creation date']))))
-                except:
+                except Exception:
                     try:
                         detailSizer.Add(StaticText(metainfo['creation date']))
-                    except:
+                    except KeyError:
                         detailSizer.Add(StaticText('<cannot read date>'))
 
             detailSizer.AddGrowableCol(1)
@@ -1136,7 +1131,7 @@ class DownloadInfoFrame:
             def kill(evt, self=self):
                 try:
                     self.detailBox.RemoveIcon()
-                except:
+                except Exception:
                     pass
                 self.detailBox.Destroy()
                 self.detailBox = None
@@ -1147,7 +1142,7 @@ class DownloadInfoFrame:
             def trackerurl(self, turl=turl):
                 try:
                     threading.Thread(target=open_new(turl)).start()
-                except:
+                except RuntimeError:
                     pass
             wx.EVT_LEFT_DOWN(trackerUrl, trackerurl)
 
@@ -1157,7 +1152,7 @@ class DownloadInfoFrame:
 
             self.refresh_details = True
             self.dow.filedatflag.set()
-        except:
+        except Exception:
             self.exception()
 
     def credits(self, event):
@@ -1173,7 +1168,7 @@ class DownloadInfoFrame:
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.creditsBox.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(self.creditsBox, -1)
@@ -1252,7 +1247,7 @@ class DownloadInfoFrame:
             def kill(e, self=self):
                 try:
                     self.creditsBox.RemoveIcon()
-                except:
+                except Exception:
                     pass
                 self.creditsBox.Destroy()
                 self.creditsBox = None
@@ -1261,7 +1256,7 @@ class DownloadInfoFrame:
             self.creditsBox.Show()
             border.Fit(panel)
             self.creditsBox.Fit()
-        except:
+        except Exception:
             self.exception()
 
     def statusIconHelp(self, event):
@@ -1277,7 +1272,7 @@ class DownloadInfoFrame:
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.statusIconHelpBox.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(self.statusIconHelpBox, -1)
@@ -1367,13 +1362,13 @@ class DownloadInfoFrame:
             self.statusIconHelpBox.Show()
             border.Fit(panel)
             self.statusIconHelpBox.Fit()
-        except:
+        except Exception:
             self.exception()
 
     def openConfigMenu(self, event):
         try:
             self.configfile.configMenu(self)
-        except:
+        except Exception:
             self.exception()
 
     def advanced(self, event):
@@ -1391,7 +1386,7 @@ class DownloadInfoFrame:
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
             try:
                 self.advBox.SetIcon(self.icon)
-            except:
+            except Exception:
                 pass
 
             panel = wx.wxPanel(self.advBox, -1, size=wx.wxSize(200, 200))
@@ -1413,7 +1408,7 @@ class DownloadInfoFrame:
                 fw = wx.wxSystemSettings_GetFont(
                     wx.wxSYS_DEFAULT_GUI_FONT
                 ).GetPointSize() + 1
-            except:
+            except AttributeError:
                 fw = wx.wxSystemSettings_GetFont(
                     wx.wxSYS_SYSTEM_FONT
                 ).GetPointSize() + 1
@@ -1529,7 +1524,7 @@ class DownloadInfoFrame:
                     wx.wxFULL_REPAINT_ON_RESIZE)
                 try:
                     frame.advextannouncebox.SetIcon(frame.icon)
-                except:
+                except Exception:
                     pass
 
                 panel = wx.wxPanel(frame.advextannouncebox, -1)
@@ -1595,7 +1590,7 @@ class DownloadInfoFrame:
             def killAdv(evt, self=self):
                 try:
                     self.advBox.RemoveIcon()
-                except:
+                except Exception:
                     pass
                 self.onDownRateSpinner()
                 self.dow.spewflag.clear()
@@ -1615,7 +1610,7 @@ class DownloadInfoFrame:
             self.advBox.Fit()
             if self.dow:
                 self.dow.spewflag.set()
-        except:
+        except Exception:
             self.exception()
 
     def displayUsage(self, text):
@@ -1653,7 +1648,7 @@ class DownloadInfoFrame:
             w.Fit()
             w.Show()
             self.usageBox = w
-        except:
+        except Exception:
             self.exception()
 
     def updateStatus(self, dpflag=threading.Event(), fractionDone=None,
@@ -1784,7 +1779,7 @@ class DownloadInfoFrame:
                     self.frame.tbicon.SetIcon(self.finicon, icontext)
                 else:
                     self.frame.tbicon.SetIcon(self.icon, icontext)
-            except:
+            except Exception:
                 pass
         if statistics is not None:
             if self.autorate:
@@ -2092,7 +2087,7 @@ class DownloadInfoFrame:
             self.filename, version))
         try:
             self.frame.SetIcon(self.finicon)
-        except:
+        except Exception:
             pass
         if self.taskbaricon:
             self.frame.tbicon.SetIcon(self.finicon, "BitTorrent - Finished")
@@ -2237,35 +2232,35 @@ class DownloadInfoFrame:
 
         try:
             self.frame.tbicon.RemoveIcon()
-        except:
+        except Exception:
             pass
         try:
             self.frame.tbicon.Destroy()
-        except:
+        except Exception:
             pass
         try:
             self.detailBox.Close()
-        except:
+        except Exception:
             self.detailBox = None
         try:
             self.aboutBox.Close()
-        except:
+        except Exception:
             self.aboutBox = None
         try:
             self.creditsBox.Close()
-        except:
+        except Exception:
             self.creditsBox = None
         try:
             self.advBox.Close()
-        except:
+        except Exception:
             self.advBox = None
         try:
             self.statusIconHelpBox.Close()
-        except:
+        except Exception:
             self.statusIconHelpBox = None
         try:
             self.frame.RemoveIcon()
-        except:
+        except Exception:
             pass
 
         self.frame.Destroy()
@@ -2296,7 +2291,7 @@ class DownloadInfoFrame:
                 if self.dow.storagewrapper.bgalloc_active:
                     t += '*'
                 t += '\n'
-            except:
+            except (KeyError, AttributeError):
                 pass
             sizer.Add(wx.wxTextCtrl(panel, -1, t + '\n' + err, size=(500, 300),
                       style=wx.wxTE_READONLY | wx.wxTE_MULTILINE))
@@ -2502,7 +2497,7 @@ def _next(params, d, doneflag, configfile):
             }
             dow.shutdown(torrentdata)
             break
-    except:
+    except Exception:
         err = True
         data = StringIO()
         traceback.print_exc(file=data)
@@ -2510,7 +2505,7 @@ def _next(params, d, doneflag, configfile):
         d.errorwindow(data.getvalue())
     try:
         rawserver.shutdown()
-    except:
+    except Exception:
         pass
     if not d.fin:
         d.failed()

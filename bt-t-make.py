@@ -178,7 +178,7 @@ class BasicDownloadInfo:
             metainfo = MetaInfo.read(f)
             self.announce = metainfo['announce']
             self.announce_list = metainfo.get('announce-list')
-        except:
+        except (IOError, ValueError):
             return
 
     def complete(self, x):
@@ -297,7 +297,7 @@ class BasicDownloadInfo:
         self.uiflag.set()
         try:
             self.cancelflag.set()
-        except:
+        except AttributeError:
             pass
         self.frame.Destroy()
 
@@ -603,7 +603,7 @@ class AdvancedDownloadInfo:
             if external:
                 self.choices.SetSelection(0)
                 self.choices1.SetSelection(0)
-        except:
+        except (IOError, ValueError):
             return
 
     def getannouncelist(self):
@@ -690,7 +690,7 @@ class AdvancedDownloadInfo:
             try:
                 self.calls['changeDropTarget'](dl.GetPath())
                 self.config['target'] = dl.GetPath()
-            except:
+            except Exception:
                 pass
 
     def dropTargetClick(self, x):
@@ -794,7 +794,7 @@ class AdvancedDownloadInfo:
                         dlg.Destroy()
                         return
                 metainfo['announce-list'] = annlist
-        except:
+        except Exception:
             return
 
         if self.thostselectnum:
@@ -811,7 +811,7 @@ class AdvancedDownloadInfo:
         try:
             metainfo.write(d)
             garbage, self.thostselection = os.path.split(d)
-        except:
+        except (IOError, TypeError):
             pass
         self.refresh_thostlist()
 
@@ -871,7 +871,7 @@ class AdvancedDownloadInfo:
         self.uiflag.set()
         try:
             self.cancelflag.set()
-        except:
+        except AttributeError:
             pass
         self.calls['saveConfig']()
         self.frame.Destroy()
@@ -918,17 +918,17 @@ class T_make:
         config = {}
         try:
             config['stayontop'] = self.configobj.ReadInt('stayontop', True)
-        except:
+        except Exception:
             config['stayontop'] = True
             self.configobj.WriteInt('stayontop', True)
         try:
             config['target'] = self.configobj.Read('target', 'default.gif')
-        except:
+        except Exception:
             config['target'] = 'default.gif'
             self.configobj.Write('target', 'default.gif')
         try:
             config['thost'] = self.configobj.Read('thost', '')
-        except:
+        except Exception:
             config['thost'] = ''
             self.configobj.Write('thost', '')
         self.configobj.Flush()
@@ -968,17 +968,17 @@ class T_make:
             self.dropTarget = wx.wxEmptyBitmap(wh[0], wh[1])
             try:
                 self.changeDropTarget(self.config['target'])
-            except:
+            except Exception:
                 pass
         else:
             try:
                 self.dropTarget = self._dropTargetRead(self.config['target'])
-            except:
+            except Exception:
                 try:
                     self.dropTarget = self._dropTargetRead('default.gif')
                     self.config['target'] = 'default.gif'
                     self.saveConfig()
-                except:
+                except Exception:
                     self.dropTarget = wx.wxEmptyBitmap(100, 100)
         return self.dropTarget
 
@@ -1002,7 +1002,7 @@ class T_make:
         bbdata.DrawBitmap(bmp, x1, y1, True)
         try:
             self.dropTargetRefresh()
-        except:
+        except Exception:
             pass
 
     def _dropTargetRead(self, new):

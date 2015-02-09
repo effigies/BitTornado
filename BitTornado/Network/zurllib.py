@@ -1,4 +1,5 @@
 import gzip
+import socket
 import httplib
 import urlparse
 from StringIO import StringIO
@@ -15,7 +16,7 @@ class btHTTPcon(httplib.HTTPConnection):
         httplib.HTTPConnection.connect(self)
         try:
             self.sock.settimeout(30)
-        except:
+        except socket.error:
             pass
 
 
@@ -25,7 +26,7 @@ class btHTTPScon(httplib.HTTPSConnection):
         httplib.HTTPSConnection.connect(self)
         try:
             self.sock.settimeout(30)
-        except:
+        except socket.error:
             pass
 
 
@@ -64,7 +65,7 @@ class urlopen:
         if status in (301, 302):
             try:
                 self.connection.close()
-            except:
+            except socket.error:
                 pass
             self._open(self.response.getheader('Location'))
             return
@@ -75,7 +76,7 @@ class urlopen:
                 if 'failure reason' in d:
                     self.error_return = data
                     return
-            except:
+            except (IOError, ValueError):
                 pass
             raise IOError(('http error', status, self.response.reason))
 
@@ -91,7 +92,7 @@ class urlopen:
                 compressed = StringIO(data)
                 f = gzip.GzipFile(fileobj=compressed)
                 data = f.read()
-            except:
+            except IOError:
                 raise IOError(('http error', 'got corrupt response'))
         return data
 

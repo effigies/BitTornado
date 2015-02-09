@@ -1,5 +1,5 @@
-# Generated from bt_MakeCreateIcons - 02/07/15 17:20:55
-# T-0.3.19 (BitTornado)
+# Generated from bt_MakeCreateIcons - 02/09/15 12:47:10
+# T-0.4.0 (BitTornado)
 
 import os
 import zlib
@@ -87,5 +87,5 @@ def CreateIcon(icon, savedir):
         with open(os.path.join(savedir, icon), "wb") as f:
             f.write(zlib.decompress(binascii.a2b_base64(icons[icon])))
         return True
-    except:
+    except IOError:
         return False

@@ -132,7 +132,7 @@ def _test_exception(exc, func, *data):
         func(*data)
     except exc:
         return True
-    except:
+    except Exception:
         pass
     return False
 

@@ -68,7 +68,7 @@ class Upload:
             try:
                 piece = self.piecebuf[begin:begin + length]
                 assert len(piece) == length
-            except:
+            except (AssertionError, AttributeError):
                 # fails if storage.get_piece returns None or if out of range
                 self.connection.close()
                 return None

@@ -20,7 +20,7 @@ try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-except:
+except ImportError:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
@@ -40,7 +40,7 @@ def fmttime(n):
     try:
         n = int(n)
         assert n < 5184000  # 60 days
-    except:
+    except (AssertionError, ValueError):
         return 'connecting to peers'
     m, s = divmod(n, 60)
     h, m = divmod(m, 60)
@@ -119,7 +119,7 @@ class CursesDisplayer:
 
         try:
             self.scrwin.border(*map(ord, '||--    '))
-        except:
+        except Exception:
             pass
         self.headerwin.addnstr(0, 2, '#', self.mainwinw - 25, curses.A_BOLD)
         self.headerwin.addnstr(0, 4, 'Filename', self.mainwinw - 25,

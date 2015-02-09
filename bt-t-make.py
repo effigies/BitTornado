@@ -251,7 +251,7 @@ class BasicDownloadInfo:
 
     def onInvoke(self, event):
         if not self.uiflag.isSet():
-            apply(event.func, event.args, event.kwargs)
+            event.func(*event.args, **event.kwargs)
 
     def invokeLater(self, func, args=[], kwargs={}):
         if not self.uiflag.isSet():
@@ -830,7 +830,7 @@ class AdvancedDownloadInfo:
 
     def onInvoke(self, event):
         if not self.uiflag.isSet():
-            apply(event.func, event.args, event.kwargs)
+            event.func(*event.args, **event.kwargs)
 
     def invokeLater(self, func, args=[], kwargs={}):
         if not self.uiflag.isSet():

@@ -167,7 +167,7 @@ class CompleteDir:
 
     def onInvoke(self, event):
         if not self.flag.isSet():
-            apply(event.func, event.args, event.kwargs)
+            event.func(*event.args, **event.kwargs)
 
     def invokeLater(self, func, args=[], kwargs={}):
         if not self.flag.isSet():

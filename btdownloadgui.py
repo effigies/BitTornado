@@ -464,7 +464,7 @@ class DownloadInfoFrame:
                 if self.uiflag.isSet():
                     return
                 try:
-                    apply(func, args, kwargs)
+                    func(*args, **kwargs)
                 except Exception:
                     self.exception()
                 del self.invokeLaterList[0]
@@ -478,7 +478,7 @@ class DownloadInfoFrame:
         def onInvoke(self, event):
             if not self.uiflag.isSet():
                 try:
-                    apply(event.func, event.args, event.kwargs)
+                    event.func(*event.args, **event.kwargs)
                 except Exception:
                     self.exception()
 

@@ -1,16 +1,13 @@
-from .PieceBuffer import PieceBuffer
-from threading import Lock
-from time import strftime, localtime
 import os
-from os.path import exists, getsize, getmtime, basename
-from traceback import print_exc
-try:
-    from os import fsync
-except ImportError:
-    fsync = lambda x: None
-from bisect import bisect
+import time
+import bisect
+import threading
+from .PieceBuffer import PieceBuffer
 
 DEBUG = False
+
+if DEBUG:
+    import traceback
 
 MAXREADSIZE = 32768
 MAXLOCKSIZE = 1000000000L
@@ -42,7 +39,7 @@ class Storage:
         else:
             self.lock_file = self.unlock_file = lambda x1, x2: None
         self.lock_while_reading = config.get('lock_while_reading', False)
-        self.lock = Lock()
+        self.lock = threading.Lock()
 
         if not disabled_files:
             disabled_files = [False] * len(files)
@@ -64,8 +61,8 @@ class Storage:
                 if disabled_files[i]:
                     l = 0
                 else:
-                    if exists(file):
-                        l = getsize(file)
+                    if os.path.exists(file):
+                        l = os.path.getsize(file)
                         if l > length:
                             with open(file, 'rb+') as h:
                                 h.truncate(length)
@@ -75,7 +72,7 @@ class Storage:
                         l = 0
                         with open(file, 'wb+') as h:
                             h.flush()
-                    self.mtimes[file] = getmtime(file)
+                    self.mtimes[file] = os.path.getmtime(file)
                 self.tops[file] = l
                 self.sizes[file] = length
                 so_far += l
@@ -153,22 +150,25 @@ class Storage:
         if file in self.mtimes:
             try:
                 if self.handlebuffer is not None:
-                    assert getsize(file) == self.tops[file]
-                    newmtime = getmtime(file)
+                    assert os.path.getsize(file) == self.tops[file]
+                    newmtime = os.path.getmtime(file)
                     oldmtime = self.mtimes[file]
                     assert newmtime <= oldmtime + 1
                     assert newmtime >= oldmtime - 1
             except:
                 if DEBUG:
-                    print file + ' modified: ' + \
-                        strftime('(%x %X)', localtime(self.mtimes[file])) + \
-                        strftime(' != (%x %X) ?', localtime(getmtime(file)))
+                    print '{} modified: ({}) != ({}) ?'.format(
+                        file,
+                        time.strftime('%x %X',
+                                      time.localtime(self.mtimes[file])),
+                        time.strftime('%x %X',
+                                      time.localtime(os.path.getmtime(file))))
                 raise IOError('modified during download')
         try:
             return open(file, mode)
         except:
             if DEBUG:
-                print_exc()
+                traceback.print_exc()
             raise
 
     def _close(self, file):
@@ -179,8 +179,8 @@ class Storage:
             f.flush()
             self.unlock_file(file, f)
             f.close()
-            self.tops[file] = getsize(file)
-            self.mtimes[file] = getmtime(file)
+            self.tops[file] = os.path.getsize(file)
+            self.mtimes[file] = os.path.getmtime(file)
         else:
             if self.lock_while_reading:
                 self.unlock_file(file, f)
@@ -204,7 +204,7 @@ class Storage:
                     self.lock_file(file, f)
                 except (IOError, OSError) as e:
                     if DEBUG:
-                        print_exc()
+                        traceback.print_exc()
                     raise IOError('unable to reopen ' + file + ': ' + str(e))
 
             if self.handlebuffer:
@@ -227,7 +227,7 @@ class Storage:
                         self.lock_file(file, f)
             except (IOError, OSError) as e:
                 if DEBUG:
-                    print_exc()
+                    traceback.print_exc()
                 raise IOError('unable to open ' + file + ': ' + str(e))
 
             if self.handlebuffer is not None:
@@ -246,7 +246,7 @@ class Storage:
     def _intervals(self, pos, amount):
         r = []
         stop = pos + amount
-        p = bisect(self.begins, pos) - 1
+        p = bisect.bisect(self.begins, pos) - 1
         while p < len(self.ranges):
             begin, end, offset, file = self.ranges[p]
             if begin >= stop:
@@ -265,7 +265,7 @@ class Storage:
             h = self._get_file_handle(file, False)
             if flush_first and file in self.whandles:
                 h.flush()
-                fsync(h)
+                os.fsync(h)
             h.seek(pos)
             while pos < end:
                 length = min(end - pos, MAXREADSIZE)
@@ -408,13 +408,13 @@ class Storage:
         if not r:
             return
         file = r[3]
-        if not exists(file):
+        if not os.path.exists(file):
             with open(file, 'wb+') as h:
                 h.flush()
         if file not in self.tops:
-            self.tops[file] = getsize(file)
+            self.tops[file] = os.path.getsize(file)
         if file not in self.mtimes:
-            self.mtimes[file] = getmtime(file)
+            self.mtimes[file] = os.path.getmtime(file)
         self.working_ranges[f] = [r]
 
     def disable_file(self, f):
@@ -427,13 +427,13 @@ class Storage:
         for file, begin, end in r[2]:
             if not os.path.isdir(self.bufferdir):
                 os.makedirs(self.bufferdir)
-            if not exists(file):
+            if not os.path.exists(file):
                 with open(file, 'wb+') as h:
                     h.flush()
             if file not in self.tops:
-                self.tops[file] = getsize(file)
+                self.tops[file] = os.path.getsize(file)
             if file not in self.mtimes:
-                self.mtimes[file] = getmtime(file)
+                self.mtimes[file] = os.path.getmtime(file)
         self.working_ranges[f] = r[0]
 
     reset_file_status = _reset_ranges
@@ -473,11 +473,13 @@ class Storage:
             if not size:
                 continue
             if not self.disabled[i]:
-                files.extend([i, getsize(fname), int(getmtime(fname))])
+                files.extend([i, os.path.getsize(fname),
+                              int(os.path.getmtime(fname))])
             else:
                 for fname, start, end in self._get_disabled_ranges(i)[2]:
-                    pfiles.extend([basename(fname), getsize(fname),
-                                   int(getmtime(fname))])
+                    pfiles.extend([os.path.basename(fname),
+                                   os.path.getsize(fname),
+                                   int(os.path.getmtime(fname))])
         return {'files': files, 'partial files': pfiles}
 
     def unpickle(self, data):
@@ -525,10 +527,10 @@ class Storage:
                 # part of unchanged partial files
                 if self.disabled[i]:
                     for fname, start, end in self._get_disabled_ranges(i)[2]:
-                        f1 = basename(fname)
-                        if f1 not in pfiles or changed(pfiles[f1],
-                                                       getsize(fname),
-                                                       getmtime(fname)):
+                        f1 = os.path.basename(fname)
+                        if f1 not in pfiles or \
+                                changed(pfiles[f1], os.path.getsize(fname),
+                                        os.path.getmtime(fname)):
                             if DEBUG:
                                 print 'removing ' + file
                             valid_pieces.difference_update(
@@ -537,8 +539,8 @@ class Storage:
                     continue
 
                 # Remove pieces unless part of unchanged completed files
-                if i not in files or changed(files[i], getsize(fname),
-                                             getmtime(fname)):
+                if i not in files or changed(files[i], os.path.getsize(fname),
+                                             os.path.getmtime(fname)):
                     start, end, offset, fname2 = self.file_ranges[i]
                     if DEBUG:
                         print 'removing ' + file
@@ -547,7 +549,7 @@ class Storage:
                                int((end - 1) / self.piece_length) + 1))
         except:
             if DEBUG:
-                print_exc()
+                traceback.print_exc()
             return []
 
         if DEBUG:

@@ -1,3 +1,9 @@
+import os
+import socket
+import threading
+import random
+from cStringIO import StringIO
+from traceback import print_exc
 from .download_bt1 import BT1Download
 from BitTornado.Network.RawServer import RawServer
 from BitTornado.Network.SocketHandler import UPnP_ERROR
@@ -5,14 +11,8 @@ from .RateLimiter import RateLimiter
 from BitTornado.Network.ServerPortHandler import MultiHandler
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Network.natpunch import UPnP_test
-from random import seed
-import socket
-from threading import Event
-import os
 from BitTornado.clock import clock
 from BitTornado.Application.PeerID import createPeerID, mapbase64
-from cStringIO import StringIO
-from traceback import print_exc
 
 
 def fmttime(n):
@@ -33,7 +33,7 @@ class SingleDownload:
         self.response = response
         self.config = config
 
-        self.doneflag = Event()
+        self.doneflag = threading.Event()
         self.waiting = True
         self.checking = False
         self.working = False
@@ -140,7 +140,7 @@ class LaunchMany:
             self.torrent_list = []
             self.downloads = {}
             self.counter = 0
-            self.doneflag = Event()
+            self.doneflag = threading.Event()
 
             self.hashcheck_queue = []
             self.hashcheck_current = None
@@ -172,7 +172,7 @@ class LaunchMany:
             self.ratelimiter.set_upload_rate(config['max_upload_rate'])
 
             self.handler = MultiHandler(self.rawserver, self.doneflag, config)
-            seed(createPeerID())
+            random.seed(createPeerID())
             self.rawserver.add_task(self.scan, 0)
             self.rawserver.add_task(self.stats, 0)
 

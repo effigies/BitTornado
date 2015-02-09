@@ -1,6 +1,6 @@
+import math
 from BitTornado.clock import clock
 from .CurrentRateMeasure import Measure
-from math import sqrt
 
 DEBUG = False
 
@@ -110,7 +110,7 @@ class RateLimiter:
                 self.upload_rate = min(self.upload_rate,
                                        self.measure.get_rate() * 1.1)
             self.upload_rate = max(int(self.upload_rate * ADJUST_DOWN), 2)
-            self.slots = int(sqrt(self.upload_rate * SLOTS_FACTOR))
+            self.slots = int(math.sqrt(self.upload_rate * SLOTS_FACTOR))
             self.slotsfunc(self.slots)
             if DEBUG:
                 print 'adjust down to ' + str(self.upload_rate)
@@ -124,7 +124,7 @@ class RateLimiter:
             if self.autoadjustup:
                 return
             self.upload_rate = int(self.upload_rate * ADJUST_UP)
-            self.slots = int(sqrt(self.upload_rate * SLOTS_FACTOR))
+            self.slots = int(math.sqrt(self.upload_rate * SLOTS_FACTOR))
             self.slotsfunc(self.slots)
             if DEBUG:
                 print 'adjust up to ' + str(self.upload_rate)

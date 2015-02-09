@@ -1,13 +1,8 @@
 import hashlib
+import random
+import bisect
 from BitTornado.bitfield import Bitfield
 from BitTornado.clock import clock
-from random import randrange
-try:
-    from bisect import insort
-except:
-    def insort(l, item):
-        l.append(item)
-        l.sort()
 
 DEBUG = False
 
@@ -435,10 +430,10 @@ class StorageWrapper:
             newhave = Bitfield(copyfrom=self.have)
             unhaves = []
             # between 2-4 unless torrent is small
-            n = min(randrange(2, 5), len(self.hashes))
+            n = min(random.randrange(2, 5), len(self.hashes))
             while len(unhaves) < n:
                 # all in first 4 bytes
-                unhave = randrange(min(32, len(self.hashes)))
+                unhave = random.randrange(min(32, len(self.hashes)))
                 if not unhave in unhaves:
                     unhaves.append(unhave)
                     newhave[unhave] = False
@@ -705,7 +700,7 @@ class StorageWrapper:
 
     def request_lost(self, index, begin, length):
         assert not (begin, length) in self.inactive_requests[index]
-        insort(self.inactive_requests[index], (begin, length))
+        bisect.insort(self.inactive_requests[index], (begin, length))
         self.amount_inactive += length
         self.numactive[index] -= 1
         if not self.numactive[index]:

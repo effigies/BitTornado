@@ -1,8 +1,7 @@
 import random
 import threading
+import urllib
 from BitTornado.Client.Rerequester import Rerequester
-from urllib import quote
-from string import lower
 
 DEBUG = True
 
@@ -61,7 +60,7 @@ class T2TConnection:
         self.newpeerdata = []
         if DEBUG:
             print 'contacting %s for info_hash=%s' % (self.tracker,
-                                                      quote(self.hash))
+                                                      urllib.quote(self.hash))
         self.rerequester.snoop(self.peers, self.callback)
 
     def callback(self):
@@ -78,7 +77,8 @@ class T2TConnection:
             self.operatinginterval = self.rerequester.announce_interval
             if DEBUG:
                 print "{} with info_hash={} returned {:d} peers".format(
-                    self.tracker, quote(self.hash), len(self.newpeerdata))
+                    self.tracker, urllib.quote(self.hash),
+                    len(self.newpeerdata))
             self.peerlists.append(self.newpeerdata)
             # keep up to the last 10 announces
             self.peerlists = self.peerlists[-10:]
@@ -93,7 +93,7 @@ class T2TConnection:
         self.lastsuccessful = False
         if DEBUG:
             print "{} with info_hash={} gives error: '{}'".format(
-                self.tracker, quote(self.hash), r)
+                self.tracker, urllib.quote(self.hash), r)
         if r == self.rerequester.rejectedmessage + 'disallowed':   # whoops!
             if DEBUG:
                 print ' -- disallowed - deactivating'
@@ -102,7 +102,7 @@ class T2TConnection:
             self.disallow(self.tracker)
             return
         # tracker rejected this particular torrent
-        if lower(r[:8]) == 'rejected':
+        if r[:8].lower() == 'rejected':
             self.rejected += 1
             if self.rejected == 3:     # rejected 3 times
                 if DEBUG:

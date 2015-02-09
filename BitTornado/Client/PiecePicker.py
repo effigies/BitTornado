@@ -1,4 +1,4 @@
-from random import randrange, shuffle
+import random
 from BitTornado.clock import clock
 
 
@@ -33,7 +33,7 @@ class PiecePicker:
         self.interests = [[] for x in xrange(self.priority_step)]
         self.level_in_interests = [self.priority_step] * self.numpieces
         interests = range(self.numpieces)
-        shuffle(interests)
+        random.shuffle(interests)
         self.pos_in_interests = [0] * self.numpieces
         for i in xrange(self.numpieces):
             self.pos_in_interests[interests[i]] = i
@@ -96,7 +96,7 @@ class PiecePicker:
         l1[p] = q
         parray[q] = p
         del l1[-1]
-        newp = randrange(len(l2) + 1)
+        newp = random.randrange(len(l2) + 1)
         if newp == len(l2):
             parray[piece] = len(l2)
             l2.append(piece)
@@ -225,7 +225,7 @@ class PiecePicker:
                 self.interests.append([])
             l2 = self.interests[level]
             parray = self.pos_in_interests
-            newp = randrange(len(l2) + 1)
+            newp = random.randrange(len(l2) + 1)
             if newp == len(l2):
                 parray[piece] = len(l2)
                 l2.append(piece)

@@ -5,25 +5,27 @@ import time
 import signal
 import random
 import threading
-from urllib import quote, unquote
-from BitTornado.Network.NetworkAddress import is_ipv4, is_valid_ip, \
-    ipv6_to_ipv4, to_ipv4, AddrList
-from BitTornado.Application.parseargs import parseargs, formatDefinitions
-from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
-from .HTTPHandler import HTTPHandler, months
-from BitTornado.Application.parsedir import parsedir
-from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
-from BitTornado.Network.BTcrypto import CRYPTO_OK
-from .T2T import T2TList
-from .torrentlistparse import parsetorrentlist
-from BitTornado.Meta.bencode import bencode, bdecode, Bencached
-from BitTornado.Network.zurllib import urlopen
-from .Filter import Filter
+import urllib
 from urlparse import urlparse
 from cStringIO import StringIO
 from traceback import print_exc
-from BitTornado.clock import clock
 from binascii import hexlify
+
+from .Filter import Filter
+from .HTTPHandler import HTTPHandler, months
+from .T2T import T2TList
+from .torrentlistparse import parsetorrentlist
+from BitTornado.Application.parseargs import parseargs, formatDefinitions
+from BitTornado.Application.parsedir import parsedir
+from BitTornado.Meta.bencode import bencode, bdecode, Bencached
+from BitTornado.Network.BTcrypto import CRYPTO_OK
+from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
+from BitTornado.Network.NetworkAddress import is_ipv4, is_valid_ip, \
+    ipv6_to_ipv4, to_ipv4, AddrList
+from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
+from BitTornado.Network.zurllib import urlopen
+from BitTornado.clock import clock
+
 from BitTornado import version
 from BitTornado.Application.PeerID import createPeerID
 
@@ -406,7 +408,7 @@ class Tracker:
                 config['multitracker_allowed'] = 'none'
             config['allowed_controls'] = 0
 
-        self.uq_broken = unquote('+') != ' '
+        self.uq_broken = urllib.unquote('+') != ' '
         self.keep_dead = config['keep_dead']
         self.Filter = Filter(rawserver.add_task)
 
@@ -526,7 +528,7 @@ class Tracker:
                             tt = tt + szt
                             if self.allow_get == 1:
                                 linkname = '<a href="/file?info_hash=' + \
-                                    quote(hash) + '">' + name + '</a>'
+                                    urllib.quote(hash) + '">' + name + '</a>'
                             else:
                                 linkname = name
                             s.write('<tr><td><code>%s</code></td><td>%s</td>'
@@ -957,13 +959,13 @@ class Tracker:
             if self.uq_broken == 1:
                 path = path.replace('+', ' ')
                 query = query.replace('+', ' ')
-            path = unquote(path)[1:]
+            path = urllib.unquote(path)[1:]
             for s in query.split('&'):
                 if s:
                     i = s.index('=')
-                    kw = unquote(s[:i])
+                    kw = urllib.unquote(s[:i])
                     paramslist.setdefault(kw, [])
-                    paramslist[kw] += [unquote(s[i + 1:])]
+                    paramslist[kw] += [urllib.unquote(s[i + 1:])]
 
             if path == '' or path == 'index.html':
                 return self.get_infopage()
@@ -1067,8 +1069,8 @@ class Tracker:
     def natchecklog(self, peerid, ip, port, result):
         year, month, day, hour, minute, second, a, b, c = time.localtime()
         print '%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i ' \
-            '0 - -' % (ip, quote(peerid), day, months[month], year, hour,
-                       minute, second, ip, port, result)
+            '0 - -' % (ip, urllib.quote(peerid), day, months[month], year,
+                       hour, minute, second, ip, port, result)
 
     def connectback_result(self, result, downloadid, peerid, ip, port):
         record = self.downloads.get(downloadid, {}).get(peerid)

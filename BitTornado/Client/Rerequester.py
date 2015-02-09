@@ -444,32 +444,28 @@ class SuccessLock:
         self.finished = False
 
     def set(self):
-        self.lock.acquire()
-        if not self.pause.locked():
-            self.pause.acquire()
-        self.first = True
-        self.code += 1L
-        self.lock.release()
+        with self.lock:
+            if not self.pause.locked():
+                self.pause.acquire()
+            self.first = True
+            self.code += 1L
         return self.code
 
-    def trip(self, code, s=False):
-        self.lock.acquire()
-        try:
+    def trip(self, code, success=False):
+        with self.lock:
             if code == self.code and not self.finished:
-                r = self.first
+                ret = self.first
                 self.first = False
-                if s:
+                if success:
                     self.finished = True
                     self.success = True
-                return r
-        finally:
-            self.lock.release()
+                return ret
+        return False
 
     def give_up(self):
-        self.lock.acquire()
-        self.success = False
-        self.finished = True
-        self.lock.release()
+        with self.lock:
+            self.success = False
+            self.finished = True
 
     def wait(self):
         self.pause.acquire()
@@ -479,7 +475,5 @@ class SuccessLock:
             self.pause.release()
 
     def isfinished(self):
-        self.lock.acquire()
-        x = self.finished
-        self.lock.release()
-        return x
+        with self.lock:
+            return self.finished

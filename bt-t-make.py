@@ -189,24 +189,22 @@ class BasicDownloadInfo:
         self.go_queue()
 
     def go_queue(self):
-        self.switchlock.acquire()
-        if self.queue and not self.working:
-            self.working = True
-            self.statustext.SetLabel('working')
-            q = self.queue.pop(0)
-            MakeMetafile(q[0], q[1], q[2], self)
-        self.switchlock.release()
+        with self.switchlock:
+            if self.queue and not self.working:
+                self.working = True
+                self.statustext.SetLabel('working')
+                q = self.queue.pop(0)
+                MakeMetafile(q[0], q[1], q[2], self)
 
     def cancel(self, x):
-        self.switchlock.acquire()
-        if self.working:
-            self.working = False
-            self.cancelflag.set()
-            self.cancelflag = threading.Event()
-            self.queue = []
-            self.statustext.SetLabel('CANCELED')
-            self.calls['dropTargetError']()
-        self.switchlock.release()
+        with self.switchlock:
+            if self.working:
+                self.working = False
+                self.cancelflag.set()
+                self.cancelflag = threading.Event()
+                self.queue = []
+                self.statustext.SetLabel('CANCELED')
+                self.calls['dropTargetError']()
 
     def dropTargetClick(self, x):
         if x.GetPosition()[0] < int(self.dropTargetWidth * 0.4):
@@ -664,24 +662,22 @@ class AdvancedDownloadInfo:
         self.go_queue()
 
     def go_queue(self):
-        self.switchlock.acquire()
-        if self.queue and not self.working:
-            self.working = True
-            self.statustext.SetLabel('working')
-            q = self.queue.pop(0)
-            MakeMetafile(q[0], q[1], q[2], self)
-        self.switchlock.release()
+        with self.switchlock:
+            if self.queue and not self.working:
+                self.working = True
+                self.statustext.SetLabel('working')
+                q = self.queue.pop(0)
+                MakeMetafile(q[0], q[1], q[2], self)
 
     def cancel(self, x):
-        self.switchlock.acquire()
-        if self.working:
-            self.working = False
-            self.cancelflag.set()
-            self.cancelflag = threading.Event()
-            self.queue = []
-            self.statustext.SetLabel('CANCELED')
-            self.calls['dropTargetError']()
-        self.switchlock.release()
+        with self.switchlock:
+            if self.working:
+                self.working = False
+                self.cancelflag.set()
+                self.cancelflag = threading.Event()
+                self.queue = []
+                self.statustext.SetLabel('CANCELED')
+                self.calls['dropTargetError']()
 
     def selectDropTarget(self, x):
         dl = wx.wxFileDialog(self.frame, 'Choose image to use',

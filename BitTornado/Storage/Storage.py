@@ -261,20 +261,19 @@ class Storage:
         for file, pos, end in self._intervals(pos, amount):
             if DEBUG:
                 print 'reading {} from {} to {}'.format(file, pos, end)
-            self.lock.acquire()
-            h = self._get_file_handle(file, False)
-            if flush_first and file in self.whandles:
-                h.flush()
-                os.fsync(h)
-            h.seek(pos)
-            while pos < end:
-                length = min(end - pos, MAXREADSIZE)
-                data = h.read(length)
-                if len(data) != length:
-                    raise IOError('error reading data from ' + file)
-                r.append(data)
-                pos += length
-            self.lock.release()
+            with self.lock:
+                h = self._get_file_handle(file, False)
+                if flush_first and file in self.whandles:
+                    h.flush()
+                    os.fsync(h)
+                h.seek(pos)
+                while pos < end:
+                    length = min(end - pos, MAXREADSIZE)
+                    data = h.read(length)
+                    if len(data) != length:
+                        raise IOError('error reading data from ' + file)
+                    r.append(data)
+                    pos += length
         return r
 
     def write(self, pos, s):
@@ -283,29 +282,26 @@ class Storage:
         for file, begin, end in self._intervals(pos, len(s)):
             if DEBUG:
                 print 'writing {} from {} to {}'.format(file, pos, end)
-            self.lock.acquire()
-            h = self._get_file_handle(file, True)
-            h.seek(begin)
-            h.write(s[total: total + end - begin])
-            self.lock.release()
+            with self.lock:
+                h = self._get_file_handle(file, True)
+                h.seek(begin)
+                h.write(s[total:total + end - begin])
             total += end - begin
 
     def top_off(self):
         for begin, end, offset, file in self.ranges:
             l = offset + end - begin
             if l > self.tops.get(file, 0):
-                self.lock.acquire()
-                h = self._get_file_handle(file, True)
-                h.seek(l - 1)
-                h.write(chr(0xFF))
-                self.lock.release()
+                with self.lock:
+                    h = self._get_file_handle(file, True)
+                    h.seek(l - 1)
+                    h.write(chr(0xFF))
 
     def flush(self):
         # may raise IOError or OSError
         for file in self.whandles:
-            self.lock.acquire()
-            self.handles[file].flush()
-            self.lock.release()
+            with self.lock:
+                self.handles[file].flush()
 
     def close(self):
         for file, f in self.handles.iteritems():

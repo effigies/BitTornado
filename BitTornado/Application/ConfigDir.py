@@ -132,7 +132,7 @@ class ConfigDir(object):
         variations = []
         for fname in map(os.path.basename, os.listdir(self.dir_torrentcache)):
             if fname[:len(torrent)] == torrent:
-                torrent, _dot, version = torrent.partition('.')
+                torrent, _, version = torrent.partition('.')
                 variations.append(int(version or '0'))
         return sorted(variations)
 

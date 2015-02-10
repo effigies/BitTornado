@@ -27,7 +27,7 @@ def rename(fname, newname, verbose=False):
 
 
 def main(argv):
-    prog, _ext = os.path.splitext(os.path.basename(argv[0]))
+    prog, _ = os.path.splitext(os.path.basename(argv[0]))
     helpmsg = """Usage: {0} [-v] TORRENT NAME
        {0} [-m] TORRENT [...]
 
@@ -49,7 +49,7 @@ Change the suggested filename in a .torrent file
     verbose = False
     match = False
 
-    for opt, _arg in opts:
+    for opt, _ in opts:
         if opt in ('-h', '--help'):
             print helpmsg
             return 0

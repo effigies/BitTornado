@@ -34,7 +34,7 @@ class poll(object):
     def poll(self, timeout=None):
         if self.rlist or self.wlist:
             try:
-                r, w, e = select.select(self.rlist, self.wlist, [], timeout)
+                r, w, _ = select.select(self.rlist, self.wlist, [], timeout)
             except ValueError:
                 return None
         else:

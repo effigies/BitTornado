@@ -11,7 +11,7 @@ from BitTornado.Application.parseargs import parseargs, formatDefinitions
 
 
 def main(argv):
-    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <trackerurl> <dir> [dir...] [params...]" % program
     desc = "Make a .torrent file for every file or directory present in " \
         "each given directory"

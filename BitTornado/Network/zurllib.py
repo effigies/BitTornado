@@ -41,7 +41,7 @@ class urlopen:
         if self.tries > MAX_REDIRECTS:
             raise IOError(('http error', 500,
                           "Internal Server Error: Redirect Recursion"))
-        (scheme, netloc, path, pars, query, fragment) = urlparse.urlparse(url)
+        (scheme, netloc, path, pars, query, _) = urlparse.urlparse(url)
         if scheme != 'http' and scheme != 'https':
             raise IOError(('url error', 'unknown url type', scheme, url))
         url = path

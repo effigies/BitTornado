@@ -53,11 +53,11 @@ class RateMeasure:
 
     def update(self, amount):
         t = clock()
-        t1 = int(t)
-        l1 = int(self.last)
-        for i in xrange(l1, t1):
-            self.time *= FACTOR
-            self.got *= FACTOR
+
+        exp = int(t) - int(self.last)
+        self.time *= (FACTOR ** exp)
+        self.got *= (FACTOR ** exp)
+
         self.got += amount
         if t - self.last < 20:
             self.time += t - self.last

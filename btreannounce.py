@@ -18,7 +18,7 @@ announce_details = """
 
 
 def main(argv):
-    program, _ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <announce> [--announce_list <arg>] " \
             "file1.torrent [file2.torrent...]" % program
     helpmsg = '\n'.join((usage, announce_details, '\n'.join(' ' * 4 + l

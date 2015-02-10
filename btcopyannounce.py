@@ -14,7 +14,7 @@ from BitTornado.Application.reannounce import reannounce
 
 def main(argv):
     """Copy announce information from source to all specified torrents"""
-    program, _ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <source.torrent> <file1.torrent> " \
             "[file2.torrent...]" % program
     try:
@@ -32,7 +32,7 @@ def main(argv):
 
     verbose = False
 
-    for opt, _arg in opts:
+    for opt, _ in opts:
         if opt in ('-h', '--help'):
             print "%s\n%s\n" % (usage, main.__doc__)
             return 0

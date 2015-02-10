@@ -16,7 +16,7 @@ def prog(amount):
 
 
 def main(argv):
-    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <trackerurl> <file> [file...] [params...]" % program
 
     if len(argv) < 3:

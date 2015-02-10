@@ -20,7 +20,7 @@ class SingleDownload:
         self.downloader = downloader
         self.baseurl = url
         try:
-            (scheme, self.netloc, path, pars, query, fragment) = urlparse(url)
+            (scheme, self.netloc, path, pars, query, _) = urlparse(url)
         except ValueError:
             self.downloader.errorfunc('cannot parse http seed address: ' + url)
             return

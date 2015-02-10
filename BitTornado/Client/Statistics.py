@@ -29,12 +29,13 @@ class Statistics:
         self.placesopen = 0
         self.filelistupdated = threading.Event()
         self.filelistupdated.set()
-        frange = xrange(len(files))
-        self.filepieces = [[] for x in frange]
-        self.filepieces2 = [[] for x in frange]
-        self.fileamtdone = [0.0 for x in frange]
-        self.filecomplete = [False for x in frange]
-        self.fileinplace = [False for x in frange]
+        nfiles = len(files)
+        frange = xrange(nfiles)
+        self.filepieces = [[] for _ in frange]
+        self.filepieces2 = [[] for _ in frange]
+        self.fileamtdone = [0.0] * nfiles
+        self.filecomplete = [False] * nfiles
+        self.fileinplace = [False] * nfiles
         start = 0L
         for i in frange:
             l = files[i][1]

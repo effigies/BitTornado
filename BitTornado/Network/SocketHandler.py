@@ -279,7 +279,7 @@ class SocketHandler(object):
                     print "lost server socket"
                 elif len(self.single_sockets) < self.max_connects:
                     try:
-                        newsock, addr = s.accept()
+                        newsock, _ = s.accept()
                         newsock.setblocking(0)
                         nss = SingleSocket(self, newsock, self.handler)
                         self.single_sockets[newsock.fileno()] = nss
@@ -304,8 +304,7 @@ class SocketHandler(object):
                         else:
                             s.handler.data_came_in(s, data)
                     except socket.error as e:
-                        code, msg = e
-                        if code != EWOULDBLOCK:
+                        if e[0] != EWOULDBLOCK:
                             self._close_socket(s)
                             continue
                 if (event & POLLOUT) and s.socket and not s.is_flushed():

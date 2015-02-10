@@ -810,8 +810,8 @@ class AdvancedDownloadInfo:
 
         try:
             metainfo.write(d)
-            garbage, self.thostselection = os.path.split(d)
-        except (IOError, TypeError):
+            self.thostselection = os.path.basename(d)
+        except IOError:
             pass
         self.refresh_thostlist()
 
@@ -1018,7 +1018,7 @@ class T_make:
                 shutil.copyfile(new, os.path.join(basepath, 'targets', b))
             new = b
         name = os.path.join(basepath, 'targets', new)
-        garbage, e = os.path.splitext(new.lower())
+        e = os.path.splitext(new.lower())[1]
         if e == '.gif':
             bmp = wx.wxBitmap(name, wx.wxBITMAP_TYPE_GIF)
         elif e == '.bmp':

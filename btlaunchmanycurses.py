@@ -176,8 +176,8 @@ class CursesDisplayer:
                 self._display_line('')
                 if self._display_line(''):
                     break
-            (name, status, progress, peers, seeds, seedsmsg, dist,
-             uprate, dnrate, upamt, dnamt, size, t, msg) = data[ii]
+            (name, status, progress, peers, seeds, _, dist, uprate, dnrate,
+             upamt, dnamt, size, t, msg) = data[ii]
             t = fmttime(t)
             if t:
                 status = t
@@ -215,10 +215,11 @@ class CursesDisplayer:
                                  'no torrents', 12, curses.A_BOLD)
         totalup = 0
         totaldn = 0
-        for (name, status, progress, peers, seeds, seedsmsg, dist,
-             uprate, dnrate, upamt, dnamt, size, t, msg) in data:
-            totalup += uprate
-            totaldn += dnrate
+        for entry in data:
+            #entry = (name, status, progress, peers, seeds, seedsmsg, dist,
+            #         uprate, downrate, upamount, downamount, size, t, msg)
+            totalup += entry[7]
+            totaldn += entry[8]
 
         totalup = '%s/s' % fmtsize(totalup)
         totaldn = '%s/s' % fmtsize(totaldn)

@@ -113,7 +113,7 @@ class RawServer(object):
                     if self.doneflag.isSet():
                         return
                     while self.funcs and self.funcs[0][0] <= clock():
-                        garbage1, func, id = self.funcs.pop(0)
+                        _, func, id = self.funcs.pop(0)
                         if id in self.tasks_to_kill:
                             pass
                         try:

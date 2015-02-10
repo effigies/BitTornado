@@ -30,7 +30,7 @@ class PiecePicker:
         self._init_interests()
 
     def _init_interests(self):
-        self.interests = [[] for x in xrange(self.priority_step)]
+        self.interests = [[] for _ in xrange(self.priority_step)]
         self.level_in_interests = [self.priority_step] * self.numpieces
         interests = range(self.numpieces)
         random.shuffle(interests)

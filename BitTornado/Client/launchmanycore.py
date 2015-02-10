@@ -283,7 +283,7 @@ class LaunchMany:
         c = self.counter
         self.counter += 1
         x = ''
-        for i in xrange(3):
+        for _ in xrange(3):
             x = mapbase64[c & 0x3F] + x
             c >>= 6
         peer_id = createPeerID(x)

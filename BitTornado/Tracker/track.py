@@ -310,7 +310,7 @@ class Tracker:
             x = 3
         else:
             x = 5
-        self.cache_default = [({}, {}) for i in xrange(x)]
+        self.cache_default = [({}, {}) for _ in xrange(x)]
         for infohash, ds in self.downloads.iteritems():
             self.seedcount[infohash] = 0
             for x, y in ds.iteritems():
@@ -955,7 +955,7 @@ class Tracker:
             return default
 
         try:
-            (scheme, netloc, path, pars, query, fragment) = urlparse(path)
+            (_, _, path, _, query, _) = urlparse(path)
             if self.uq_broken == 1:
                 path = path.replace('+', ' ')
                 query = query.replace('+', ' ')
@@ -1067,7 +1067,7 @@ class Tracker:
                     bencode({'ip': ip, 'port': port}))
 
     def natchecklog(self, peerid, ip, port, result):
-        year, month, day, hour, minute, second, a, b, c = time.localtime()
+        year, month, day, hour, minute, second = time.localtime()[:6]
         print '%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i ' \
             '0 - -' % (ip, urllib.quote(peerid), day, months[month], year,
                        hour, minute, second, ip, port, result)
@@ -1194,7 +1194,7 @@ def track(args):
         print formatDefinitions(defaults, 80)
         return
     try:
-        config, files = parseargs(args, defaults, 0, 0)
+        config, _ = parseargs(args, defaults, 0, 0)
     except ValueError as e:
         print 'error: ' + str(e)
         print 'run with no arguments for parameter explanations'

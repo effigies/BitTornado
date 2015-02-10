@@ -408,7 +408,7 @@ class DownloadInfoFrame:
                                              'rate', self.FONT - 2)
             colSizer.Add(self.unlimitedLabel, 0, wx.wxALIGN_CENTER)
 
-            self.priorityIDs = [wx.wxNewId() for i in xrange(4)]
+            self.priorityIDs = [wx.wxNewId() for _ in xrange(4)]
             self.prioritycolors = [wx.wxColour(160, 160, 160),
                                    wx.wxColour(255, 64, 0),
                                    wx.wxColour(0, 0, 0),
@@ -946,9 +946,8 @@ class DownloadInfoFrame:
                                       width=55)
                 fileList.InsertColumn(2, "")
 
-                for i in xrange(len(info['files'])):
-                    x = wx.wxListItem()
-                    fileList.InsertItem(x)
+                for _ in info['files']:
+                    fileList.InsertItem(wx.wxListItem())
 
                 x = 0
                 for file in info['files']:
@@ -1004,14 +1003,12 @@ class DownloadInfoFrame:
                 trackerList.InsertColumn(0, "")
                 trackerList.InsertColumn(1, "announce urls")
 
-                for tier in range(len(announce_list)):
-                    for t in range(len(announce_list[tier])):
-                        i = wx.wxListItem()
-                        trackerList.InsertItem(i)
+                for tier in announce_list:
+                    for _ in tier:
+                        trackerList.InsertItem(wx.wxListItem())
                 if announce is not None:
-                    for l in [1, 2]:
-                        i = wx.wxListItem()
-                        trackerList.InsertItem(i)
+                    trackerList.InsertItem(wx.wxListItem())
+                    trackerList.InsertItem(wx.wxListItem())
 
                 x = 0
                 for tier in range(len(announce_list)):

@@ -20,7 +20,7 @@ class FileSelector:
         self.new_partials = None
         self.filepieces = []
         total = 0L
-        for file, length in files:
+        for _, length in files:
             if not length:
                 self.filepieces.append(())
             else:

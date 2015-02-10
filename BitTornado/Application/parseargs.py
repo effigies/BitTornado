@@ -34,7 +34,7 @@ def formatDefinitions(options, COLS, presets={}):
 
         # Word wrap documentation string
         while len(doc) > width:
-            pre, sep, post = doc[:width].rpartition(' ')
+            pre, _, post = doc[:width].rpartition(' ')
             doc = post + doc[width:]
             lines.append(spaces + pre)
         if doc:
@@ -55,7 +55,7 @@ def defaultargs(options):
         dict    - {flag: default} for each option in input
     """
     config = {}
-    for longname, default, doc in options:
+    for longname, default, _ in options:
         config[longname] = default
     return config
 
@@ -76,7 +76,7 @@ def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
     """
     # This is faster than dict comprehensions
     config = {}
-    for longname, default, doc in options:
+    for longname, default, _ in options:
         config[longname] = default
 
     # presets after defaults but before arguments

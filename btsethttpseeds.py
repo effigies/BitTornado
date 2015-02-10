@@ -11,7 +11,7 @@ from BitTornado.Meta.Info import MetaInfo
 
 
 def main(argv):
-    program, ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = """Usage: %s <http-seeds> file1.torrent [file2.torrent...]
 
   Where:
@@ -36,7 +36,7 @@ def main(argv):
 
     verbose = False
 
-    for opt, arg in opts:
+    for opt, _ in opts:
         if opt in ('-h', '--help'):
             print usage
             return 0

@@ -27,7 +27,7 @@ class Storage:
         self.working_ranges = []
         numfiles = 0
         total = 0l
-        so_far = 0l
+        #so_far = 0l
         self.handles = {}
         self.whandles = set()
         self.tops = {}
@@ -75,7 +75,7 @@ class Storage:
                     self.mtimes[file] = os.path.getmtime(file)
                 self.tops[file] = l
                 self.sizes[file] = length
-                so_far += l
+                #so_far += l
 
         self.total_length = total
         self._reset_ranges()
@@ -120,8 +120,8 @@ class Storage:
             pass
 
     def was_preallocated(self, pos, length):
-        for file, begin, end in self._intervals(pos, length):
-            if self.tops.get(file, 0) < end:
+        for fname, _, end in self._intervals(pos, length):
+            if self.tops.get(fname, 0) < end:
                 return False
         return True
 
@@ -420,7 +420,7 @@ class Storage:
         r = self._get_disabled_ranges(f)
         if not r:
             return
-        for file, begin, end in r[2]:
+        for file, _, _ in r[2]:
             if not os.path.isdir(self.bufferdir):
                 os.makedirs(self.bufferdir)
             if not os.path.exists(file):
@@ -472,7 +472,7 @@ class Storage:
                 files.extend([i, os.path.getsize(fname),
                               int(os.path.getmtime(fname))])
             else:
-                for fname, start, end in self._get_disabled_ranges(i)[2]:
+                for fname, _, _ in self._get_disabled_ranges(i)[2]:
                     pfiles.extend([os.path.basename(fname),
                                    os.path.getsize(fname),
                                    int(os.path.getmtime(fname))])
@@ -499,7 +499,7 @@ class Storage:
             for frange, disabled in zip(self.file_ranges, self.disabled):
                 if disabled or not frange:
                     continue
-                start, end, offset, fname = frange
+                start, end, _, fname = frange
                 if DEBUG:
                     print 'adding ' + fname
                 valid_pieces.update(
@@ -537,7 +537,7 @@ class Storage:
                 # Remove pieces unless part of unchanged completed files
                 if i not in files or changed(files[i], os.path.getsize(fname),
                                              os.path.getmtime(fname)):
-                    start, end, offset, fname2 = self.file_ranges[i]
+                    start, end, _, _ = self.file_ranges[i]
                     if DEBUG:
                         print 'removing ' + file
                     valid_pieces.difference_update(

@@ -145,7 +145,7 @@ class AddressRange(object):     # pylint: disable=R0903
     @classmethod
     def fromString(cls, iprange):
         """Parse address range of the form start-end"""
-        start, _dash, end = iprange.partition('-')
+        start, _, end = iprange.partition('-')
         startip = addressToLong(start)
         if end:
             endip = addressToLong(end)
@@ -191,7 +191,7 @@ class Subnet(AddressRange):
     @classmethod
     def fromCIDR(cls, netstring):
         """Parse CIDR string of the form IP/CIDR"""
-        ipstring, _slash, cidrstring = netstring.partition('/')
+        ipstring, _, cidrstring = netstring.partition('/')
         addr = addressToLong(ipstring)
         if cidrstring:
             cidr = int(cidrstring)

@@ -510,8 +510,10 @@ class StorageWrapper:
         return True
 
     def sync(self):
+        # No clear reason for these to be in a dictionary and sorted by their
+        # entries in self.places, but that's how it came
         spots = {self.places[p]: p for p in self.write_buf_list}
-        for place, write_buf in sorted(spots.items()):
+        for _, write_buf in sorted(spots.items()):
             try:
                 self._flush_buffer(write_buf)
             except IOError:
@@ -791,7 +793,7 @@ class StorageWrapper:
                     self.amount_inactive -= length
                     continue
                 inactive = 0
-                for nb, nl in self.inactive_requests[i]:
+                for _, nl in self.inactive_requests[i]:
                     inactive += nl
                 self.amount_inactive -= inactive
                 self.amount_obtained -= length - inactive
@@ -806,7 +808,7 @@ class StorageWrapper:
                     self.amount_inactive += length
                     continue
                 inactive = 0
-                for nb, nl in self.inactive_requests[i]:
+                for _, nl in self.inactive_requests[i]:
                     inactive += nl
                 self.amount_inactive += inactive
                 self.amount_obtained += length - inactive

@@ -126,8 +126,8 @@ class Statistics:
             self.fdatactive = False
 
         if self.piecescomplete != self.picker.numgot:
-            for i in xrange(len(self.filecomplete)):
-                if self.filecomplete[i]:
+            for i, complete in enumerate(self.filecomplete):
+                if complete:
                     continue
                 oldlist = self.filepieces[i]
                 newlist = [piece for piece in oldlist
@@ -145,8 +145,8 @@ class Statistics:
 
         if self.filelistupdated.isSet() or \
                 self.placesopen != len(self.storage.places):
-            for i in xrange(len(self.filecomplete)):
-                if not self.filecomplete[i] or self.fileinplace[i]:
+            for i, complete in enumerate(self.filecomplete):
+                if not complete or self.fileinplace[i]:
                     continue
                 while self.filepieces2[i]:
                     piece = self.filepieces2[i][-1]

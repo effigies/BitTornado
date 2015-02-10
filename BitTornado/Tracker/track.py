@@ -885,11 +885,11 @@ class Tracker:
             random.shuffle(cache[1])
             random.shuffle(cache[2])
             self.cached[infohash][return_type] = cache
-            for rr in xrange(len(self.cached[infohash])):
+            for rr, cached in enumerate(self.cached[infohash]):
                 if rr != return_type:
                     try:
-                        self.cached[infohash][rr][1].extend(vv[rr])
-                    except (KeyError, IndexError, TypeError, AttributeError):
+                        cached[1].extend(vv[rr])
+                    except (IndexError, TypeError, AttributeError):
                         pass
         if len(cache[1]) < l_get_size:
             peerdata = cache[1]

@@ -14,7 +14,7 @@ BITCHARMAP = dict((_bits, chr(_chr)) for _chr, _bits in enumerate(CHARBITMAP))
 
 class Bitfield(list):
     """Allow a sequence of booleans to be used as an indexable bitfield"""
-    def __init__(self, length=None, bitstring=None, copyfrom=None):
+    def __init__(self, length=None, bitstring=None, copyfrom=None, val=False):
         if copyfrom is not None:
             super(Bitfield, self).__init__(copyfrom)
             self.numfalse = copyfrom.numfalse
@@ -34,8 +34,8 @@ class Bitfield(list):
                 del bits[-extra:]
             self.numfalse = len(bits) - sum(bits)
         else:
-            bits = [False] * length
-            self.numfalse = length
+            bits = [val] * length
+            self.numfalse = 0 if val else length
 
         super(Bitfield, self).__init__(bits)
 

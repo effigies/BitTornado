@@ -238,14 +238,13 @@ class Rerequester:
                     self.externalsched(fail)
             self.errorcodes = {}
             if self.special is None:
-                for t in range(len(self.trackerlist)):
-                    for tr in range(len(self.trackerlist[t])):
-                        tracker = self.trackerlist[t][tr]
+                for tier in self.trackerlist:
+                    # Iterating is ok, as the loop is ended after modification
+                    for i, tracker in enumerate(tier):
                         if self.rerequest_single(tracker, s, callback):
-                            if not self.last_failed and tr != 0:
-                                del self.trackerlist[t][tr]
-                                self.trackerlist[t] = [tracker] + \
-                                    self.trackerlist[t]
+                            if not self.last_failed and i != 0:
+                                tier.pop(i)
+                                tier.insert(0, tracker)
                             return
             else:
                 tracker = self.special
@@ -389,17 +388,16 @@ class Rerequester:
         if not isinstance(cflags, str) or len(cflags) != lenpeers:
             cflags = None
         if cflags is None:
-            cflags = [None for i in xrange(lenpeers)]
+            cflags = [None] * lenpeers
         else:
-            cflags = [ord(x) for x in cflags]
+            cflags = map(ord, cflags)
         if isinstance(p, str):
             for x in xrange(0, len(p), 6):
                 ip = '.'.join([str(ord(i)) for i in p[x:x + 4]])
                 port = (ord(p[x + 4]) << 8) | ord(p[x + 5])
                 peers.append(((ip, port), 0, cflags[int(x / 6)]))
         else:
-            for i in xrange(len(p)):
-                x = p[i]
+            for i, x in enumerate(p):
                 peers.append(((x['ip'].strip(), x['port']),
                               x.get('peer id', 0), cflags[i]))
         ps = len(peers) + self.howmany()

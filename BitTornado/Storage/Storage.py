@@ -44,8 +44,7 @@ class Storage:
         if not disabled_files:
             disabled_files = [False] * len(files)
 
-        for i in xrange(len(files)):
-            file, length = files[i]
+        for (fname, length), disabled in zip(files, disabled_files):
             if doneflag.isSet():    # bail out if doneflag is set
                 return
             self.disabled_ranges.append(None)
@@ -53,28 +52,28 @@ class Storage:
                 self.file_ranges.append(None)
                 self.working_ranges.append([])
             else:
-                range = (total, total + length, 0, file)
+                range = (total, total + length, 0, fname)
                 self.file_ranges.append(range)
                 self.working_ranges.append([range])
                 numfiles += 1
                 total += length
-                if disabled_files[i]:
+                if disabled:
                     l = 0
                 else:
-                    if os.path.exists(file):
-                        l = os.path.getsize(file)
+                    if os.path.exists(fname):
+                        l = os.path.getsize(fname)
                         if l > length:
-                            with open(file, 'rb+') as h:
+                            with open(fname, 'rb+') as h:
                                 h.truncate(length)
                                 h.flush()
                             l = length
                     else:
                         l = 0
-                        with open(file, 'wb+') as h:
+                        with open(fname, 'wb+') as h:
                             h.flush()
-                    self.mtimes[file] = os.path.getmtime(file)
-                self.tops[file] = l
-                self.sizes[file] = length
+                    self.mtimes[fname] = os.path.getmtime(fname)
+                self.tops[fname] = l
+                self.sizes[fname] = length
                 #so_far += l
 
         self.total_length = total

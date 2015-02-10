@@ -257,8 +257,8 @@ class CursesDisplayer:
             if self.spew_scroll_pos > len(spew):
                 self.spew_scroll_pos = 0
 
-            for i in range(len(spew)):
-                spew[i]['lineno'] = i + 1
+            for i, subspew in enumerate(spew, 1):
+                subspew['lineno'] = i
             spew.append({'lineno': None})
             spew = spew[self.spew_scroll_pos:] + spew[:self.spew_scroll_pos]
 

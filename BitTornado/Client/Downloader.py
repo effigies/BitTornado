@@ -77,8 +77,8 @@ class SingleDownload:
         if self.have.complete:
             self.downloader.picker.lost_seed()
         else:
-            for i in xrange(len(self.have)):
-                if self.have[i]:
+            for i, have in enumerate(self.have):
+                if have:
                     self.downloader.picker.lost_have(i)
         if self.have.complete and self.downloader.storage.is_endgame():
             self.downloader.add_disconnected_seed(
@@ -298,8 +298,8 @@ class SingleDownload:
     def _check_interests(self):
         if self.interested or self.downloader.paused:
             return
-        for i in xrange(len(self.have)):
-            if (self.have[i] and not self.downloader.picker.is_blocked(i) and
+        for i, have in enumerate(self.have):
+            if (have and not self.downloader.picker.is_blocked(i) and
                 (self.downloader.endgamemode or
                  self.downloader.storage.do_I_have_requests(i))):
                 self.send_interested()
@@ -318,8 +318,8 @@ class SingleDownload:
         if have.complete:
             self.downloader.picker.got_seed()
         else:
-            for i in xrange(len(have)):
-                if have[i]:
+            for i, havethis in enumerate(have):
+                if havethis:
                     self.downloader.picker.got_have(i)
         if self.downloader.endgamemode and not self.downloader.paused:
             for piece, _, _ in self.downloader.all_requests:

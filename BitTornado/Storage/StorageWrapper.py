@@ -175,9 +175,9 @@ class StorageWrapper:
         for v in self.places.itervalues():
             assert v not in got
             got.add(v)
-        for i in xrange(len(self.hashes)):
+        for i, hval in enumerate(self.hashes):
             if i in self.places:  # restored from pickled
-                self.check_targets[self.hashes[i]] = []
+                self.check_targets[hval] = []
                 if self.places[i] == i:
                     continue
                 else:
@@ -196,11 +196,11 @@ class StorageWrapper:
                             'missing')
                 return False
             self.holes.append(i)
-            if self.blocked[i] or self.hashes[i] in self.check_targets:
+            if self.blocked[i] or hval in self.check_targets:
                 # in case of a hash collision, discard
-                self.check_targets[self.hashes[i]] = []
+                self.check_targets[hval] = []
             else:
-                self.check_targets[self.hashes[i]] = [i]
+                self.check_targets[hval] = [i]
         self.check_total = len(self.check_list)
         self.check_numchecked = 0.0
         self.lastlen = self._piecelen(len(self.hashes) - 1)
@@ -782,8 +782,8 @@ class StorageWrapper:
 
     def reblock(self, new_blocked):
         # assume downloads have already been canceled and chunks made inactive
-        for i in xrange(len(new_blocked)):
-            if new_blocked[i] and not self.blocked[i]:
+        for i, nblock in enumerate(new_blocked):
+            if nblock and not self.blocked[i]:
                 length = self._piecelen(i)
                 self.amount_desired -= length
                 if self.have[i]:
@@ -798,7 +798,7 @@ class StorageWrapper:
                 self.amount_inactive -= inactive
                 self.amount_obtained -= length - inactive
 
-            if self.blocked[i] and not new_blocked[i]:
+            if self.blocked[i] and not nblock:
                 length = self._piecelen(i)
                 self.amount_desired += length
                 if self.have[i]:
@@ -901,9 +901,7 @@ class StorageWrapper:
             if data['pieces'] == 1:     # a seed
                 assert not data.get('places', None)
                 assert not data.get('partials', None)
-                have = Bitfield(len(self.hashes))
-                for i in xrange(len(self.hashes)):
-                    have[i] = True
+                have = Bitfield(len(self.hashes), val=True)
                 assert have.complete
                 _places = []
                 _partials = []
@@ -962,12 +960,14 @@ class StorageWrapper:
                 l = []
                 if plist[0][0] > 0:
                     l.append((0, plist[0][0]))
-                for i in xrange(len(plist) - 1):
-                    end = plist[i][0] + plist[i][1]
-                    assert not end > plist[i + 1][0]
-                    l.append((end, plist[i + 1][0] - end))
-                end = plist[-1][0] + plist[-1][1]
+
+                for pieceA, pieceB in zip(plist[:-1], plist[1:]):
+                    end = pieceA[0] + pieceA[1]
+                    assert not end > pieceB[0]
+                    l.append((end, pieceB[0] - end))
+                end = pieceB[0] + pieceB[1]
                 assert not end > length
+
                 if end < length:
                     l.append((end, length - end))
                 # split them to request_size

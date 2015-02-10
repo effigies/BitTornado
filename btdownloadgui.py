@@ -1011,12 +1011,12 @@ class DownloadInfoFrame:
                     trackerList.InsertItem(wx.wxListItem())
 
                 x = 0
-                for tier in range(len(announce_list)):
-                    for t in range(len(announce_list[tier])):
-                        if t == 0:
-                            trackerList.SetStringItem(x, 0, 'tier {}:'.format(
-                                tier))
-                        trackerList.SetStringItem(x, 1, announce_list[tier][t])
+                for i, tier in enumerate(announce_list):
+                    trackerList.SetStringItem(x, 0, 'tier {}:'.format(i))
+                    # XXX Retaining semantics, but I think this should be here
+                    #x += 1
+                    for item in tier:
+                        trackerList.SetStringItem(x, 1, item)
                         x += 1
                 if announce is not None:
                     trackerList.SetStringItem(x + 1, 0, 'single:')
@@ -1097,20 +1097,20 @@ class DownloadInfoFrame:
                         menu.Check(self.priorityIDs[oldstate + 1], True)
 
                     def onSelection(evt, self=self, s=s):
-                        p = evt.GetId()
+                        try:
+                            i = self.priorityIDs.index(evt.GetID())
+                        except ValueError:
+                            return
+
                         priorities = self.dow.fileselector.get_priorities()
-                        for i in xrange(len(self.priorityIDs)):
-                            if p == self.priorityIDs[i]:
-                                for ss in s:
-                                    priorities[ss] = i - 1
-                                    item = self.fileList.GetItem(ss)
-                                    item.SetTextColour(self.prioritycolors[i])
-                                    self.fileList.SetItem(item)
-                                self.dow.fileselector.set_priorities(
-                                    priorities)
-                                self.fileList.Refresh()
-                                self.refresh_details = True
-                                break
+                        for ss in s:
+                            priorities[ss] = i - 1
+                            item = self.fileList.GetItem(ss)
+                            item.SetTextColour(self.prioritycolors[i])
+                            self.fileList.SetItem(item)
+                        self.dow.fileselector.set_priorities(priorities)
+                        self.fileList.Refresh()
+                        self.refresh_details = True
 
                     for id in self.priorityIDs:
                         wx.EVT_MENU(self.detailBox, id, onSelection)
@@ -1871,69 +1871,69 @@ class DownloadInfoFrame:
 
                 tot_uprate = 0.0
                 tot_downrate = 0.0
-                for x in range(len(spew)):
-                    if (spew[x]['optimistic'] == 1):
+                for i, subspew in enumerate(spew):
+                    if (subspew['optimistic'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 0, a)
-                    spewList.SetStringItem(x, 1, spew[x]['id'])
-                    spewList.SetStringItem(x, 2, spew[x]['ip'])
-                    spewList.SetStringItem(x, 3, spew[x]['direction'])
-                    if spew[x]['uprate'] > 100:
-                        spewList.SetStringItem(x, 4, '{:.0f} kB/s'.format(
-                            float(spew[x]['uprate']) / 1000))
+                    spewList.SetStringItem(i, 0, a)
+                    spewList.SetStringItem(i, 1, subspew['id'])
+                    spewList.SetStringItem(i, 2, subspew['ip'])
+                    spewList.SetStringItem(i, 3, subspew['direction'])
+                    if subspew['uprate'] > 100:
+                        spewList.SetStringItem(i, 4, '{:.0f} kB/s'.format(
+                            float(subspew['uprate']) / 1000))
                     else:
-                        spewList.SetStringItem(x, 4, ' ')
-                    tot_uprate += spew[x]['uprate']
-                    if (spew[x]['uinterested'] == 1):
+                        spewList.SetStringItem(i, 4, ' ')
+                    tot_uprate += subspew['uprate']
+                    if (subspew['uinterested'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 5, a)
-                    if (spew[x]['uchoked'] == 1):
+                    spewList.SetStringItem(i, 5, a)
+                    if (subspew['uchoked'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 6, a)
+                    spewList.SetStringItem(i, 6, a)
 
-                    if spew[x]['downrate'] > 100:
-                        spewList.SetStringItem(x, 7, '{:.0f} kB/s'.format(
-                            float(spew[x]['downrate']) / 1000))
+                    if subspew['downrate'] > 100:
+                        spewList.SetStringItem(i, 7, '{:.0f} kB/s'.format(
+                            float(subspew['downrate']) / 1000))
                     else:
-                        spewList.SetStringItem(x, 7, ' ')
-                    tot_downrate += spew[x]['downrate']
+                        spewList.SetStringItem(i, 7, ' ')
+                    tot_downrate += subspew['downrate']
 
-                    if (spew[x]['dinterested'] == 1):
+                    if (subspew['dinterested'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 8, a)
-                    if (spew[x]['dchoked'] == 1):
+                    spewList.SetStringItem(i, 8, a)
+                    if (subspew['dchoked'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 9, a)
-                    if (spew[x]['snubbed'] == 1):
+                    spewList.SetStringItem(i, 9, a)
+                    if (subspew['snubbed'] == 1):
                         a = '*'
                     else:
                         a = ' '
-                    spewList.SetStringItem(x, 10, a)
-                    spewList.SetStringItem(x, 11, '{:.2f} MiB'.format(
-                        float(spew[x]['dtotal']) / (1 << 20)))
-                    if spew[x]['utotal'] is not None:
+                    spewList.SetStringItem(i, 10, a)
+                    spewList.SetStringItem(i, 11, '{:.2f} MiB'.format(
+                        float(subspew['dtotal']) / (1 << 20)))
+                    if subspew['utotal'] is not None:
                         a = '{:.2f} MiB'.format(
-                            float(spew[x]['utotal']) / (1 << 20))
+                            float(subspew['utotal']) / (1 << 20))
                     else:
                         a = ''
-                    spewList.SetStringItem(x, 12, a)
+                    spewList.SetStringItem(i, 12, a)
                     spewList.SetStringItem(
-                        x, 13, '{:.1%}'.format(spew[x]['completed']))
-                    if spew[x]['speed'] is not None:
-                        a = '%.0f kB/s' % (float(spew[x]['speed']) / 1000)
+                        i, 13, '{:.1%}'.format(subspew['completed']))
+                    if subspew['speed'] is not None:
+                        a = '%.0f kB/s' % (float(subspew['speed']) / 1000)
                     else:
                         a = ''
-                    spewList.SetStringItem(x, 14, a)
+                    spewList.SetStringItem(i, 14, a)
 
                 x = len(spew)
                 for i in range(15):
@@ -1997,14 +1997,14 @@ class DownloadInfoFrame:
 
         if (self.fileList is not None and statistics is not None and
                 (statistics.filelistupdated.isSet() or self.refresh_details)):
-            for i in range(len(statistics.filecomplete)):
+            for i, complete in enumerate(statistics.filecomplete):
                 if self.dow.fileselector[i] == -1:
                     self.fileList.SetItemImage(i, 0, 0)
                     self.fileList.SetStringItem(i, 1, '')
                 elif statistics.fileinplace[i]:
                     self.fileList.SetItemImage(i, 2, 2)
                     self.fileList.SetStringItem(i, 1, "done")
-                elif statistics.filecomplete[i]:
+                elif complete:
                     self.fileList.SetItemImage(i, 1, 1)
                     self.fileList.SetStringItem(i, 1, "100%")
                 else:

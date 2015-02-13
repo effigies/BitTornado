@@ -306,7 +306,7 @@ class CursesDisplayer:
         curses.doupdate()
         dpflag.set()
 
-    def chooseFile(self, default, size, saveas, dir):
+    def chooseFile(self, default, size, saveas, isdir):
         self.file = default
         self.fileSize = fmtsize(size)
         if saveas == '':

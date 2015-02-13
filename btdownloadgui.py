@@ -113,13 +113,13 @@ class DownloadInfoFrame:
             self.creditsBox = None
             self.statusIconHelpBox = None
             self.reannouncelast = 0
-            self.spinlock = 0
-            self.scrollock = 0
+            self.spinlock = threading.Lock()
+            self.scrollock = threading.Lock()
             self.lastError = 0
             self.spewwait = clock()
             self.config = None
-            self.updateSpinnerFlag = 0
-            self.updateSliderFlag = 0
+            self.updateSpinnerFlag = False
+            self.updateSliderFlag = False
             self.statusIconValue = ' '
             self.iconized = 0
             self.taskbaricon = False
@@ -597,14 +597,13 @@ class DownloadInfoFrame:
                 return
             if not self._try_get_config():
                 return
-            if (self.scrollock == 0):
-                self.scrollock = 1
-                self.updateSpinnerFlag = 1
+            if self.scrollock.acquire(False):
+                self.updateSpinnerFlag = True
                 self.dow.setUploadRate(self.rateslider.GetValue() *
                                        connChoices[
                                            self.connChoice.GetSelection()
                                        ]['rate'].get('div', 1))
-                self.scrollock = 0
+                self.scrollock.release()
         except Exception:
             self.exception()
 
@@ -619,14 +618,13 @@ class DownloadInfoFrame:
         except Exception:
             self.exception()
 
-    def onRateSpinner(self, event=None):
+    def onRateSpinner(self, _=None):
         try:
             if self.autorate:
                 return
             if not self._try_get_config():
                 return
-            if (self.spinlock == 0):
-                self.spinlock = 1
+            if self.spinlock.acquire(False):
                 spinnerValue = self.rateSpinner.GetValue()
                 div = connChoices[self.connChoice.GetSelection()]['rate'].get(
                     'div', 1)
@@ -641,8 +639,8 @@ class DownloadInfoFrame:
                 else:
                     newValue = spinnerValue
                 self.dow.setUploadRate(newValue)
-                self.updateSliderFlag = 1
-                self.spinlock = 0
+                self.updateSliderFlag = True
+                self.spinlock.release()
         except Exception:
             self.exception()
 
@@ -1704,16 +1702,16 @@ class DownloadInfoFrame:
         else:
             self.setgaugemode(0)
 
-        if self.updateSliderFlag == 1:
-            self.updateSliderFlag = 0
+        if self.updateSliderFlag:
+            self.updateSliderFlag = False
             newValue = (self.rateSpinner.GetValue() /
                         connChoices[
                             self.connChoice.GetSelection()
                         ]['rate'].get('div', 1))
             if self.rateslider.GetValue() != newValue:
                 self.rateslider.SetValue(newValue)
-        if self.updateSpinnerFlag == 1:
-            self.updateSpinnerFlag = 0
+        if self.updateSpinnerFlag:
+            self.updateSpinnerFlag = False
             cc = connChoices[self.connChoice.GetSelection()]
             if 'rate' in cc:
                 newValue = (self.rateslider.GetValue() *

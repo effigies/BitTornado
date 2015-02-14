@@ -130,7 +130,7 @@ def statefiletemplate(x):
                     raise ValueError
                 # ... of client ids interested in that torrent
                 for id, info in y.iteritems():
-                    if (len(id) != 20):
+                    if len(id) != 20:
                         raise ValueError
                     # ... each of which is also a dictionary
                     # ... which has an IP, a Port, and a Bytes Left count for
@@ -348,7 +348,7 @@ class Tracker:
                            self.timeout_downloaders_interval)
         self.logfile = None
         self.log = None
-        if (config['logfile']) and (config['logfile'] != '-'):
+        if config['logfile'] and config['logfile'] != '-':
             try:
                 self.logfile = config['logfile']
                 self.log = open(self.logfile, 'a')
@@ -969,7 +969,7 @@ class Tracker:
 
             if path == '' or path == 'index.html':
                 return self.get_infopage()
-            if (path == 'file'):
+            if path == 'file':
                 return self.get_file(params('info_hash'))
             if path == 'favicon.ico' and self.favicon is not None:
                 return (200, 'OK', {'Content-Type': 'image/x-icon'},
@@ -1178,7 +1178,7 @@ class Tracker:
                 if t < self.prevtime:
                     self.delete_peer(x, myid)
         self.prevtime = clock()
-        if (self.keep_dead != 1):
+        if not self.keep_dead:
             for key, value in self.downloads.items():
                 if len(value) == 0 and (self.allowed is None or
                                         key not in self.allowed):

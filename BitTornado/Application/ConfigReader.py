@@ -7,7 +7,7 @@ from .ConfigDir import ConfigDir
 from .parseargs import defaultargs
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 
-if (sys.platform == 'win32'):
+if sys.platform == 'win32':
     _FONT = 9
 else:
     _FONT = 10
@@ -208,7 +208,7 @@ class configReader:
             self.downloadcolor = HexToColor(self.config['gui_downloadcolor'])
             self.seedingcolor = HexToColor(self.config['gui_seedingcolor'])
 
-            if (self.configMenuBox is not None):
+            if self.configMenuBox is not None:
                 try:
                     self.configMenuBox.Close()
                 except wx.wxPyDeadObjectError:
@@ -217,7 +217,7 @@ class configReader:
             self.configMenuBox = wx.wxFrame(
                 None, -1, 'BitTornado Preferences', size=(1, 1),
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 self.icon = self.parent.icon
                 self.configMenuBox.SetIcon(self.icon)
 
@@ -325,7 +325,7 @@ class configReader:
             self.gui_ratesettingsmode_data.SetStringSelection(
                 self.config['gui_ratesettingsmode'])
 
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 self.win32_taskbar_icon_checkbox = wx.wxCheckBox(
                     panel, -1, "Minimize to system tray")
                 self.win32_taskbar_icon_checkbox.SetFont(self.default_font)
@@ -373,7 +373,7 @@ class configReader:
             block12sizer = wx.wxFlexGridSizer(cols=1, vgap=12)
 
             block1sizer = wx.wxFlexGridSizer(cols=1, vgap=2)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 block1sizer.Add(self.win32_taskbar_icon_checkbox)
             block1sizer.Add(self.gui_stretchwindow_checkbox)
             block1sizer.Add(self.gui_displaystats_checkbox)
@@ -435,7 +435,7 @@ class configReader:
             ratesettingsSizer.Add(self.gui_ratesettingsdefault_data, 1,
                                   wx.wxALIGN_CENTER)
             block3sizer.Add(ratesettingsSizer, 1, wx.wxALIGN_CENTER)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 block3sizer.Add(StaticText(' '))
                 upnpSizer = wx.wxFlexGridSizer(cols=1, vgap=2)
                 upnpSizer.Add(StaticText('UPnP Port Forwarding: *'), 1,
@@ -561,7 +561,7 @@ class configReader:
                                       self.seedingcolor_iconptr,
                                       self.seedingcolor)
 
-                    if (sys.platform == 'win32'):
+                    if sys.platform == 'win32':
                         self.win32_taskbar_icon_checkbox.SetValue(
                             self.defaults['win32_taskbar_icon'])
                         self.upnp_data.SetSelection(
@@ -632,7 +632,7 @@ class configReader:
                     self.config['gui_seedingcolor'] = ColorToHex(
                         self.seedingcolor)
 
-                    if (sys.platform == 'win32'):
+                    if sys.platform == 'win32':
                         self.config['win32_taskbar_icon'] = int(
                             self.win32_taskbar_icon_checkbox.GetValue())
                         self.config['upnp_nat_access'] = \
@@ -746,7 +746,7 @@ class configReader:
             self.advancedMenuBox = wx.wxFrame(
                 None, -1, 'BitTornado Advanced Preferences', size=(1, 1),
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 self.advancedMenuBox.SetIcon(self.icon)
 
             panel = wx.wxPanel(self.advancedMenuBox, -1)
@@ -1228,7 +1228,7 @@ class configReader:
                             'crypto_only', 'crypto_stealth']:
                     self.cryptoConfig[key] = self.config[key]
 
-            if (self.cryptoMenuBox is not None):
+            if self.cryptoMenuBox is not None:
                 try:
                     self.cryptoMenuBox.Close()
                 except wx.wxPyDeadObjectError:
@@ -1238,7 +1238,7 @@ class configReader:
                 None, -1, 'BitTornado Encryption/Security Preferences',
                 size=(1, 1),
                 style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 self.cryptoMenuBox.SetIcon(self.icon)
 
             panel = wx.wxPanel(self.cryptoMenuBox, -1)

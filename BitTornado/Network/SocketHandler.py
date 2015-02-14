@@ -292,10 +292,10 @@ class SocketHandler(object):
                 if not s:
                     continue
                 s.connected = True
-                if (event & (POLLHUP | POLLERR)):
+                if event & (POLLHUP | POLLERR):
                     self._close_socket(s)
                     continue
-                if (event & POLLIN):
+                if event & POLLIN:
                     try:
                         s.last_hit = clock()
                         data = s.socket.recv(self.readsize)
@@ -307,7 +307,7 @@ class SocketHandler(object):
                         if e[0] != EWOULDBLOCK:
                             self._close_socket(s)
                             continue
-                if (event & POLLOUT) and s.socket and not s.is_flushed():
+                if event & POLLOUT and s.socket and not s.is_flushed():
                     s.try_write()
                     if s.is_flushed():
                         s.handler.connection_flushed(s)

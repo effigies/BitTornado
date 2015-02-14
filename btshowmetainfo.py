@@ -42,7 +42,7 @@ for metainfo_name in sys.argv[1:]:
         for file in info['files']:
             path = ''
             for item in file['path']:
-                if (path != ''):
+                if path != '':
                     path = path + "/"
                 path = path + item
             print '   %s (%d)' % (path, file['length'])

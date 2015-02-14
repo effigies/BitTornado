@@ -91,7 +91,7 @@ class HeadlessDisplayer:
         if upRate is not None:
             self.upRate = '%.1f kB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
+            if statistics.shareRating < 0 or statistics.shareRating > 100:
                 self.shareRating = 'oo  ({:.1f} MB up / {:.1f} MB down)' \
                     ''.format(float(statistics.upTotal) / (1 << 20),
                               float(statistics.downTotal) / (1 << 20))

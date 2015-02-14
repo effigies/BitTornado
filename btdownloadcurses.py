@@ -162,7 +162,7 @@ class CursesDisplayer:
 
     def display(self, dpflag=threading.Event(), fractionDone=None,
                 timeEst=None, downRate=None, upRate=None, activity=None,
-                statistics=None, spew=None, **kws):
+                statistics=None, spew=None, **kwargs):
 
         inchar = self.fieldwin.getch()
         if inchar == 12:                    # ^L
@@ -191,7 +191,7 @@ class CursesDisplayer:
         if upRate is not None:
             self.upRate = '%.1f KB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
+            if statistics.shareRating < 0 or statistics.shareRating > 100:
                 shareRateString = "oo"
             else:
                 shareRateString = '{:.3f}'.format(statistics.shareRating)
@@ -272,17 +272,17 @@ class CursesDisplayer:
                     self.spewwin.addnstr(i + 3, 20, '{:6.0f} KB/s'.format(
                         float(spew[i]['uprate']) / 1000), 11)
                 self.spewwin.addnstr(i + 3, 32, '-----', 5)
-                if spew[i]['uinterested'] == 1:
+                if spew[i]['uinterested']:
                     self.spewwin.addnstr(i + 3, 33, 'I', 1)
-                if spew[i]['uchoked'] == 1:
+                if spew[i]['uchoked']:
                     self.spewwin.addnstr(i + 3, 35, 'C', 1)
                 if spew[i]['downrate'] > 100:
                     self.spewwin.addnstr(i + 3, 38, '{:6.0f} KB/s'.format(
                         float(spew[i]['downrate']) / 1000), 11)
                 self.spewwin.addnstr(i + 3, 50, '-------', 7)
-                if spew[i]['dinterested'] == 1:
+                if spew[i]['dinterested']:
                     self.spewwin.addnstr(i + 3, 51, 'I', 1)
-                if spew[i]['dchoked'] == 1:
+                if spew[i]['dchoked']:
                     self.spewwin.addnstr(i + 3, 53, 'C', 1)
                 if spew[i]['snubbed'] == 1:
                     self.spewwin.addnstr(i + 3, 55, 'S', 1)

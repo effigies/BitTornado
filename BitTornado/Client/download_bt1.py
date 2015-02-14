@@ -694,7 +694,7 @@ class BT1Download:
             def s(self=self, conns=conns, conns2=conns2):
                 self.config['min_uploads'] = conns
                 self.config['max_uploads'] = conns2
-                if (conns > 30):
+                if conns > 30:
                     self.config['max_initiate'] = conns + 10
             self.rawserver.add_task(s)
         except AttributeError:

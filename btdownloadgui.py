@@ -417,7 +417,7 @@ class DownloadInfoFrame:
             wx.EVT_CHOICE(self.connChoice, -1, self.onConnChoice)
             wx.EVT_SPINCTRL(self.connSpinner, -1, self.onConnSpinner)
             wx.EVT_SPINCTRL(self.rateSpinner, -1, self.onRateSpinner)
-            if (sys.platform == 'win32'):
+            if sys.platform == 'win32':
                 self.frame.tbicon = wx.TaskBarIcon()
                 wx.EVT_ICONIZE(self.frame, self.onIconify)
                 wx.EVT_TASKBAR_LEFT_DCLICK(self.frame.tbicon,
@@ -706,7 +706,7 @@ class DownloadInfoFrame:
 
     def about(self, event):
         try:
-            if (self.aboutBox is not None):
+            if self.aboutBox is not None:
                 try:
                     self.aboutBox.Close()
                 except wx.PyDeadObjectError:
@@ -848,7 +848,7 @@ class DownloadInfoFrame:
             piece_length = info['piece length']
             fileselector = self.dow.fileselector
 
-            if (self.detailBox is not None):
+            if self.detailBox is not None:
                 try:
                     self.detailBox.Close()
                 except wx.PyDeadObjectError:
@@ -942,7 +942,7 @@ class DownloadInfoFrame:
                 for file in info['files']:
                     path = ' '
                     for item in file['path']:
-                        if (path != ''):
+                        if path != '':
                             path = path + "/"
                         path = path + item
                     path += ' (' + str(file['length']) + ')'
@@ -1143,7 +1143,7 @@ class DownloadInfoFrame:
 
     def credits(self, event):
         try:
-            if (self.creditsBox is not None):
+            if self.creditsBox is not None:
                 try:
                     self.creditsBox.Close()
                 except wx.PyDeadObjectError:
@@ -1245,7 +1245,7 @@ class DownloadInfoFrame:
 
     def statusIconHelp(self, event):
         try:
-            if (self.statusIconHelpBox is not None):
+            if self.statusIconHelpBox is not None:
                 try:
                     self.statusIconHelpBox.Close()
                 except wx.PyDeadObjectError:
@@ -1359,7 +1359,7 @@ class DownloadInfoFrame:
         try:
             if not self.dow or not self.filename:
                 return
-            if (self.advBox is not None):
+            if self.advBox is not None:
                 try:
                     self.advBox.Close()
                 except wx.PyDeadObjectError:
@@ -1488,7 +1488,7 @@ class DownloadInfoFrame:
                                   format=wx.LIST_FORMAT_RIGHT, width=fw * 6)
 
             def reannounce(self, frame=self):
-                if (clock() - frame.reannouncelast > 60):
+                if clock() - frame.reannouncelast > 60:
                     frame.reannouncelast = clock()
                     frame.dow.reannounce()
             wx.EVT_BUTTON(self.advBox, reannounceButton.GetId(), reannounce)
@@ -1496,7 +1496,7 @@ class DownloadInfoFrame:
             self.advextannouncebox = None
 
             def reannounce_external(self, frame=self):
-                if (frame.advextannouncebox is not None):
+                if frame.advextannouncebox is not None:
                     try:
                         frame.advextannouncebox.Close()
                     except wx.PyDeadObjectError:
@@ -1544,7 +1544,7 @@ class DownloadInfoFrame:
                     special = frame.advexturl.GetValue()
                     if special:
                         frame.lastexternalannounce = special
-                        if (clock() - frame.reannouncelast > 60):
+                        if clock() - frame.reannouncelast > 60:
                             frame.reannouncelast = clock()
                             frame.dow.reannounce(special)
                     frame.advextannouncebox.Close()
@@ -1820,7 +1820,7 @@ class DownloadInfoFrame:
                         statistics.numPeers,
                         statistics.percentDone / 100,
                         float(statistics.torrentRate) / 1000))
-        if (clock() - self.lastError) > 300:
+        if clock() - self.lastError > 300:
             self.errorText.SetLabel('')
 
         if (self.configfileargs['gui_displaymiscstats'] and
@@ -1856,7 +1856,7 @@ class DownloadInfoFrame:
                 tot_uprate = 0.0
                 tot_downrate = 0.0
                 for i, subspew in enumerate(spew):
-                    if (subspew['optimistic'] == 1):
+                    if subspew['optimistic']:
                         a = '*'
                     else:
                         a = ' '
@@ -1870,12 +1870,12 @@ class DownloadInfoFrame:
                     else:
                         spewList.SetStringItem(i, 4, ' ')
                     tot_uprate += subspew['uprate']
-                    if (subspew['uinterested'] == 1):
+                    if subspew['uinterested']:
                         a = '*'
                     else:
                         a = ' '
                     spewList.SetStringItem(i, 5, a)
-                    if (subspew['uchoked'] == 1):
+                    if subspew['uchoked']:
                         a = '*'
                     else:
                         a = ' '
@@ -1888,17 +1888,17 @@ class DownloadInfoFrame:
                         spewList.SetStringItem(i, 7, ' ')
                     tot_downrate += subspew['downrate']
 
-                    if (subspew['dinterested'] == 1):
+                    if subspew['dinterested']:
                         a = '*'
                     else:
                         a = ' '
                     spewList.SetStringItem(i, 8, a)
-                    if (subspew['dchoked'] == 1):
+                    if subspew['dchoked']:
                         a = '*'
                     else:
                         a = ' '
                     spewList.SetStringItem(i, 9, a)
-                    if (subspew['snubbed'] == 1):
+                    if subspew['snubbed']:
                         a = '*'
                     else:
                         a = ' '

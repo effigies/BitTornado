@@ -16,11 +16,11 @@ class poll(object):
     def register(self, f, t):
         if not isinstance(f, int):
             f = f.fileno()
-        if (t & POLLIN):
+        if t & POLLIN:
             insert(self.rlist, f)
         else:
             remove(self.rlist, f)
-        if (t & POLLOUT):
+        if t & POLLOUT:
             insert(self.wlist, f)
         else:
             remove(self.wlist, f)

@@ -15,21 +15,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-
-wxEVT_INVOKE = wx.NewEventType()
-
-
-def EVT_INVOKE(win, func):
-    win.Connect(-1, -1, wxEVT_INVOKE, func)
-
-
-class InvokeEvent(wx.PyEvent):
-    def __init__(self, func, args, kwargs):
-        super(InvokeEvent, self).__init__()
-        self.SetEventType(wxEVT_INVOKE)
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
+from BitTornado.Application.GUI import EVT_INVOKE, InvokeEvent
 
 
 class DownloadInfo:
@@ -75,10 +61,9 @@ class DownloadInfo:
         annList.Add(abutton, 0, wx.EXPAND)
         gridSizer.Add(annList, 0, wx.EXPAND)
 
-        self.annListCtl = wx.TextCtrl(panel, -1, '\n\n\n\n\n',
-                                      wx.Point(-1, -1), (400, 120),
-                                      wx.TE_MULTILINE | wx.HSCROLL |
-                                      wx.TE_DONTWRAP)
+        self.annListCtl = wx.TextCtrl(panel, -1, '\n', wx.Point(-1, -1),
+                                      (400, 120), wx.TE_MULTILINE |
+                                      wx.HSCROLL | wx.TE_DONTWRAP)
         gridSizer.Add(self.annListCtl, -1, wx.EXPAND)
 
         gridSizer.Add(wx.StaticText(panel, -1, ''))
@@ -120,35 +105,28 @@ class DownloadInfo:
         panel.SetSizer(border)
         panel.SetAutoLayout(True)
 
-    def selectdir(self, x):
-        dl = wx.DirDialog(
-            self.frame, style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
-        if dl.ShowModal() == wx.ID_OK:
-            self.dirCtl.SetValue(dl.GetPath())
+    def selectdir(self, event):
+        dialog = wx.DirDialog(self.frame,
+                              style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dialog.ShowModal() == wx.ID_OK:
+            self.dirCtl.SetValue(dialog.GetPath())
 
-    def selectfile(self, x):
-        dl = wx.FileDialog(self.frame, 'Choose file or directory to use', '',
-                           '', '', wx.OPEN)
-        if dl.ShowModal() == wx.ID_OK:
-            self.dirCtl.SetValue(dl.GetPath())
+    def selectfile(self, event):
+        dialog = wx.FileDialog(self.frame, 'Choose file or directory to use')
+        if dialog.ShowModal() == wx.ID_OK:
+            self.dirCtl.SetValue(dialog.GetPath())
 
-    def selectdrop(self, x):
-        print x
-
-        # list = x.m_files
-        self.dirCtl.SetValue(x[0])
-
-    def announcecopy(self, x):
-        dl = wx.FileDialog(self.frame, 'Choose .torrent file to use', '', '',
-                           '*.torrent', wx.OPEN)
-        if dl.ShowModal() == wx.ID_OK:
+    def announcecopy(self, event):
+        dialog = wx.FileDialog(self.frame, 'Choose .torrent file to use',
+                               wildcard='*.torrent', style=wx.OPEN)
+        if dialog.ShowModal() == wx.ID_OK:
             try:
-                metainfo = MetaInfo.read(dl.GetPath())
+                metainfo = MetaInfo.read(dialog.GetPath())
                 self.annCtl.SetValue(metainfo['announce'])
                 if 'announce-list' in metainfo:
                     self.annListCtl.SetValue(
                         '\n'.join(', '.join(tier) for tier in
-                                  metainfo['announce-list']) + '\n' * 3)
+                                  metainfo['announce-list']))
                 else:
                     self.annListCtl.SetValue('')
             except (IOError, ValueError):
@@ -159,7 +137,7 @@ class DownloadInfo:
         return [filter(bool, tier.replace(',', ' ').split())
                 for tier in annList]
 
-    def complete(self, x):
+    def complete(self, event):
         if self.dirCtl.GetValue() == '':
             dlg = wx.MessageDialog(
                 self.frame, message='You must select a\n file or directory',
@@ -305,13 +283,13 @@ class CompleteDir:
             dlg.Destroy()
 
     def valcallback(self, amount):
-        self.invokeLater(self.onval, [amount])
+        self.invokeLater(self.onval, amount)
 
     def onval(self, amount):
         self.gauge.SetValue(int(amount * 1000))
 
     def filecallback(self, fname):
-        self.invokeLater(self.onfile, [fname])
+        self.invokeLater(self.onfile, fname)
 
     def onfile(self, fname):
         path = os.path.join(self.dirname, fname)
@@ -321,7 +299,7 @@ class CompleteDir:
         if not self.flag.isSet():
             event.func(*event.args, **event.kwargs)
 
-    def invokeLater(self, func, args=[], kwargs={}):
+    def invokeLater(self, func, *args, **kwargs):
         if not self.flag.isSet():
             wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
 

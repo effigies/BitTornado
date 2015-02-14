@@ -987,11 +987,11 @@ class Tracker:
 
             # main tracker function
 
-            filtered = self.Filter.check(real_ip, paramslist, headers)
-            if filtered:
-                return (400, 'Not Authorized', {'Content-Type': 'text/plain',
-                                                'Pragma': 'no-cache'},
-                        bencode({'failure reason': filtered}))
+            #filtered = self.Filter.check(real_ip, paramslist, headers)
+            #if filtered:
+            #    return (400, 'Not Authorized', {'Content-Type': 'text/plain',
+            #                                    'Pragma': 'no-cache'},
+            #            bencode({'failure reason': filtered}))
 
             infohash = params('info_hash')
             if not infohash:

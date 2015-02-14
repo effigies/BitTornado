@@ -11,19 +11,19 @@ from traceback import print_exc
 from BitTornado.Application.makemetafile import make_meta_file, completedir
 from BitTornado.Meta.Info import MetaInfo
 try:
-    from wxPython import wx
+    import wx
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
 
-wxEVT_INVOKE = wx.wxNewEventType()
+wxEVT_INVOKE = wx.NewEventType()
 
 
 def EVT_INVOKE(win, func):
     win.Connect(-1, -1, wxEVT_INVOKE, func)
 
 
-class InvokeEvent(wx.wxPyEvent):
+class InvokeEvent(wx.PyEvent):
     def __init__(self, func, args, kwargs):
         super(InvokeEvent, self).__init__()
         self.SetEventType(wxEVT_INVOKE)
@@ -34,107 +34,102 @@ class InvokeEvent(wx.wxPyEvent):
 
 class DownloadInfo:
     def __init__(self):
-        frame = wx.wxFrame(None, -1, 'BitTorrent Torrent File Maker',
-                           size=wx.wxSize(550, 410))
+        frame = wx.Frame(None, -1, 'BitTorrent Torrent File Maker',
+                         size=wx.Size(550, 410))
         self.frame = frame
 
-        panel = wx.wxPanel(frame, -1)
+        panel = wx.Panel(frame, -1)
 
-        gridSizer = wx.wxFlexGridSizer(cols=2, rows=2, vgap=0, hgap=8)
+        gridSizer = wx.FlexGridSizer(cols=2, rows=2, vgap=0, hgap=8)
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, 'make torrent of:'))
+        gridSizer.Add(wx.StaticText(panel, -1, 'make torrent of:'))
 
-        b = wx.wxBoxSizer(wx.wxHORIZONTAL)
-        self.dirCtl = wx.wxTextCtrl(panel, -1, '')
-        b.Add(self.dirCtl, 1, wx.wxEXPAND)
-#        b.Add(10, 10, 0, wxEXPAND)
+        b = wx.BoxSizer(wx.HORIZONTAL)
+        self.dirCtl = wx.TextCtrl(panel, -1, '')
+        b.Add(self.dirCtl, 1, wx.EXPAND)
 
-        button = wx.wxButton(panel, -1, 'dir', size=(30, 20))
+        button = wx.Button(panel, -1, 'dir', size=(30, 20))
         wx.EVT_BUTTON(frame, button.GetId(), self.selectdir)
         b.Add(button, 0)
 
-        button2 = wx.wxButton(panel, -1, 'file', size=(30, 20))
+        button2 = wx.Button(panel, -1, 'file', size=(30, 20))
         wx.EVT_BUTTON(frame, button2.GetId(), self.selectfile)
         b.Add(button2, 0)
 
-        gridSizer.Add(b, 0, wx.wxEXPAND)
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
+        gridSizer.Add(b, 0, wx.EXPAND)
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, 'announce url:'))
-        self.annCtl = wx.wxTextCtrl(panel, -1,
-                                    'http://my.tracker:6969/announce')
-        gridSizer.Add(self.annCtl, 0, wx.wxEXPAND)
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, 'announce url:'))
+        self.annCtl = wx.TextCtrl(panel, -1, 'http://my.tracker:6969/announce')
+        gridSizer.Add(self.annCtl, 0, wx.EXPAND)
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
 
-        a = wx.wxFlexGridSizer(cols=1)
-        a.Add(wx.wxStaticText(panel, -1, 'announce list:'))
-        a.Add(wx.wxStaticText(panel, -1, ''))
-        abutton = wx.wxButton(panel, -1, 'copy\nannounces\nfrom\ntorrent',
-                              size=(50, 70))
+        annList = wx.FlexGridSizer(cols=1)
+        annList.Add(wx.StaticText(panel, -1, 'announce list:'))
+        annList.Add(wx.StaticText(panel, -1, ''))
+        abutton = wx.Button(panel, -1, 'copy\nannounces\nfrom\ntorrent',
+                            size=(50, 70))
         wx.EVT_BUTTON(frame, abutton.GetId(), self.announcecopy)
-        a.Add(abutton, 0, wx.wxEXPAND)
-        gridSizer.Add(a, 0, wx.wxEXPAND)
+        annList.Add(abutton, 0, wx.EXPAND)
+        gridSizer.Add(annList, 0, wx.EXPAND)
 
-        self.annListCtl = wx.wxTextCtrl(
-            panel, -1, '\n\n\n\n\n', wx.wxPoint(-1, -1), (400, 120),
-            wx.wxTE_MULTILINE | wx.wxHSCROLL | wx.wxTE_DONTWRAP)
-        gridSizer.Add(self.annListCtl, -1, wx.wxEXPAND)
+        self.annListCtl = wx.TextCtrl(panel, -1, '\n\n\n\n\n',
+                                      wx.Point(-1, -1), (400, 120),
+                                      wx.TE_MULTILINE | wx.HSCROLL |
+                                      wx.TE_DONTWRAP)
+        gridSizer.Add(self.annListCtl, -1, wx.EXPAND)
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
-        exptext = wx.wxStaticText(
-            panel, -1, 'a list of announces separated by commas or whitespace '
-            'and on several lines -\ntrackers on the same line will be tried '
-            'randomly, and all the trackers on one line\nwill be tried before '
-            'the trackers on the next line.')
-        exptext.SetFont(wx.wxFont(6, wx.wxDEFAULT, wx.wxNORMAL, wx.wxNORMAL,
-                                  False))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
+        exptext = wx.StaticText(panel, -1, 'a list of announces separated by '
+                                'commas or whitespace and on several lines -\n'
+                                'trackers on the same line will be tried '
+                                'randomly, and all the trackers on one line\n'
+                                'will be tried before the trackers on the '
+                                'next line.')
+        exptext.SetFont(wx.Font(6, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False))
         gridSizer.Add(exptext)
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, 'piece size:'))
-        self.piece_length = wx.wxChoice(
-            panel, -1, choices=['automatic', '2MiB', '1MiB', '512KiB',
-                                '256KiB', '128KiB', '64KiB', '32KiB'])
+        gridSizer.Add(wx.StaticText(panel, -1, 'piece size:'))
+        self.piece_length = wx.Choice(panel, -1,
+                                      choices=['automatic', '2MiB', '1MiB',
+                                               '512KiB', '256KiB', '128KiB',
+                                               '64KiB', '32KiB'])
         self.piece_length_list = [0, 21, 20, 19, 18, 17, 16, 15]
         self.piece_length.SetSelection(0)
         gridSizer.Add(self.piece_length)
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
-        gridSizer.Add(wx.wxStaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
+        gridSizer.Add(wx.StaticText(panel, -1, ''))
 
-        gridSizer.Add(wx.wxStaticText(panel, -1, 'comment:'))
-        self.commentCtl = wx.wxTextCtrl(panel, -1, '')
-        gridSizer.Add(self.commentCtl, 0, wx.wxEXPAND)
+        gridSizer.Add(wx.StaticText(panel, -1, 'comment:'))
+        self.commentCtl = wx.TextCtrl(panel, -1, '')
+        gridSizer.Add(self.commentCtl, 0, wx.EXPAND)
 
         gridSizer.AddGrowableCol(1)
 
-        border = wx.wxBoxSizer(wx.wxVERTICAL)
-        border.Add(gridSizer, 0,
-                   wx.wxEXPAND | wx.wxNORTH | wx.wxEAST | wx.wxWEST, 25)
-        b2 = wx.wxButton(panel, -1, 'make')
-#        border.Add(10, 10, 1, wxEXPAND)
-        border.Add(b2, 0, wx.wxALIGN_CENTER | wx.wxSOUTH, 20)
+        border = wx.BoxSizer(wx.VERTICAL)
+        border.Add(gridSizer, 0, wx.EXPAND | wx.NORTH | wx.EAST | wx.WEST, 25)
+        b2 = wx.Button(panel, -1, 'make')
+        border.Add(b2, 0, wx.ALIGN_CENTER | wx.SOUTH, 20)
         wx.EVT_BUTTON(frame, b2.GetId(), self.complete)
         panel.SetSizer(border)
         panel.SetAutoLayout(True)
 
-#        panel.DragAcceptFiles(True)
-#        EVT_DROP_FILES(panel, self.selectdrop)
-
     def selectdir(self, x):
-        dl = wx.wxDirDialog(
-            self.frame, style=wx.wxDD_DEFAULT_STYLE | wx.wxDD_NEW_DIR_BUTTON)
-        if dl.ShowModal() == wx.wxID_OK:
+        dl = wx.DirDialog(
+            self.frame, style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dl.ShowModal() == wx.ID_OK:
             self.dirCtl.SetValue(dl.GetPath())
 
     def selectfile(self, x):
-        dl = wx.wxFileDialog(self.frame, 'Choose file or directory to use', '',
-                             '', '', wx.wxOPEN)
-        if dl.ShowModal() == wx.wxID_OK:
+        dl = wx.FileDialog(self.frame, 'Choose file or directory to use', '',
+                           '', '', wx.OPEN)
+        if dl.ShowModal() == wx.ID_OK:
             self.dirCtl.SetValue(dl.GetPath())
 
     def selectdrop(self, x):
@@ -144,9 +139,9 @@ class DownloadInfo:
         self.dirCtl.SetValue(x[0])
 
     def announcecopy(self, x):
-        dl = wx.wxFileDialog(self.frame, 'Choose .torrent file to use', '', '',
-                             '*.torrent', wx.wxOPEN)
-        if dl.ShowModal() == wx.wxID_OK:
+        dl = wx.FileDialog(self.frame, 'Choose .torrent file to use', '', '',
+                           '*.torrent', wx.OPEN)
+        if dl.ShowModal() == wx.ID_OK:
             try:
                 metainfo = MetaInfo.read(dl.GetPath())
                 self.annCtl.SetValue(metainfo['announce'])
@@ -166,9 +161,9 @@ class DownloadInfo:
 
     def complete(self, x):
         if self.dirCtl.GetValue() == '':
-            dlg = wx.wxMessageDialog(
+            dlg = wx.MessageDialog(
                 self.frame, message='You must select a\n file or directory',
-                caption='Error', style=wx.wxOK | wx.wxICON_ERROR)
+                caption='Error', style=wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -189,31 +184,30 @@ class DownloadInfo:
 
 
 class CompleteDir:
-    def __init__(self, d, a, params):
-        self.d = d
-        self.a = a
+    def __init__(self, dirname, announce, params):
+        self.dirname = dirname
+        self.announce = announce
         self.params = params
         self.flag = threading.Event()
         self.separatetorrents = False
 
-        if os.path.isdir(d):
+        if os.path.isdir(dirname):
             self.choicemade = threading.Event()
-            frame = wx.wxFrame(None, -1, 'BitTorrent make torrent',
-                               size=(1, 1))
+            frame = wx.Frame(None, -1, 'BitTorrent make torrent', size=(1, 1))
             self.frame = frame
-            panel = wx.wxPanel(frame, -1)
-            gridSizer = wx.wxFlexGridSizer(cols=1, vgap=8, hgap=8)
+            panel = wx.Panel(frame, -1)
+            gridSizer = wx.FlexGridSizer(cols=1, vgap=8, hgap=8)
             gridSizer.AddGrowableRow(1)
-            gridSizer.Add(wx.wxStaticText(
+            gridSizer.Add(wx.StaticText(
                 panel, -1, 'Do you want to make a separate .torrent'), 0,
-                wx.wxALIGN_CENTER)
-            gridSizer.Add(wx.wxStaticText(
+                wx.ALIGN_CENTER)
+            gridSizer.Add(wx.StaticText(
                 panel, -1, 'for every item in this directory?'), 0,
-                wx.wxALIGN_CENTER)
-            gridSizer.Add(wx.wxStaticText(panel, -1, ''))
+                wx.ALIGN_CENTER)
+            gridSizer.Add(wx.StaticText(panel, -1, ''))
 
-            b = wx.wxFlexGridSizer(cols=3, hgap=10)
-            yesbut = wx.wxButton(panel, -1, 'Yes')
+            b = wx.FlexGridSizer(cols=3, hgap=10)
+            yesbut = wx.Button(panel, -1, 'Yes')
 
             def saidyes(e, self=self):
                 self.frame.Destroy()
@@ -222,7 +216,7 @@ class CompleteDir:
             wx.EVT_BUTTON(frame, yesbut.GetId(), saidyes)
             b.Add(yesbut, 0)
 
-            nobut = wx.wxButton(panel, -1, 'No')
+            nobut = wx.Button(panel, -1, 'No')
 
             def saidno(e, self=self):
                 self.frame.Destroy()
@@ -230,15 +224,15 @@ class CompleteDir:
             wx.EVT_BUTTON(frame, nobut.GetId(), saidno)
             b.Add(nobut, 0)
 
-            cancelbut = wx.wxButton(panel, -1, 'Cancel')
+            cancelbut = wx.Button(panel, -1, 'Cancel')
 
             def canceled(e, self=self):
                 self.frame.Destroy()
             wx.EVT_BUTTON(frame, cancelbut.GetId(), canceled)
             b.Add(cancelbut, 0)
-            gridSizer.Add(b, 0, wx.wxALIGN_CENTER)
-            border = wx.wxBoxSizer(wx.wxHORIZONTAL)
-            border.Add(gridSizer, 1, wx.wxEXPAND | wx.wxALL, 4)
+            gridSizer.Add(b, 0, wx.ALIGN_CENTER)
+            border = wx.BoxSizer(wx.HORIZONTAL)
+            border.Add(gridSizer, 1, wx.EXPAND | wx.ALL, 4)
 
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
@@ -251,33 +245,33 @@ class CompleteDir:
 
     def begin(self):
         if self.separatetorrents:
-            frame = wx.wxFrame(None, -1, 'BitTorrent make directory',
-                               size=wx.wxSize(550, 250))
+            frame = wx.Frame(None, -1, 'BitTorrent make directory',
+                             size=wx.Size(550, 250))
         else:
-            frame = wx.wxFrame(None, -1, 'BitTorrent make torrent',
-                               size=wx.wxSize(550, 250))
+            frame = wx.Frame(None, -1, 'BitTorrent make torrent',
+                             size=wx.Size(550, 250))
         self.frame = frame
 
-        panel = wx.wxPanel(frame, -1)
-        gridSizer = wx.wxFlexGridSizer(cols=1, vgap=15, hgap=8)
+        panel = wx.Panel(frame, -1)
+        gridSizer = wx.FlexGridSizer(cols=1, vgap=15, hgap=8)
 
         if self.separatetorrents:
-            self.currentLabel = wx.wxStaticText(panel, -1,
-                                                'checking file sizes')
+            label = 'checking file sizes'
         else:
-            self.currentLabel = wx.wxStaticText(
-                panel, -1, 'building ' + self.d + '.torrent')
-        gridSizer.Add(self.currentLabel, 0, wx.wxEXPAND)
-        self.gauge = wx.wxGauge(panel, -1, range=1000, style=wx.wxGA_SMOOTH)
-        gridSizer.Add(self.gauge, 0, wx.wxEXPAND)
-        gridSizer.Add((10, 10), 1, wx.wxEXPAND)
-        self.button = wx.wxButton(panel, -1, 'cancel')
-        gridSizer.Add(self.button, 0, wx.wxALIGN_CENTER)
+            label = 'building {}.torrent'.format(self.dirname)
+        self.currentLabel = wx.StaticText(panel, -1, label)
+
+        gridSizer.Add(self.currentLabel, 0, wx.EXPAND)
+        self.gauge = wx.Gauge(panel, -1, range=1000, style=wx.GA_SMOOTH)
+        gridSizer.Add(self.gauge, 0, wx.EXPAND)
+        gridSizer.Add((10, 10), 1, wx.EXPAND)
+        self.button = wx.Button(panel, -1, 'cancel')
+        gridSizer.Add(self.button, 0, wx.ALIGN_CENTER)
         gridSizer.AddGrowableRow(2)
         gridSizer.AddGrowableCol(0)
 
-        g2 = wx.wxFlexGridSizer(cols=1, vgap=15, hgap=8)
-        g2.Add(gridSizer, 1, wx.wxEXPAND | wx.wxALL, 25)
+        g2 = wx.FlexGridSizer(cols=1, vgap=15, hgap=8)
+        g2.Add(gridSizer, 1, wx.EXPAND | wx.ALL, 25)
         g2.AddGrowableRow(0)
         g2.AddGrowableCol(0)
         panel.SetSizer(g2)
@@ -291,11 +285,11 @@ class CompleteDir:
     def complete(self):
         try:
             if self.separatetorrents:
-                completedir(self.d, self.a, self.params, self.flag,
-                            self.valcallback, self.filecallback)
+                completedir(self.dirname, self.announce, self.params,
+                            self.flag, self.valcallback, self.filecallback)
             else:
-                make_meta_file(self.d, self.a, self.params, self.flag,
-                               self.valcallback, progress_percent=1)
+                make_meta_file(self.dirname, self.announce, self.params,
+                               self.flag, self.valcallback)
             if not self.flag.isSet():
                 self.currentLabel.SetLabel('Done!')
                 self.gauge.SetValue(1000)
@@ -304,9 +298,9 @@ class CompleteDir:
         except (OSError, IOError) as e:
             self.currentLabel.SetLabel('Error!')
             self.button.SetLabel('Close')
-            dlg = wx.wxMessageDialog(
+            dlg = wx.MessageDialog(
                 self.frame, message='Error - ' + str(e), caption='Error',
-                style=wx.wxOK | wx.wxICON_ERROR)
+                style=wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
             dlg.Destroy()
 
@@ -316,12 +310,12 @@ class CompleteDir:
     def onval(self, amount):
         self.gauge.SetValue(int(amount * 1000))
 
-    def filecallback(self, f):
-        self.invokeLater(self.onfile, [f])
+    def filecallback(self, fname):
+        self.invokeLater(self.onfile, [fname])
 
-    def onfile(self, f):
-        self.currentLabel.SetLabel(
-            'building ' + os.path.join(self.d, f) + '.torrent')
+    def onfile(self, fname):
+        path = os.path.join(self.dirname, fname)
+        self.currentLabel.SetLabel('building {}.torrent'.format(path))
 
     def onInvoke(self, event):
         if not self.flag.isSet():
@@ -329,14 +323,14 @@ class CompleteDir:
 
     def invokeLater(self, func, args=[], kwargs={}):
         if not self.flag.isSet():
-            wx.wxPostEvent(self.frame, InvokeEvent(func, args, kwargs))
+            wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
 
     def done(self, event):
         self.flag.set()
         self.frame.Destroy()
 
 
-class btWxApp(wx.wxApp):
+class btWxApp(wx.App):
     def OnInit(self):
         d = DownloadInfo()
         d.frame.Show(True)

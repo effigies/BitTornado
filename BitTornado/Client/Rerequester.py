@@ -12,15 +12,13 @@ from BitTornado.Meta.bencode import bdecode
 from cStringIO import StringIO
 from traceback import print_exc
 
-mapbase64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 keys = {}
 basekeydata = str(os.getpid()) + repr(time.time()) + 'tracker'
 
 
 def add_key(tracker):
-    keys[tracker] = ''.join(
-        mapbase64[ord(i) & 0x3F]
-        for i in hashlib.sha1(basekeydata + tracker).digest()[-6:])
+    keys[tracker] = base64.urlsafe_b64encode(
+        hashlib.sha1(basekeydata + tracker).digest()[-6:])
 
 
 def get_key(tracker):

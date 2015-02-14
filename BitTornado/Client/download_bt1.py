@@ -1,7 +1,5 @@
 import os
-import random
 import socket
-import hashlib
 import threading
 from BitTornado.Meta.Info import check_type, check_info
 from BitTornado.Network.zurllib import urlopen
@@ -16,7 +14,7 @@ from .HTTPDownloader import HTTPDownloader
 from .Connecter import Connecter
 from .RateLimiter import RateLimiter
 from BitTornado.Network.Encrypter import Encoder
-from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
+from BitTornado.Network.RawServer import autodetect_socket_style
 from .Rerequester import Rerequester
 from .DownloaderFeedback import DownloaderFeedback
 from .RateMeasure import RateMeasure
@@ -24,13 +22,11 @@ from .CurrentRateMeasure import Measure
 from .PiecePicker import PiecePicker
 from .Statistics import Statistics
 from BitTornado.Application.ConfigDir import ConfigDir
-from BitTornado.Meta.bencode import bencode, bdecode
-from BitTornado.Network.natpunch import UPnP_test
+from BitTornado.Meta.bencode import bdecode
 from BitTornado.Application.parseargs import parseargs, formatDefinitions, \
     defaultargs
 from BitTornado.clock import clock
 from BitTornado.Network.BTcrypto import CRYPTO_OK
-from BitTornado.Application.PeerID import createPeerID
 
 defaults = [
     ('max_uploads', 7,

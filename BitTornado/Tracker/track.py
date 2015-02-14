@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import time
+import socket
 import signal
 import random
 import threading
@@ -706,7 +707,7 @@ class Tracker:
             try:
                 s = int(params['requirecrypto'])
                 chr(s)
-            except KeyError, ValueError:
+            except (KeyError, ValueError):
                 s = 0
             requirecrypto = s
         else:

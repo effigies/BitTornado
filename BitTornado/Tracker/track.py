@@ -588,7 +588,7 @@ class Tracker:
         f = {'complete': c, 'incomplete': d, 'downloaded': n}
         if return_name and self.show_names and self.config['allowed_dir']:
             f['name'] = self.allowed[hash]['name']
-        return (f)
+        return f
 
     def get_scrape(self, paramslist):
         fs = {}
@@ -853,7 +853,7 @@ class Tracker:
         bc = self.becache.setdefault(infohash, self.cache_default)
         len_l = len(bc[2][0])
         len_s = len(bc[2][1])
-        if not (len_l + len_s):   # caches are empty!
+        if not len_l + len_s:   # caches are empty!
             data['peers'] = []
             return data
         l_get_size = int(float(rsize) * (len_l) / (len_l + len_s))

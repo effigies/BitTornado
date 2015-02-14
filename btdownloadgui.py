@@ -68,14 +68,14 @@ def size_format(s):
         r = '{:.2f}GiB'.format(float(s) / (1 << 30))
     else:
         r = '{:.2f}TiB'.format(float(s) / (1 << 40))
-    return(r)
+    return r
 
 
 def comma_format(s):
     r = str(s)
     for i in range(len(r) - 3, 0, -3):
         r = r[:i] + ',' + r[i:]
-    return(r)
+    return r
 
 
 class DownloadInfoFrame:

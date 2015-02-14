@@ -259,7 +259,7 @@ class StorageWrapper:
         self.numchecked += 1
         if self.amount_left == 0:
             self.finished()
-        return (self.numchecked / self.check_total)
+        return self.numchecked / self.check_total
 
     def init_movedata(self):
         if self.flag.isSet():
@@ -306,7 +306,7 @@ class StorageWrapper:
 
         self.places[i] = i
         self.tomove -= 1
-        return (self.tomove / self.out_of_place)
+        return self.tomove / self.out_of_place
 
     def init_alloc(self):
         if self.flag.isSet():

@@ -196,7 +196,7 @@ def parse_params(params, presets={}):
 
 
 def get_usage(defaults=defaults, cols=100, presets={}):
-    return (argslistheader + formatDefinitions(defaults, cols, presets))
+    return argslistheader + formatDefinitions(defaults, cols, presets)
 
 
 def get_response(file, url, errorfunc):

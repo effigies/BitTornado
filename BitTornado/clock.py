@@ -13,7 +13,7 @@ _MAXFORWARD = 100
 _FUDGE = 1
 
 
-class RelativeTime(object): #pylint: disable=R0903
+class RelativeTime(object):     # pylint: disable=R0903
     """Non-decreasing time implementation for Unix"""
     def __init__(self):
         self.time = time.time()
@@ -36,6 +36,6 @@ class RelativeTime(object): #pylint: disable=R0903
         return self.time
 
 if sys.platform != 'win32':
-    clock = RelativeTime().get_time     #pylint: disable=C0103
+    clock = RelativeTime().get_time     # pylint: disable=C0103
 else:
     from time import clock

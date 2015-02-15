@@ -2130,11 +2130,11 @@ class DownloadInfoFrame(DelayedEvents):
         self.frame.Layout()
         self.frame.Refresh()
 
-    @classpath
+    @callback
     def newpath(self, path):
         self.fileDestText.SetLabel(path)
 
-    @classpath
+    @callback
     def pause(self, event):
         if not self.dow:
             return

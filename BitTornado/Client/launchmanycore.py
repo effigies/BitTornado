@@ -9,21 +9,11 @@ from BitTornado.Network.RawServer import RawServer
 from BitTornado.Network.SocketHandler import UPnP_ERROR
 from .RateLimiter import RateLimiter
 from BitTornado.Network.ServerPortHandler import MultiHandler
+from BitTornado.Application.NumberFormats import formatIntClock
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado.Application.PeerID import createPeerID, mapbase64
-
-
-def fmttime(n):
-    try:
-        n = int(n)  # n may be None or too large
-        assert n < 5184000  # 60 days
-    except (TypeError, ValueError, AssertionError):
-        return 'downloading'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    return '%d:%02d:%02d' % (h, m, s)
 
 
 class SingleDownload:
@@ -250,7 +240,7 @@ class LaunchMany:
                         t = stats['time']
                         if t == 0:  # unlikely
                             t = 0.01
-                        status = fmttime(t)
+                        status = formatIntClock(t)
                     else:
                         t = -1
                         status = 'connecting to peers'

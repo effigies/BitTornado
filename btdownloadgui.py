@@ -22,6 +22,7 @@ from BitTornado.Network.RawServer import RawServer
 from BitTornado.Network.SocketHandler import UPnP_ERROR
 from BitTornado.Application.ConnChoice import connChoices, connChoiceList
 from BitTornado.Application.ConfigReader import configReader
+from BitTornado.Application.NumberFormats import formatIntText, formatSize
 from BitTornado.Meta.bencode import bencode
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
@@ -39,43 +40,6 @@ PROFILER = False
 WXPROFILER = False
 
 # Note to packagers: edit OLDICONPATH in BitTornado/ConfigDir.py
-
-
-def hours(n):
-    if n == 0:
-        return 'download complete'
-    try:
-        n = int(n)
-        assert n >= 0 and n < 5184000  # 60 days
-    except (AssertionError, ValueError):
-        return '<unknown>'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    if h > 0:
-        return '%d hour(s) %02d min %02d sec' % (h, m, s)
-    else:
-        return '%d min %02d sec' % (m, s)
-
-
-def size_format(s):
-    if s < 1024:
-        r = '{:d}B'.format(s)
-    elif s < 1048576:
-        r = '{:d}KiB'.format(s / 1024)
-    elif s < 1073741824L:
-        r = '{:d}MiB'.format(s / (1 << 20))
-    elif s < 1099511627776L:
-        r = '{:.2f}GiB'.format(float(s) / (1 << 30))
-    else:
-        r = '{:.2f}TiB'.format(float(s) / (1 << 40))
-    return r
-
-
-def comma_format(s):
-    r = str(s)
-    for i in range(len(r) - 3, 0, -3):
-        r = r[:i] + ',' + r[i:]
-    return r
 
 
 class DownloadInfoFrame:
@@ -970,12 +934,12 @@ class DownloadInfoFrame:
                                         size=(325, -1), style=wx.TE_READONLY))
             num_pieces = int((file_length + piece_length - 1) / piece_length)
             detailSizer.Add(StaticText(name + ' : '))
-            detailSizer.Add(StaticText('{} ({} bytes)'.format(
-                size_format(file_length), comma_format(file_length))))
+            detailSizer.Add(StaticText('{} ({:,} bytes)'.format(
+                formatSize(file_length), file_length)))
             detailSizer.Add(StaticText('pieces : '))
             if num_pieces > 1:
-                detailSizer.Add(StaticText('{:d} ({} bytes each)'.format(
-                    num_pieces, comma_format(piece_length))))
+                detailSizer.Add(StaticText('{:d} ({:,} bytes each)'.format(
+                    num_pieces, piece_length)))
             else:
                 detailSizer.Add(StaticText('1'))
 
@@ -1717,9 +1681,8 @@ class DownloadInfoFrame:
             if statistics is not None and statistics.downTotal is not None:
                 if self.configfileargs['gui_displaymiscstats']:
                     self.frame.SetTitle(
-                        '{:.1%} ({:.2f} MiB) {} - BitTorrent {}'.format(
-                            float(gaugelevel) / 1000,
-                            float(sizeDone) / (1 << 20),
+                        '{:.1%} ({}) {} - BitTorrent {}'.format(
+                            float(gaugelevel) / 1000, formatSize(sizeDone),
                             self.filename, version))
                 else:
                     self.frame.SetTitle('{:.1%} {} - BitTorrent {}'.format(
@@ -1728,13 +1691,15 @@ class DownloadInfoFrame:
                 self.frame.SetTitle('{:.0%} {} - BitTorrent {}'.format(
                     float(gaugelevel) / 1000, self.filename, version))
         if self.ispaused:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' /')
+            self.timeText.SetLabel(formatIntText(clock() - self.starttime) +
+                                   ' /')
         elif timeEst is None:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
-                                   self.activity)
+            self.timeText.SetLabel('{} / {}'.format(
+                formatIntText(clock() - self.starttime), self.activity))
         else:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
-                                   hours(timeEst))
+            self.timeText.SetLabel('{} / {}'.format(
+                formatIntText(clock() - self.starttime),
+                formatIntText(timeEst) or 'download complete'))
         if not self.ispaused:
             if downRate is not None:
                 self.downRateText.SetLabel('{:.0f} kB/s'.format(
@@ -1745,8 +1710,8 @@ class DownloadInfoFrame:
             icontext = 'BitTorrent '
             if self.gui_fractiondone is not None and not self.fin:
                 if statistics is not None and statistics.downTotal is not None:
-                    icontext += ' {:.1%} ({:.2f} MiB)'.format(
-                        self.gui_fractiondone, float(sizeDone) / (1 << 20))
+                    icontext += ' {:.1%} ({})'.format(self.gui_fractiondone,
+                                                      formatSize(sizeDone))
                 else:
                     icontext += '  {:.0%}'.format(self.gui_fractiondone)
             if upRate is not None:
@@ -1770,10 +1735,8 @@ class DownloadInfoFrame:
             downtotal = statistics.downTotal + self.old_download
             uptotal = statistics.upTotal + self.old_upload
             if self.configfileargs['gui_displaymiscstats']:
-                self.downText.SetLabel('{:.2f} MiB'.format(
-                    float(downtotal) / (1 << 20)))
-                self.upText.SetLabel('{:.2f} MiB'.format(
-                    float(uptotal) / (1 << 20)))
+                self.downText.SetLabel(formatSize(downtotal))
+                self.upText.SetLabel(formatSize(uptotal))
             if downtotal > 0:
                 sharerating = float(uptotal) / downtotal
                 if sharerating == 0:
@@ -1903,11 +1866,10 @@ class DownloadInfoFrame:
                     else:
                         a = ' '
                     spewList.SetStringItem(i, 10, a)
-                    spewList.SetStringItem(i, 11, '{:.2f} MiB'.format(
-                        float(subspew['dtotal']) / (1 << 20)))
+                    spewList.SetStringItem(i, 11,
+                                           formatSize(subspew['dtotal']))
                     if subspew['utotal'] is not None:
-                        a = '{:.2f} MiB'.format(
-                            float(subspew['utotal']) / (1 << 20))
+                        a = formatSize(subspew['utotal'])
                     else:
                         a = ''
                     spewList.SetStringItem(i, 12, a)
@@ -1930,10 +1892,10 @@ class DownloadInfoFrame:
                 spewList.SetStringItem(x, 7, '{:.0f} kB/s'.format(
                     float(tot_downrate) / 1000))
                 if statistics is not None:
-                    spewList.SetStringItem(x, 11, '{:.2f} MiB'.format(
-                        float(statistics.downTotal) / (1 << 20)))
-                    spewList.SetStringItem(x, 12, '{:.2f} MiB'.format(
-                        float(statistics.upTotal) / (1 << 20)))
+                    spewList.SetStringItem(x, 11,
+                                           formatSize(statistics.downTotal))
+                    spewList.SetStringItem(x, 12,
+                                           formatSize(statistics.upTotal))
                 else:
                     spewList.SetStringItem(x, 11, '')
                     spewList.SetStringItem(x, 12, '')
@@ -1971,13 +1933,13 @@ class DownloadInfoFrame:
                     self.storagestats2.SetLabel(l1)
                     self.storagestats1.SetLabel(
                         '{} {:d} of {:d} pieces complete ({:d} just '
-                        'downloaded), {:d} failed hash check, {}KiB redundant '
-                        'data discarded'.format(
+                        'downloaded), {:d} failed hash check, {:,}KiB '
+                        'redundant data discarded'.format(
                             ' ' * 9, statistics.storage_numcomplete,
                             statistics.storage_totalpieces,
                             statistics.storage_justdownloaded,
                             statistics.storage_numflunked,
-                            comma_format(int(statistics.discarded / 1024))))
+                            statistics.discarded // 1024))
 
         if (self.fileList is not None and statistics is not None and
                 (statistics.filelistupdated.isSet() or self.refresh_details)):
@@ -2060,8 +2022,8 @@ class DownloadInfoFrame:
         self.invokeLater(self.onErrorEvent, errormsg)
 
     def onFinishEvent(self):
-        self.activity = hours(clock() - self.starttime) + ' / ' + \
-            'Download Succeeded!'
+        self.activity = '{} / Download Succeeded!'.format(
+            formatIntText(clock() - self.starttime))
         self.cancelButton.SetLabel('Finish')
         self.gauge.SetValue(0)
         self.frame.SetTitle('{} - Upload - BitTorrent {}'.format(
@@ -2076,8 +2038,8 @@ class DownloadInfoFrame:
 
     def onFailEvent(self):
         if not self.shuttingdown:
-            self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
-                                   'Failed!')
+            self.timeText.SetLabel('{} / Failed!'.format(
+                formatIntText(clock() - self.starttime)))
             self.activity = 'Failed!'
             self.cancelButton.SetLabel('Close')
             self.gauge.SetValue(0)
@@ -2153,10 +2115,10 @@ class DownloadInfoFrame:
         self.torrentsize = size
         lname = os.path.basename(name)
         self.filename = lname
-        self.fileNameText.SetLabel('%s' % (lname))
-        self.fileSizeText.SetLabel('(%.2f MiB)' % (float(size) / (1 << 20)))
-        self.timeText.SetLabel(hours(clock() - self.starttime) + ' / ' +
-                               self.activity)
+        self.fileNameText.SetLabel(lname)
+        self.fileSizeText.SetLabel(formatSize(size))
+        self.timeText.SetLabel('{} / {}'.format(
+            formatIntText(clock() - self.starttime), self.activity))
         self.fileDestText.SetLabel(name)
         self.frame.SetTitle(lname + '- BitTorrent ' + version)
 

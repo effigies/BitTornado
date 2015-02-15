@@ -19,25 +19,10 @@ from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import version
 from BitTornado.Application.ConfigDir import ConfigDir
+from BitTornado.Application.NumberFormats import formatIntText
 from BitTornado.Application.PeerID import createPeerID
 
 PROFILER = False
-
-
-def hours(n):
-    if n == 0:
-        return 'complete!'
-    try:
-        n = int(n)
-        assert n >= 0 and n < 5184000  # 60 days
-    except (AssertionError, ValueError):
-        return '<unknown>'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    if h > 0:
-        return '%d hour %02d min %02d sec' % (h, m, s)
-    else:
-        return '%d min %02d sec' % (m, s)
 
 
 class HeadlessDisplayer:
@@ -83,7 +68,7 @@ class HeadlessDisplayer:
         if fractionDone is not None:
             self.percentDone = str(float(int(fractionDone * 1000)) / 10)
         if timeEst is not None:
-            self.timeEst = hours(timeEst)
+            self.timeEst = formatIntText(timeEst) or 'complete!'
         if activity is not None and not self.done:
             self.timeEst = activity
         if downRate is not None:

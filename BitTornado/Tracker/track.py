@@ -16,6 +16,7 @@ from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
 from .T2T import T2TList
 from .torrentlistparse import parsetorrentlist
+from BitTornado.Application.FormatNumbers import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Meta.bencode import bencode, bdecode, Bencached
@@ -538,8 +539,8 @@ class Tracker:
                                     '<td align="right">%i</td>'
                                     '<td align="right">%i</td>'
                                     '<td align="right">%s</td></tr>\n' %
-                                    (hexlify(hash), linkname, size_format(sz),
-                                     c, d, n, size_format(szt)))
+                                    (hexlify(hash), linkname, formatSize(sz),
+                                     c, d, n, formatSize(szt)))
                     else:
                         s.write('<tr><td><code>%s</code></td>'
                                 '<td align="right"><code>%i</code></td>'
@@ -551,7 +552,7 @@ class Tracker:
                             '<td align="right">%s</td><td align="right">%i'
                             '</td><td align="right">%i</td><td align="right">'
                             '%i</td><td align="right">%s</td></tr>\n' %
-                            (nf, size_format(ts), tc, td, tn, size_format(tt)))
+                            (nf, formatSize(ts), tc, td, tn, formatSize(tt)))
                 else:
                     s.write('<tr><td align="right">%i files</td>'
                             '<td align="right">%i</td><td align="right">%i'
@@ -1209,17 +1210,3 @@ def track(args):
         HTTPHandler(t.get, config['min_time_between_log_flushes']))
     t.save_state()
     print '# Shutting down: ' + isotime()
-
-
-def size_format(s):
-    if s < 1024:
-        r = '{:d}B'.format(s)
-    elif s < 1048576:
-        r = '{:.0f}KiB'.format(s / 1024)
-    elif s < 1073741824L:
-        r = '{:.0f}MiB'.format(s / 1048576)
-    elif s < 1099511627776L:
-        r = '{:.2f}GiB'.format(s / 1073741824.0)
-    else:
-        r = '{:.2f}TiB'.format(s / 1099511627776.0)
-    return r

@@ -22,6 +22,7 @@ from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
 from BitTornado import version
 from BitTornado.Application.ConfigDir import ConfigDir
+from BitTornado.Application.NumberFormats import formatIntClock, formatSize
 from BitTornado.Application.PeerID import createPeerID
 
 try:
@@ -38,36 +39,6 @@ except ImportError:
     print
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
-
-
-def fmttime(n):
-    if n == 0:
-        return 'download complete!'
-    try:
-        n = int(n)
-        assert n >= 0 and n < 5184000  # 60 days
-    except (AssertionError, ValueError):
-        return '<unknown>'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    return 'finishing in %d:%02d:%02d' % (h, m, s)
-
-
-def fmtsize(n):
-    s = str(n)
-    size = s[-3:]
-    while len(s) > 3:
-        s = s[:-3]
-        size = '%s,%s' % (s[-3:], size)
-    if n > 999:
-        unit = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-        i = 1
-        while i + 1 < len(unit) and (n >> 10) >= 999:
-            i += 1
-            n >>= 10
-        n = float(n) / (1 << 10)
-        size = '%s (%.0f %s)' % (size, n, unit[i])
-    return size
 
 
 class CursesDisplayer:
@@ -173,7 +144,7 @@ class CursesDisplayer:
         if activity is not None and not self.done:
             self.activity = activity
         elif timeEst is not None:
-            self.activity = fmttime(timeEst)
+            self.activity = 'finishing in ' + formatIntClock(timeEst)
         if self.changeflag.isSet() or \
                 self.last_update_time + 0.1 > clock() and \
                 fractionDone not in (0.0, 1.0) and \
@@ -308,7 +279,7 @@ class CursesDisplayer:
 
     def chooseFile(self, default, size, saveas, isdir):
         self.file = default
-        self.fileSize = fmtsize(size)
+        self.fileSize = formatSize(size)
         if saveas == '':
             saveas = default
         self.downloadTo = os.path.abspath(saveas)

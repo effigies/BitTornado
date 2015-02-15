@@ -15,7 +15,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import EVT_INVOKE, InvokeEvent
+from BitTornado.Application.GUI import DelayedEvents
 
 
 class DownloadInfo:
@@ -161,13 +161,14 @@ class DownloadInfo:
             print_exc()
 
 
-class CompleteDir:
+class CompleteDir(DelayedEvents):
     def __init__(self, dirname, announce, params):
         self.dirname = dirname
         self.announce = announce
         self.params = params
-        self.flag = threading.Event()
         self.separatetorrents = False
+
+        super(CompleteDir, self).__init__()
 
         if os.path.isdir(dirname):
             self.choicemade = threading.Event()
@@ -256,7 +257,7 @@ class CompleteDir:
         panel.SetAutoLayout(True)
         wx.EVT_BUTTON(frame, self.button.GetId(), self.done)
         wx.EVT_CLOSE(frame, self.done)
-        EVT_INVOKE(frame, self.onInvoke)
+        self.setDelayWindow(frame)
         frame.Show(True)
         threading.Thread(target=self.complete).start()
 
@@ -264,11 +265,11 @@ class CompleteDir:
         try:
             if self.separatetorrents:
                 completedir(self.dirname, self.announce, self.params,
-                            self.flag, self.valcallback, self.filecallback)
+                            self.uiflag, self.valcallback, self.filecallback)
             else:
                 make_meta_file(self.dirname, self.announce, self.params,
-                               self.flag, self.valcallback)
-            if not self.flag.isSet():
+                               self.uiflag, self.valcallback)
+            if not self.uiflag.isSet():
                 self.currentLabel.SetLabel('Done!')
                 self.gauge.SetValue(1000)
                 self.button.SetLabel('Close')
@@ -295,16 +296,8 @@ class CompleteDir:
         path = os.path.join(self.dirname, fname)
         self.currentLabel.SetLabel('building {}.torrent'.format(path))
 
-    def onInvoke(self, event):
-        if not self.flag.isSet():
-            event.func(*event.args, **event.kwargs)
-
-    def invokeLater(self, func, *args, **kwargs):
-        if not self.flag.isSet():
-            wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
-
     def done(self, event):
-        self.flag.set()
+        self.uiflag.set()
         self.frame.Destroy()
 
 

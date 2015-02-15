@@ -17,7 +17,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import EVT_INVOKE, InvokeEvent
+from BitTornado.Application.GUI import DelayedEvents
 
 basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -27,12 +27,11 @@ else:
     DROP_HERE = ''
 
 
-class BasicDownloadInfo:
+class BasicDownloadInfo(DelayedEvents):
     def __init__(self, config, calls):
         self.config = config
         self.calls = calls
 
-        self.uiflag = threading.Event()
         self.cancelflag = threading.Event()
         self.switchlock = threading.Lock()
         self.working = False
@@ -126,7 +125,7 @@ class BasicDownloadInfo:
         frame.Fit()
         frame.Show(True)
 
-        EVT_INVOKE(frame, self.onInvoke)
+        super(BasicDownloadInfo, self).__init__(frame)
         wx.EVT_CLOSE(frame, self._close)
 
     def selectdir(self, x=None):
@@ -229,14 +228,6 @@ class BasicDownloadInfo:
                                         self.thostselection))
         self.calls['setCurrentTHost'](self.thostselection)
 
-    def onInvoke(self, event):
-        if not self.uiflag.isSet():
-            event.func(*event.args, **event.kwargs)
-
-    def invokeLater(self, func, *args, **kwargs):
-        if not self.uiflag.isSet():
-            wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
-
     def build_setgauge(self, x):
         self.invokeLater(self.on_setgauge, x)
 
@@ -281,12 +272,11 @@ class BasicDownloadInfo:
         self.frame.Destroy()
 
 
-class AdvancedDownloadInfo:
+class AdvancedDownloadInfo(DelayedEvents):
     def __init__(self, config, calls):
         self.config = config
         self.calls = calls
 
-        self.uiflag = threading.Event()
         self.cancelflag = threading.Event()
         self.switchlock = threading.Lock()
         self.working = False
@@ -520,7 +510,7 @@ class AdvancedDownloadInfo:
         frame.Fit()
         frame.Show(True)
 
-        EVT_INVOKE(frame, self.onInvoke)
+        super(AdvancedDownloadInfo, self).__init__(frame)
         wx.EVT_CLOSE(frame, self._close)
 
     def setstayontop(self, x):
@@ -801,14 +791,6 @@ class AdvancedDownloadInfo:
         os.remove(os.path.join(basepath, 'thosts', self.thostselection))
         self.thostselection = None
         self.refresh_thostlist()
-
-    def onInvoke(self, event):
-        if not self.uiflag.isSet():
-            event.func(*event.args, **event.kwargs)
-
-    def invokeLater(self, func, *args, **kwargs):
-        if not self.uiflag.isSet():
-            wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
 
     def build_setgauge(self, x):
         self.invokeLater(self.on_setgauge, x)

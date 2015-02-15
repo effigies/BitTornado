@@ -34,7 +34,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import EVT_INVOKE, InvokeEvent
+from BitTornado.Application.GUI import DelayedEvents, InvokeEvent
 
 PROFILER = False
 WXPROFILER = False
@@ -42,7 +42,7 @@ WXPROFILER = False
 # Note to packagers: edit OLDICONPATH in BitTornado/ConfigDir.py
 
 
-class DownloadInfoFrame:
+class DownloadInfoFrame(DelayedEvents):
     def __init__(self, flag, configfile):
         self._errorwindow = None
         try:
@@ -52,10 +52,10 @@ class DownloadInfoFrame:
             frame = wx.Frame(None, -1, 'BitTorrent ' + version + ' download',
                              style=wx.DEFAULT_FRAME_STYLE |
                              wx.FULL_REPAINT_ON_RESIZE)
+            super(DownloadInfoFrame, self).__init__(frame)
             self.flag = flag
             self.configfile = configfile
             self.configfileargs = configfile.config
-            self.uiflag = threading.Event()
             self.fin = False
             self.aboutBox = None
             self.detailBox = None
@@ -375,7 +375,6 @@ class DownloadInfoFrame:
             wx.EVT_CLOSE(frame, self.done)
             wx.EVT_BUTTON(frame, self.pauseButton.GetId(), self.pause)
             wx.EVT_BUTTON(frame, self.cancelButton.GetId(), self.done)
-            EVT_INVOKE(frame, self.onInvoke)
             wx.EVT_SCROLL(self.rateslider, self.onRateScroll)
             wx.EVT_SCROLL(self.connslider, self.onConnScroll)
             wx.EVT_CHOICE(self.connChoice, -1, self.onConnChoice)
@@ -427,17 +426,6 @@ class DownloadInfoFrame:
                 self.invokeLaterList.append((func, args, kwargs))
                 if len(self.invokeLaterList) == 1:
                     wx.PostEvent(self.frame, self.invokeLaterEvent)
-    else:
-        def onInvoke(self, event):
-            if not self.uiflag.isSet():
-                try:
-                    event.func(*event.args, **event.kwargs)
-                except Exception:
-                    self.exception()
-
-        def invokeLater(self, func, *args, **kwargs):
-            if not self.uiflag.isSet():
-                wx.PostEvent(self.frame, InvokeEvent(func, args, kwargs))
 
     def getStatusIcon(self, name, bitmap=False):
         if name in self.statusIcons:

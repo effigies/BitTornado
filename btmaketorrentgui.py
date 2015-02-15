@@ -15,7 +15,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import DelayedEvents
+from BitTornado.Application.GUI import DelayedEvents, callback
 
 
 class DownloadInfo:
@@ -283,16 +283,12 @@ class CompleteDir(DelayedEvents):
             dlg.ShowModal()
             dlg.Destroy()
 
+    @callback
     def valcallback(self, amount):
-        self.invokeLater(self.onval, amount)
-
-    def onval(self, amount):
         self.gauge.SetValue(int(amount * 1000))
 
+    @callback
     def filecallback(self, fname):
-        self.invokeLater(self.onfile, fname)
-
-    def onfile(self, fname):
         path = os.path.join(self.dirname, fname)
         self.currentLabel.SetLabel('building {}.torrent'.format(path))
 

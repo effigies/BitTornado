@@ -46,3 +46,9 @@ class DelayedEvents(object):
 
     def exception(self):
         pass
+
+
+def callback(func):
+    def cback(self, *args, **kwargs):
+        self.invokeLater(func, self, *args, **kwargs)
+    return cback

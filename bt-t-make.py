@@ -17,7 +17,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import DelayedEvents
+from BitTornado.Application.GUI import DelayedEvents, callback
 
 basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
@@ -228,26 +228,20 @@ class BasicDownloadInfo(DelayedEvents):
                                         self.thostselection))
         self.calls['setCurrentTHost'](self.thostselection)
 
+    @callback
     def build_setgauge(self, x):
-        self.invokeLater(self.on_setgauge, x)
-
-    def on_setgauge(self, x):
         self.gauge.SetValue(int(x * 1000))
 
+    @callback
     def build_done(self):
-        self.invokeLater(self.on_builddone)
-
-    def on_builddone(self):
         self.gauge.SetValue(0)
         self.statustext.SetLabel('done!')
         self.calls['dropTargetSuccess']()
         self.working = False
         self.go_queue()
 
+    @callback
     def build_failed(self, e):
-        self.invokeLater(self.on_buildfailed, e)
-
-    def on_buildfailed(self, e):
         dlg = wx.MessageDialog(self.frame, message='Error - ' + e,
                                caption='Error', style=wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
@@ -792,26 +786,20 @@ class AdvancedDownloadInfo(DelayedEvents):
         self.thostselection = None
         self.refresh_thostlist()
 
+    @callback
     def build_setgauge(self, x):
-        self.invokeLater(self.on_setgauge, x)
-
-    def on_setgauge(self, x):
         self.gauge.SetValue(int(x * 1000))
 
+    @callback
     def build_done(self):
-        self.invokeLater(self.on_builddone)
-
-    def on_builddone(self):
         self.gauge.SetValue(0)
         self.statustext.SetLabel('done!')
         self.calls['dropTargetSuccess']()
         self.working = False
         self.go_queue()
 
+    @callback
     def build_failed(self, e):
-        self.invokeLater(self.on_buildfailed, e)
-
-    def on_buildfailed(self, e):
         self.gauge.SetValue(0)
         self.statustext.SetLabel('ERROR')
         self.calls['dropTargetError']()

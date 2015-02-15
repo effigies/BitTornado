@@ -34,7 +34,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import DelayedEvents, InvokeEvent
+from BitTornado.Application.GUI import DelayedEvents, InvokeEvent, callback
 
 PROFILER = False
 WXPROFILER = False
@@ -1548,10 +1548,8 @@ class DownloadInfoFrame(DelayedEvents):
         except Exception:
             self.exception()
 
+    @callback
     def displayUsage(self, text):
-        self.invokeLater(self.onDisplayUsage, text)
-
-    def onDisplayUsage(self, text):
         try:
             self.done(None)
             w = wx.Frame(None, -1, 'BITTORRENT USAGE',
@@ -2006,8 +2004,6 @@ class DownloadInfoFrame(DelayedEvents):
         self.fin = True
         self.invokeLater(self.onFailEvent)
 
-    def error(self, errormsg):
-        self.invokeLater(self.onErrorEvent, errormsg)
 
     def onFinishEvent(self):
         self.activity = '{} / Download Succeeded!'.format(
@@ -2034,7 +2030,8 @@ class DownloadInfoFrame(DelayedEvents):
             self.downRateText.SetLabel('')
             self.setStatusIcon('startup')
 
-    def onErrorEvent(self, errormsg):
+    @callback
+    def error(self, errormsg):
         # indent at least 2 spaces means a warning message
         if errormsg[:2] == '  ':
             self.errorText.SetLabel(errormsg)
@@ -2133,16 +2130,12 @@ class DownloadInfoFrame(DelayedEvents):
         self.frame.Layout()
         self.frame.Refresh()
 
+    @classpath
     def newpath(self, path):
-        self.invokeLater(self.onNewpath, path)
-
-    def onNewpath(self, path):
         self.fileDestText.SetLabel(path)
 
+    @classpath
     def pause(self, event):
-        self.invokeLater(self.onPause)
-
-    def onPause(self):
         if not self.dow:
             return
         if self.ispaused:

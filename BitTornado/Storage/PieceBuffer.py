@@ -1,37 +1,52 @@
+"""Wrapper on character arrays that avoids garbage-collection/reallocation.
+
+Example:
+
+from PieceBuffer import PieceBuffer
+x = PieceBuffer()
+...
+x.release()
+"""
+
 import threading
-from array import array
+import array
 
 
 class SingleBuffer(object):
     """Non-shrinking array"""
     def __init__(self, pool):
         self.pool = pool
-        self.buf = array('c')
-
-    def init(self):
+        self.buf = array.array('c')
         self.length = 0
 
-    def append(self, s):
-        l = self.length + len(s)
-        self.buf[self.length:l] = array('c', s)
-        self.length = l
+    def init(self):
+        """Prepare buffer for use."""
+        self.length = 0
+
+    def append(self, string):
+        """Extend buffer with characters in string"""
+        length = self.length + len(string)
+        self.buf[self.length:length] = array.array('c', string)
+        self.length = length
 
     def __len__(self):
         return self.length
 
-    def __getslice__(self, a, b):
-        if b > self.length:
-            b = self.length
-        if b < 0:
-            b += self.length
-        if a == 0 and b == self.length == len(self.buf):
+    def __getslice__(self, i, j):
+        if j > self.length:
+            j = self.length
+        if j < 0:
+            j += self.length
+        if i == 0 and j == self.length == len(self.buf):
             return self.buf  # optimization
-        return self.buf[a:b]
+        return self.buf[i:j]
 
     def getarray(self):
+        """Get array containing contents of buffer"""
         return self.buf[:self.length]
 
     def release(self):
+        """Return buffer to pool for reallocation"""
         self.pool.release(self)
 
 

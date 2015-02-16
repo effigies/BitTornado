@@ -5,27 +5,11 @@
 
 import sys
 import os
-from BitTornado.launchmanycore import LaunchMany
-from BitTornado.download_bt1 import defaults, get_usage
-from BitTornado.parseargs import parseargs
-from BitTornado import version, report_email
-from BitTornado.ConfigDir import ConfigDir
-
-
-def hours(n):
-    if n == 0:
-        return 'complete!'
-    try:
-        n = int(n)
-        assert n >= 0 and n < 5184000  # 60 days
-    except:
-        return '<unknown>'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    if h > 0:
-        return '%d hour %02d min %02d sec' % (h, m, s)
-    else:
-        return '%d min %02d sec' % (m, s)
+from BitTornado.Client.launchmanycore import LaunchMany
+from BitTornado.Client.download_bt1 import defaults, get_usage
+from BitTornado.Application.parseargs import parseargs
+from BitTornado import version, report_url
+from BitTornado.Application.ConfigDir import ConfigDir
 
 
 Exceptions = []
@@ -97,4 +81,4 @@ if __name__ == '__main__':
     if Exceptions:
         print '\nEXCEPTION:'
         print Exceptions[0]
-        print 'please report this to ' + report_email
+        print 'please report this to ' + report_url

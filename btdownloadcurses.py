@@ -13,21 +13,23 @@ import random
 import socket
 import hashlib
 import threading
-from BitTornado.download_bt1 import BT1Download, defaults, parse_params, \
-    get_usage, get_response
-from BitTornado.RawServer import RawServer
-from BitTornado.SocketHandler import UPnP_ERROR
-from BitTornado.bencode import bencode
-from BitTornado.natpunch import UPnP_test
+from BitTornado.Client.download_bt1 import BT1Download, defaults, \
+    parse_params, get_usage, get_response
+from BitTornado.Network.RawServer import RawServer
+from BitTornado.Network.SocketHandler import UPnP_ERROR
+from BitTornado.Meta.bencode import bencode
+from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
-from BitTornado import createPeerID, version
-from BitTornado.ConfigDir import ConfigDir
+from BitTornado import version
+from BitTornado.Application.ConfigDir import ConfigDir
+from BitTornado.Application.NumberFormats import formatIntClock, formatSize
+from BitTornado.Application.PeerID import createPeerID
 
 try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-except:
+except ImportError:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
@@ -37,36 +39,6 @@ except:
     print
     print 'You may still use "btdownloadheadless.py" to download.'
     sys.exit(1)
-
-
-def fmttime(n):
-    if n == 0:
-        return 'download complete!'
-    try:
-        n = int(n)
-        assert n >= 0 and n < 5184000  # 60 days
-    except:
-        return '<unknown>'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    return 'finishing in %d:%02d:%02d' % (h, m, s)
-
-
-def fmtsize(n):
-    s = str(n)
-    size = s[-3:]
-    while len(s) > 3:
-        s = s[:-3]
-        size = '%s,%s' % (s[-3:], size)
-    if n > 999:
-        unit = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-        i = 1
-        while i + 1 < len(unit) and (n >> 10) >= 999:
-            i += 1
-            n >>= 10
-        n = float(n) / (1 << 10)
-        size = '%s (%.0f %s)' % (size, n, unit[i])
-    return size
 
 
 class CursesDisplayer:
@@ -125,7 +97,7 @@ class CursesDisplayer:
         self.spewpan = curses.panel.new_panel(self.spewwin)
         try:
             self.scrwin.border(*map(ord, '||--    '))
-        except:
+        except Exception:
             pass
         self.labelwin.addstr(0, 0, 'file:')
         self.labelwin.addstr(1, 0, 'size:')
@@ -161,7 +133,7 @@ class CursesDisplayer:
 
     def display(self, dpflag=threading.Event(), fractionDone=None,
                 timeEst=None, downRate=None, upRate=None, activity=None,
-                statistics=None, spew=None, **kws):
+                statistics=None, spew=None, **kwargs):
 
         inchar = self.fieldwin.getch()
         if inchar == 12:                    # ^L
@@ -172,7 +144,7 @@ class CursesDisplayer:
         if activity is not None and not self.done:
             self.activity = activity
         elif timeEst is not None:
-            self.activity = fmttime(timeEst)
+            self.activity = 'finishing in ' + formatIntClock(timeEst)
         if self.changeflag.isSet() or \
                 self.last_update_time + 0.1 > clock() and \
                 fractionDone not in (0.0, 1.0) and \
@@ -190,7 +162,7 @@ class CursesDisplayer:
         if upRate is not None:
             self.upRate = '%.1f KB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-            if (statistics.shareRating < 0) or (statistics.shareRating > 100):
+            if statistics.shareRating < 0 or statistics.shareRating > 100:
                 shareRateString = "oo"
             else:
                 shareRateString = '{:.3f}'.format(statistics.shareRating)
@@ -209,7 +181,7 @@ class CursesDisplayer:
             self.seedStatus = seeds + copies
             self.peerStatus = '{:d} seen now, {:.1f}% done at {:.1f} kB/s' \
                 ''.format(statistics.numPeers, statistics.percentDone,
-                float(statistics.torrentRate) / (1 << 10))
+                          float(statistics.torrentRate) / (1 << 10))
 
         self.fieldwin.erase()
         self.fieldwin.addnstr(0, 0, self.file, self.fieldw, curses.A_BOLD)
@@ -256,8 +228,8 @@ class CursesDisplayer:
             if self.spew_scroll_pos > len(spew):
                 self.spew_scroll_pos = 0
 
-            for i in range(len(spew)):
-                spew[i]['lineno'] = i + 1
+            for i, subspew in enumerate(spew, 1):
+                subspew['lineno'] = i
             spew.append({'lineno': None})
             spew = spew[self.spew_scroll_pos:] + spew[:self.spew_scroll_pos]
 
@@ -271,17 +243,17 @@ class CursesDisplayer:
                     self.spewwin.addnstr(i + 3, 20, '{:6.0f} KB/s'.format(
                         float(spew[i]['uprate']) / 1000), 11)
                 self.spewwin.addnstr(i + 3, 32, '-----', 5)
-                if spew[i]['uinterested'] == 1:
+                if spew[i]['uinterested']:
                     self.spewwin.addnstr(i + 3, 33, 'I', 1)
-                if spew[i]['uchoked'] == 1:
+                if spew[i]['uchoked']:
                     self.spewwin.addnstr(i + 3, 35, 'C', 1)
                 if spew[i]['downrate'] > 100:
                     self.spewwin.addnstr(i + 3, 38, '{:6.0f} KB/s'.format(
                         float(spew[i]['downrate']) / 1000), 11)
                 self.spewwin.addnstr(i + 3, 50, '-------', 7)
-                if spew[i]['dinterested'] == 1:
+                if spew[i]['dinterested']:
                     self.spewwin.addnstr(i + 3, 51, 'I', 1)
-                if spew[i]['dchoked'] == 1:
+                if spew[i]['dchoked']:
                     self.spewwin.addnstr(i + 3, 53, 'C', 1)
                 if spew[i]['snubbed'] == 1:
                     self.spewwin.addnstr(i + 3, 55, 'S', 1)
@@ -305,9 +277,9 @@ class CursesDisplayer:
         curses.doupdate()
         dpflag.set()
 
-    def chooseFile(self, default, size, saveas, dir):
+    def chooseFile(self, default, size, saveas, isdir):
         self.file = default
-        self.fileSize = fmtsize(size)
+        self.fileSize = formatSize(size)
         if saveas == '':
             saveas = default
         self.downloadTo = os.path.abspath(saveas)
@@ -399,7 +371,7 @@ def run(scrwin, errlist, params):
         pass
     try:
         rawserver.shutdown()
-    except:
+    except Exception:
         pass
     if not d.done:
         d.failed()

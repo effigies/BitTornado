@@ -1,5 +1,6 @@
 """Manipulable boolean list structure and related functions"""
 
+
 def _int_to_booleans(integer):
     """Produce a tuple of booleans corresponding to 8 least significant bits
     in an integer
@@ -13,7 +14,7 @@ BITCHARMAP = dict((_bits, chr(_chr)) for _chr, _bits in enumerate(CHARBITMAP))
 
 class Bitfield(list):
     """Allow a sequence of booleans to be used as an indexable bitfield"""
-    def __init__(self, length=None, bitstring=None, copyfrom=None):
+    def __init__(self, length=None, bitstring=None, copyfrom=None, val=False):
         if copyfrom is not None:
             super(Bitfield, self).__init__(copyfrom)
             self.numfalse = copyfrom.numfalse
@@ -33,8 +34,8 @@ class Bitfield(list):
                 del bits[-extra:]
             self.numfalse = len(bits) - sum(bits)
         else:
-            bits = [False] * length
-            self.numfalse = length
+            bits = [val] * length
+            self.numfalse = 0 if val else length
 
         super(Bitfield, self).__init__(bits)
 
@@ -58,14 +59,12 @@ class Bitfield(list):
         return not self.numfalse
 
 
-class TrueBitfield:
+class TrueBitfield(object):     # pylint: disable=R0903
     """A trivial structure that acts like an infinitely long field of
     True bits"""
-    def __getitem__(self, x):
-        return True
+    complete = True
 
-    @property
-    def complete(self):
+    def __getitem__(self, index):
         return True
 
 

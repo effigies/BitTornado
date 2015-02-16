@@ -1,4 +1,4 @@
-install Python, version 2.0 or later -
+install Python, version 2.7 or later -
             http://python.org/
 
 install wxPython -

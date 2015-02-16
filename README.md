@@ -3,40 +3,36 @@ BitTornado
 
 BitTornado is a fork of the original Python BitTorrent distribution, made by
 John Hoffman to add some experimental features, most (if not all) of which are
-now standard in other clients and trackers. The last release was made in 2006,
-so it cannot be considered an active project, but it has the advantage of being
-an accessible Python library, as well as having some simple tools for editing
-.torrent files.
+now standard in other clients and trackers. The last official release was made
+in 2006, and thus many newer features are missing, but BitTornado is also an
+accessible Python library, and has several simple tools for editing torrent
+files.
 
-I am not maintaining this project in a particularly active sense, but I have
-made a few changes for my own use in other projects that I've reincorporated
-into this library, and I have done a little cleaning of code. Obviously feel
-free to fork, but please also consider making pull requests. I can't say I'll
-respond quickly, but I would like to incorporate all the improvements and
-cleanups others make.
+After several years of intermittent modifications, cleanups and modernization,
+it seems like a good time to give this code an actual version number. All
+applications have been tested and work as well as they did in version 0.3.18.
+The library components have been substantially reorganized, so this is highly
+likely to break dependent applications.
 
-Original README.txt
-===================
+Using BitTornado Applications
+=============================
 
-BitTorrent is a tool for distributing files. It's extremely 
-easy to use - downloads are started by clicking on hyperlinks.
-Whenever more than one person is downloading at once 
-they send pieces of the file(s) to each other, thus relieving 
-the central server's bandwidth burden. Even with many 
-simultaneous downloads, the upload burden on the central server 
-remains quite small, since each new downloader introduces new 
-upload capacity.
+## Download or seed a file
 
-Windows web browser support is added by running an installer. 
-A prebuilt one is available, but instructions for building it 
-yourself are in `BUILD.windows.txt`
+A single file can be downloaded with any of the following commands:
 
-Instructions for Unix installation are in INSTALL.unix.txt
+    btdownloadheadless.py myfile.torrent
+    btdownloadcurses.py myfile.torrent
+    btdownloadgui.py myfile.torrent
 
-To start hosting -
+A directory of files can be downloaded with any of the following commands:
 
-1) start running a tracker
+    btlaunchmany.py mydir
+    btlaunchmanycurses.py mydir
 
+Attempting to download an already downloaded file will seed it.
+
+## Tracker
 First, you need a tracker. If you're on a dynamic IP or otherwise 
 unreliable connection, you should find someone else's tracker and 
 use that. Otherwise, follow the rest of this step.
@@ -46,7 +42,7 @@ is very small, so you only need one for all your files.
 
 To run a tracker, execute the command bttrack.py Here is an example -
 
-    ./bttrack.py --port 6969 --dfile dstate
+    bttrack.py --port 6969 --dfile dstate
 
 `--dfile` is where persistent information is kept on the tracker across 
 invocations. It makes everything start working again immediately if 
@@ -59,12 +55,10 @@ ip number or dns name of it.
 The tracker outputs web logs to standard out. You can get information 
 about the files it's currently serving by getting its index page. 
 
-2) create a metainfo file using `btmakemetafile.py`
 
-To generate a metainfo file, run the publish btmakemetafile and give 
-it the file you want metainfo for and the url of the tracker
+## Creating torrent files
 
-    ./btmakemetafile.py http://my.tracker:6969/announce myfile.ext
+    btmakemetafile.py http://my.tracker:6969/announce myfile.ext
 
 This will generate a file called `myfile.ext.torrent`
 
@@ -78,53 +72,40 @@ my.tracker.
 
 You can use either a dns name or an IP address in the tracker url.
 
-3) associate `.torrent` with `application/x-bittorrent` on your web server
+### Creating many torrent files
 
-The way you do this is dependent on the particular web server you're using.
+    btcompletedir.py http://my.tracker:6969/announce mydir
 
-You must have a web server which can serve ordinary static files and is 
-addressable from the internet at large.
+This will generate a torrent file for each file in `mydir`.
 
-4) put the newly made `.torrent` file on your web server
+### GUI interface
 
-Note that the file name you choose on the server must end in `.torrent`, so 
-it gets associated with the right mimetype.
+`btmaketorrentgui.py` and `bt-t-make.py` provide GUI interfaces for
+creating single torrent files or directories of files.
 
-5) put up a static page which links to the location you uploaded to in step 4
+## Editing torrent files
 
-The file you uploaded in step 4 is linked to using an ordinary url.
+To view metadata encoded in the torrent file:
 
-6) start a downloader as a resume on the complete file
+    btshowmetainfo.py myfile.torrent
 
-You have to run a downloader which already has the complete file, 
-so new downloaders have a place to get it from. Here's an example -
+To set the announce tracker of a torrent file:
 
-    ./btdownloadheadless.py --url http://my.server/myfile.torrent --saveas myfile.ext
+    btreannounce.py http://mytracker.com:6969/announce myfile.torrent
 
-Make sure the saveas argument points to the already complete file.
+To copy the announce information from one file to another:
 
-If you're running the complete downloader on the same machine or LAN as 
-the tracker, give a `--ip` parameter to the complete downloader. The `--ip` 
-parameter can be either an IP address or DNS name.
+    btcopyannounce.py source.torrent destination.torrent
 
-BitTorrent defaults to port 6881. If it can't use 6881, (probably because 
-another download is happening) it tries 6882, then 6883, etc. It gives up 
-after 6889.
+To set the default download name:
 
-7) you're done!
+    btrename.py myfile.torrent targetFileName.ext
 
-Now you just have to get people downloading! Refer them to the page you 
-created in step 5.
+To set HTTP seeds:
 
-BitTorrent can also publish whole directories - simply point 
-btmakemetafile.py at the directory with files in it, they'll be published 
-as one unit. All files in subdirectories will be included, although files 
-and directories named 'CVS' and 'core' are ignored.
+    btsethttpseeds http://example.net/myfile myfile.torrent
 
-If you have any questions, try the web site or mailing list -
+To remove HTTP seeds:
 
-http://bitconjurer.org/BitTorrent/
+    btsethttpseeds 0 myfile.torrent
 
-http://groups.yahoo.com/group/BitTorrent
-
-You can also often find me, Bram, in #bittorrent of irc.freenode.net

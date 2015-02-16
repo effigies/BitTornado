@@ -1,36 +1,37 @@
 #!/usr/bin/env python
+"Make a .torrent file for every file or directory in each given directory."
 
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
 import sys
 import os
-from BitTornado.BT1.makemetafile import defaults, completedir, \
+from BitTornado.Application.makemetafile import defaults, completedir, \
     announcelist_details
-from BitTornado.parseargs import parseargs, formatDefinitions
+from BitTornado.Application.parseargs import parseargs, formatDefinitions
 
 
-def main(argv):
-    program, ext = os.path.splitext(os.path.basename(argv[0]))
+def main(cmd, *argv):
+    "Make a .torrent file for every file or directory in each given directory."
+    program, _ = os.path.splitext(os.path.basename(cmd))
     usage = "Usage: %s <trackerurl> <dir> [dir...] [params...]" % program
-    desc = "Make a .torrent file for every file or directory present in " \
-        "each given directory"
+    desc = __doc__
 
-    if len(argv) < 3:
+    if len(argv) < 2:
         print "{}\n{}\n{}{}".format(usage, desc,
                                     formatDefinitions(defaults, 80),
                                     announcelist_details)
         return 2
 
     try:
-        config, args = parseargs(argv[1:], defaults, 2, None)
-        for dir in args[1:]:
-            completedir(dir, args[0], config)
-    except ValueError as e:
-        print 'error: ' + str(e)
+        config, args = parseargs(argv, defaults, 2, None)
+        for directory in args[1:]:
+            completedir(directory, args[0], config)
+    except ValueError as error:
+        print 'error: ' + str(error)
         print 'run with no args for parameter explanations'
         return 1
 
     return 0
 
-sys.exit(main(sys.argv))
+sys.exit(main(*sys.argv))

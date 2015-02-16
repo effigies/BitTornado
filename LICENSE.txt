@@ -1,7 +1,7 @@
 Unless otherwise noted, all files are released under the MIT
 license, exceptions contain licensing information in them.
 
-Copyright (C) 2012-2013 Christopher J. Johnson
+Copyright (C) 2012-2015 Christopher J. Markiewicz
 Copyright (C) 2001-2002 Bram Cohen
 
 Permission is hereby granted, free of charge, to any person

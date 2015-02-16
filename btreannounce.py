@@ -7,8 +7,8 @@
 import sys
 import os
 import getopt
-from BitTornado.BT1.makemetafile import announcelist_details
-from BitTornado.reannounce import reannounce
+from BitTornado.Application.makemetafile import announcelist_details
+from BitTornado.Application.reannounce import reannounce
 
 announce_details = """
   Where:
@@ -18,7 +18,7 @@ announce_details = """
 
 
 def main(argv):
-    program, _ext = os.path.splitext(os.path.basename(argv[0]))
+    program, _ = os.path.splitext(os.path.basename(argv[0]))
     usage = "Usage: %s <announce> [--announce_list <arg>] " \
             "file1.torrent [file2.torrent...]" % program
     helpmsg = '\n'.join((usage, announce_details, '\n'.join(' ' * 4 + l

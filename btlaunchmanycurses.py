@@ -10,17 +10,18 @@ import os
 import time
 import signal
 import threading
-from BitTornado.launchmanycore import LaunchMany
-from BitTornado.download_bt1 import defaults, get_usage
-from BitTornado.parseargs import parseargs
-from BitTornado import version, report_email
-from BitTornado.ConfigDir import ConfigDir
+from BitTornado.Client.launchmanycore import LaunchMany
+from BitTornado.Client.download_bt1 import defaults, get_usage
+from BitTornado.Application.NumberFormats import formatSize, formatIntClock
+from BitTornado.Application.parseargs import parseargs
+from BitTornado import version, report_url
+from BitTornado.Application.ConfigDir import ConfigDir
 
 try:
     import curses
     import curses.panel
     from curses.wrapper import wrapper as curses_wrapper
-except:
+except ImportError:
     print 'Textmode GUI initialization failed, cannot proceed.'
     print
     print 'This download interface requires the standard Python module ' \
@@ -32,31 +33,6 @@ except:
     sys.exit(1)
 
 Exceptions = []
-
-
-def fmttime(n):
-    if n <= 0:
-        return None
-    try:
-        n = int(n)
-        assert n < 5184000  # 60 days
-    except:
-        return 'connecting to peers'
-    m, s = divmod(n, 60)
-    h, m = divmod(m, 60)
-    return 'ETA in %d:%02d:%02d' % (h, m, s)
-
-
-def fmtsize(size):
-    if size < 1000:
-        order = 0
-        fmtstring = '{:.0f} B'
-    else:
-        for order, prefix in enumerate("KMGTPEZY", 1):
-            if size < 1000 * 2.0 ** (10 * order):
-                fmtstring = '{:.1f}' + prefix + 'iB'
-                break
-    return fmtstring.format(size / (2.0 ** (10 * order)))
 
 
 def ljust(s, size):
@@ -119,7 +95,7 @@ class CursesDisplayer:
 
         try:
             self.scrwin.border(*map(ord, '||--    '))
-        except:
+        except Exception:
             pass
         self.headerwin.addnstr(0, 2, '#', self.mainwinw - 25, curses.A_BOLD)
         self.headerwin.addnstr(0, 4, 'Filename', self.mainwinw - 25,
@@ -176,25 +152,24 @@ class CursesDisplayer:
                 self._display_line('')
                 if self._display_line(''):
                     break
-            (name, status, progress, peers, seeds, seedsmsg, dist,
-             uprate, dnrate, upamt, dnamt, size, t, msg) = data[ii]
-            t = fmttime(t)
-            if t:
-                status = t
+            (name, status, progress, peers, seeds, _, dist, uprate, dnrate,
+             upamt, dnamt, size, t, msg) = data[ii]
+            if t > 0:
+                status = 'ETA in ' + formatIntClock(t)
             name = ljust(name, self.mainwinw - 32)
-            size = rjust(fmtsize(size), 8)
-            uprate = rjust('%s/s' % fmtsize(uprate), 10)
-            dnrate = rjust('%s/s' % fmtsize(dnrate), 10)
+            size = rjust(formatSize(size), 8)
+            uprate = rjust('%s/s' % formatSize(uprate), 10)
+            dnrate = rjust('%s/s' % formatSize(dnrate), 10)
             line = "%3d %s%s%s%s" % (ii + 1, name, size, dnrate, uprate)
             self._display_line(line, True)
             if peers + seeds:
                 datastr = '    ({}) {} - {} up {} dn - {} peers {} seeds ' \
                     '{:.3f} dist copies'.format(
-                        progress, status, fmtsize(upamt), fmtsize(dnamt),
+                        progress, status, formatSize(upamt), formatSize(dnamt),
                         peers, seeds, dist)
             else:
                 datastr = '    ({}) {} - {} up {} dn'.format(
-                    progress, status, fmtsize(upamt), fmtsize(dnamt))
+                    progress, status, formatSize(upamt), formatSize(dnamt))
             self._display_line(datastr)
             self._display_line('    ' + ljust(msg, self.mainwinw - 4))
             i += 1
@@ -215,13 +190,14 @@ class CursesDisplayer:
                                  'no torrents', 12, curses.A_BOLD)
         totalup = 0
         totaldn = 0
-        for (name, status, progress, peers, seeds, seedsmsg, dist,
-             uprate, dnrate, upamt, dnamt, size, t, msg) in data:
-            totalup += uprate
-            totaldn += dnrate
+        for entry in data:
+            #entry = (name, status, progress, peers, seeds, seedsmsg, dist,
+            #         uprate, downrate, upamount, downamount, size, t, msg)
+            totalup += entry[7]
+            totaldn += entry[8]
 
-        totalup = '%s/s' % fmtsize(totalup)
-        totaldn = '%s/s' % fmtsize(totaldn)
+        totalup = '%s/s' % formatSize(totalup)
+        totaldn = '%s/s' % formatSize(totaldn)
 
         self.totalwin.erase()
         self.totalwin.addnstr(0, self.mainwinw - 27, 'Totals:', 7,
@@ -301,4 +277,4 @@ if __name__ == '__main__':
     if Exceptions:
         print '\nEXCEPTION:'
         print Exceptions[0]
-        print 'please report this to ' + report_email
+        print 'please report this to ' + report_url

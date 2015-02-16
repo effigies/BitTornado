@@ -18,7 +18,7 @@ class Storage:
     def __init__(self, files, piece_length, doneflag, config,
                  disabled_files=None):
         # can raise IOError and ValueError
-        self.files = files
+        self.files = files                      # [(fname, length)]
         self.piece_length = piece_length
         self.doneflag = doneflag
         self.disabled = [False] * len(files)
@@ -28,11 +28,11 @@ class Storage:
         numfiles = 0
         total = 0l
         #so_far = 0l
-        self.handles = {}
-        self.whandles = set()
-        self.tops = {}
-        self.sizes = {}
-        self.mtimes = {}
+        self.handles = {}       # {fname: fileh}
+        self.whandles = set()   # {fname}
+        self.tops = {}          # {fname: length}
+        self.sizes = {}         # {fname: size}
+        self.mtimes = {}        # {fname: mtime}
         if config.get('lock_files', True):
             self.lock_file = self._lock_file
             self.unlock_file = self._unlock_file

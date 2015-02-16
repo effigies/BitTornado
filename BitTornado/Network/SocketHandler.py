@@ -265,9 +265,6 @@ class SocketHandler(object):
 
         return s
 
-    def _sleep(self):
-        time.sleep(1)
-
     def handle_events(self, events):
         for sock, event in events:
             s = self.servers.get(sock)
@@ -286,7 +283,7 @@ class SocketHandler(object):
                         self.poll.register(newsock, POLLIN)
                         self.handler.external_connection_made(nss)
                     except socket.error:
-                        self._sleep()
+                        time.sleep(1)
             else:
                 s = self.single_sockets.get(sock)
                 if not s:

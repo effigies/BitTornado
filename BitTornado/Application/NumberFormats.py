@@ -7,7 +7,10 @@ def formatInterval(secs, fmt):
 
     fmt may contain labeled references {h}, {m} and {s} for hours, minutes
     and seconds. e.g. fmt = '{h:d}:{m:02d}:{s:02d}'"""
-    secs = int(secs)
+    try:
+        secs = int(secs)
+    except TypeError, ValueError:
+        return None
     if secs == 0:
         return None
     if not 0 < secs < 5184000:        # 60 days

@@ -240,7 +240,7 @@ class LaunchMany:
                         t = stats['time']
                         if t == 0:  # unlikely
                             t = 0.01
-                        status = formatIntClock(t)
+                        status = formatIntClock(t) or 'downloading'
                     else:
                         t = -1
                         status = 'connecting to peers'

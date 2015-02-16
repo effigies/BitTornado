@@ -34,7 +34,7 @@ try:
 except ImportError:
     print 'wxPython is not installed or has not been installed properly.'
     sys.exit(1)
-from BitTornado.Application.GUI import DelayedEvents, InvokeEvent, callback,
+from BitTornado.Application.GUI import DelayedEvents, InvokeEvent, callback, \
     StaticText
 
 PROFILER = False
@@ -1299,7 +1299,7 @@ class DownloadInfoFrame(DelayedEvents):
             panel = wx.Panel(self.advBox, -1, size=wx.Size(200, 200))
 
             def sText(text, font=self.FONT - 1, panel=panel):
-                return StaticText(penel, text, font)
+                return StaticText(panel, text, font)
 
             colSizer = wx.FlexGridSizer(cols=1, vgap=1)
             colSizer.Add(sText('Advanced Info for ' + self.filename,

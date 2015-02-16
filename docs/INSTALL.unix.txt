@@ -1,4 +1,4 @@
-install Python, version 2.0 or later -
+install Python, version 2.7 or later -
             http://python.org/
 
 install wxPython -
@@ -6,10 +6,6 @@ install wxPython -
 
 install the Python Cryptography Toolkit, if available -
             http://www.amk.ca/python/code/crypto
-
-(under debian, you can currently get the above using 
-apt-get install libwxgtk2.2-python 
-from testing and use python 2.1)
 
 untar and run: python setup.py install
 

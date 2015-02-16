@@ -52,3 +52,12 @@ def callback(func):
     def cback(self, *args, **kwargs):
         self.invokeLater(func, self, *args, **kwargs)
     return cback
+
+
+def StaticText(panel, text, font, underline=False, color=None,
+               style=wx.ALIGN_LEFT):
+    stext = wx.StaticText(panel, -1, text, style=style)
+    stext.SetFont(wx.Font(font, wx.DEFAULT, wx.NORMAL, wx.NORMAL, underline))
+    if color is not None:
+        stext.SetForegroundColour(color)
+    return stext

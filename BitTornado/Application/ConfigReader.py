@@ -1,10 +1,11 @@
 import sys
 import socket
-from .ConnChoice import connChoices
-from wxPython import wx
-from BitTornado.Client.download_bt1 import defaults
+import wx
 from .ConfigDir import ConfigDir
+from .ConnChoice import connChoices
+from .GUI import StaticText
 from .parseargs import defaultargs
+from BitTornado.Client.download_bt1 import defaults
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 
 if sys.platform == 'win32':
@@ -13,17 +14,20 @@ else:
     _FONT = 10
 
 
-def HexToColor(s):
-    r, g, b = s.split(' ')
-    return wx.wxColour(red=int(r, 16), green=int(g, 16), blue=int(b, 16))
+def HexToColor(hexstring):
+    """Convert hex string to wxWindows color object.
+
+    Input form: RR GG BB"""
+    red, grn, blu = hexstring.split(' ')
+    return wx.Colour(red=int(red, 16), green=int(grn, 16), blue=int(blu, 16))
 
 
-def hex2(c):
-    return '{:02x}'.format(c)
+def ColorToHex(clr):
+    """Convert wxWindows color object to hex string.
 
+    Output form: RR GG BB"""
+    return '{:02x} {:02x} {:02x}'.format(clr.Red(), clr.Green(), clr.Blue())
 
-def ColorToHex(c):
-    return hex2(c.Red()) + ' ' + hex2(c.Green()) + ' ' + hex2(c.Blue())
 
 ratesettingslist = [x['name'] for x in connChoices if 'super-seed' not in x]
 
@@ -58,9 +62,9 @@ configFileDefaults = [
 
 def setwxconfigfiledefaults():
     CHECKINGCOLOR = ColorToHex(
-        wx.wxSystemSettings_GetColour(wx.wxSYS_COLOUR_3DSHADOW))
+        wx.SystemSettings_GetColour(wx.SYS_COLOUR_3DSHADOW))
     DOWNLOADCOLOR = ColorToHex(
-        wx.wxSystemSettings_GetColour(wx.wxSYS_COLOUR_ACTIVECAPTION))
+        wx.SystemSettings_GetColour(wx.SYS_COLOUR_ACTIVECAPTION))
 
     configFileDefaults.extend([
         ('gui_checkingcolor', CHECKINGCOLOR, "progress bar checking color"),
@@ -70,11 +74,11 @@ def setwxconfigfiledefaults():
 defaultsToIgnore = ['responsefile', 'url', 'priority']
 
 
-class configReader:
-
+class configReader(object):
+    """Graphical interface to configuration file"""
     def __init__(self):
-        self.configfile = wx.wxConfig("BitTorrent",
-                                      style=wx.wxCONFIG_USE_LOCAL_FILE)
+        self.configfile = wx.Config("BitTorrent",
+                                    style=wx.CONFIG_USE_LOCAL_FILE)
         self.configMenuBox = None
         self.advancedMenuBox = None
         self.cryptoMenuBox = None
@@ -103,12 +107,12 @@ class configReader:
         if self.config['ipv6_enabled'] and not socket.has_ipv6:
             self.config['ipv6_enabled'] = 0
             updated = True
-        for c in ('gui_checkingcolor', 'gui_downloadcolor',
-                  'gui_seedingcolor'):
+        for color in ('gui_checkingcolor', 'gui_downloadcolor',
+                      'gui_seedingcolor'):
             try:
-                HexToColor(self.config[c])
+                HexToColor(self.config[color])
             except (ValueError, OverflowError):
-                self.config[c] = self.defaults[c]
+                self.config[color] = self.defaults[color]
                 updated = True
 
         if updated:
@@ -117,7 +121,7 @@ class configReader:
         self.configDir.deleteOldCacheData(self.config['expire_cache_data'])
 
     def importOldGUIConfig(self):
-        oldconfig = wx.wxConfig("BitTorrent", style=wx.wxCONFIG_USE_LOCAL_FILE)
+        oldconfig = wx.Config("BitTorrent", style=wx.CONFIG_USE_LOCAL_FILE)
         cont, s, i = oldconfig.GetFirstEntry()
         if not cont:
             oldconfig.DeleteAll()
@@ -179,21 +183,21 @@ class configReader:
         return self.configDir.getTorrentData(t)
 
     def setColorIcon(self, xxicon, xxiconptr, xxcolor):
-        idata = wx.wxMemoryDC()
+        idata = wx.MemoryDC()
         idata.SelectObject(xxicon)
-        idata.SetBrush(wx.wxBrush(xxcolor, wx.wxSOLID))
+        idata.SetBrush(wx.Brush(xxcolor, wx.SOLID))
         idata.DrawRectangle(0, 0, 16, 16)
-        idata.SelectObject(wx.wxNullBitmap)
+        idata.SelectObject(wx.NullBitmap)
         xxiconptr.Refresh()
 
     def getColorFromUser(self, parent, colInit):
-        data = wx.wxColourData()
+        data = wx.ColourData()
         if colInit.Ok():
             data.SetColour(colInit)
         data.SetCustomColour(0, self.checkingcolor)
         data.SetCustomColour(1, self.downloadcolor)
         data.SetCustomColour(2, self.seedingcolor)
-        dlg = wx.wxColourDialog(parent, data)
+        dlg = wx.ColourDialog(parent, data)
         if not dlg.ShowModal():
             return colInit
         return dlg.GetColourData().GetColour()
@@ -202,8 +206,8 @@ class configReader:
         self.parent = parent
         try:
             self.FONT = self.config['gui_font']
-            self.default_font = wx.wxFont(self.FONT, wx.wxDEFAULT, wx.wxNORMAL,
-                                          wx.wxNORMAL, False)
+            self.default_font = wx.Font(self.FONT, wx.DEFAULT, wx.NORMAL,
+                                        wx.NORMAL, False)
             self.checkingcolor = HexToColor(self.config['gui_checkingcolor'])
             self.downloadcolor = HexToColor(self.config['gui_downloadcolor'])
             self.seedingcolor = HexToColor(self.config['gui_seedingcolor'])
@@ -211,168 +215,164 @@ class configReader:
             if self.configMenuBox is not None:
                 try:
                     self.configMenuBox.Close()
-                except wx.wxPyDeadObjectError:
+                except wx.PyDeadObjectError:
                     self.configMenuBox = None
 
-            self.configMenuBox = wx.wxFrame(
+            self.configMenuBox = wx.Frame(
                 None, -1, 'BitTornado Preferences', size=(1, 1),
-                style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
+                style=wx.DEFAULT_FRAME_STYLE | wx.FULL_REPAINT_ON_RESIZE)
             if sys.platform == 'win32':
                 self.icon = self.parent.icon
                 self.configMenuBox.SetIcon(self.icon)
 
-            panel = wx.wxPanel(self.configMenuBox, -1)
+            panel = wx.Panel(self.configMenuBox, -1)
             self.panel = panel
 
-            def StaticText(text, font=self.FONT, underline=False, color=None,
-                           panel=panel):
-                x = wx.wxStaticText(panel, -1, text, style=wx.wxALIGN_LEFT)
-                x.SetFont(wx.wxFont(font, wx.wxDEFAULT, wx.wxNORMAL,
-                                    wx.wxNORMAL, underline))
-                if color is not None:
-                    x.SetForegroundColour(color)
-                return x
+            def sText(text, font=self.FONT, panel=panel):
+                return StaticText(panel, text, font=font)
 
-            colsizer = wx.wxFlexGridSizer(cols=1, vgap=8)
+            colsizer = wx.FlexGridSizer(cols=1, vgap=8)
 
-            self.gui_stretchwindow_checkbox = wx.wxCheckBox(
+            self.gui_stretchwindow_checkbox = wx.CheckBox(
                 panel, -1, "Stretch window to fit torrent name *")
             self.gui_stretchwindow_checkbox.SetFont(self.default_font)
             self.gui_stretchwindow_checkbox.SetValue(
                 self.config['gui_stretchwindow'])
 
-            self.gui_displaystats_checkbox = wx.wxCheckBox(
+            self.gui_displaystats_checkbox = wx.CheckBox(
                 panel, -1, "Display peer and seed statistics")
             self.gui_displaystats_checkbox.SetFont(self.default_font)
             self.gui_displaystats_checkbox.SetValue(
                 self.config['gui_displaystats'])
 
-            self.gui_displaymiscstats_checkbox = wx.wxCheckBox(
+            self.gui_displaymiscstats_checkbox = wx.CheckBox(
                 panel, -1, "Display miscellaneous other statistics")
             self.gui_displaymiscstats_checkbox.SetFont(self.default_font)
             self.gui_displaymiscstats_checkbox.SetValue(
                 self.config['gui_displaymiscstats'])
 
-            self.buffering_checkbox = wx.wxCheckBox(
+            self.buffering_checkbox = wx.CheckBox(
                 panel, -1, "Enable read/write buffering *")
             self.buffering_checkbox.SetFont(self.default_font)
             self.buffering_checkbox.SetValue(self.config['buffer_reads'])
 
-            self.breakup_checkbox = wx.wxCheckBox(
+            self.breakup_checkbox = wx.CheckBox(
                 panel, -1, "Break-up seed bitfield to foil ISP manipulation")
             self.breakup_checkbox.SetFont(self.default_font)
             self.breakup_checkbox.SetValue(
                 self.config['breakup_seed_bitfield'])
 
-            self.autoflush_checkbox = wx.wxCheckBox(
+            self.autoflush_checkbox = wx.CheckBox(
                 panel, -1, "Flush data to disk every 5 minutes")
             self.autoflush_checkbox.SetFont(self.default_font)
             self.autoflush_checkbox.SetValue(self.config['auto_flush'])
 
             if socket.has_ipv6:
-                self.ipv6enabled_checkbox = wx.wxCheckBox(
+                self.ipv6enabled_checkbox = wx.CheckBox(
                     panel, -1, "Initiate and receive connections via IPv6 *")
                 self.ipv6enabled_checkbox.SetFont(self.default_font)
                 self.ipv6enabled_checkbox.SetValue(self.config['ipv6_enabled'])
 
-            self.gui_forcegreenonfirewall_checkbox = wx.wxCheckBox(
+            self.gui_forcegreenonfirewall_checkbox = wx.CheckBox(
                 panel, -1, "Force icon to display green when firewalled")
             self.gui_forcegreenonfirewall_checkbox.SetFont(self.default_font)
             self.gui_forcegreenonfirewall_checkbox.SetValue(
                 self.config['gui_forcegreenonfirewall'])
 
-            cryptoButton = wx.wxButton(panel, -1,
-                                       'Encryption/Security Settings...')
+            cryptoButton = wx.Button(panel, -1,
+                                     'Encryption/Security Settings...')
 
-            self.minport_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                              (self.FONT * 8, -1))
+            self.minport_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                            (self.FONT * 8, -1))
             self.minport_data.SetFont(self.default_font)
             self.minport_data.SetRange(1, 65535)
             self.minport_data.SetValue(self.config['minport'])
 
-            self.maxport_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                              (self.FONT * 8, -1))
+            self.maxport_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                            (self.FONT * 8, -1))
             self.maxport_data.SetFont(self.default_font)
             self.maxport_data.SetRange(1, 65535)
             self.maxport_data.SetValue(self.config['maxport'])
 
-            self.randomport_checkbox = wx.wxCheckBox(panel, -1, "randomize")
+            self.randomport_checkbox = wx.CheckBox(panel, -1, "randomize")
             self.randomport_checkbox.SetFont(self.default_font)
             self.randomport_checkbox.SetValue(self.config['random_port'])
 
-            self.gui_font_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                               (self.FONT * 5, -1))
+            self.gui_font_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                             (self.FONT * 5, -1))
             self.gui_font_data.SetFont(self.default_font)
             self.gui_font_data.SetRange(8, 16)
             self.gui_font_data.SetValue(self.config['gui_font'])
 
-            self.gui_ratesettingsdefault_data = wx.wxChoice(
+            self.gui_ratesettingsdefault_data = wx.Choice(
                 panel, -1, choices=ratesettingslist)
             self.gui_ratesettingsdefault_data.SetFont(self.default_font)
             self.gui_ratesettingsdefault_data.SetStringSelection(
                 self.config['gui_ratesettingsdefault'])
 
-            self.maxdownload_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                                  (self.FONT * 7, -1))
+            self.maxdownload_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                                (self.FONT * 7, -1))
             self.maxdownload_data.SetFont(self.default_font)
             self.maxdownload_data.SetRange(0, 5000)
             self.maxdownload_data.SetValue(self.config['max_download_rate'])
 
-            self.gui_ratesettingsmode_data = wx.wxRadioBox(
-                panel, -1, 'Rate Settings Mode',
-                choices=['none', 'basic', 'full'])
+            self.gui_ratesettingsmode_data = wx.RadioBox(panel, -1,
+                                                         'Rate Settings Mode',
+                                                         choices=['none',
+                                                                  'basic',
+                                                                  'full'])
             self.gui_ratesettingsmode_data.SetFont(self.default_font)
             self.gui_ratesettingsmode_data.SetStringSelection(
                 self.config['gui_ratesettingsmode'])
 
             if sys.platform == 'win32':
-                self.win32_taskbar_icon_checkbox = wx.wxCheckBox(
+                self.win32_taskbar_icon_checkbox = wx.CheckBox(
                     panel, -1, "Minimize to system tray")
                 self.win32_taskbar_icon_checkbox.SetFont(self.default_font)
                 self.win32_taskbar_icon_checkbox.SetValue(
                     self.config['win32_taskbar_icon'])
 
-                self.upnp_data = wx.wxChoice(
+                self.upnp_data = wx.Choice(
                     panel, -1, choices=['disabled', 'type 1 (fast)',
                                         'type 2 (slow)'])
                 self.upnp_data.SetFont(self.default_font)
                 self.upnp_data.SetSelection(self.config['upnp_nat_access'])
 
-            self.gui_default_savedir_ctrl = wx.wxTextCtrl(
+            self.gui_default_savedir_ctrl = wx.TextCtrl(
                 parent=panel, id=-1, value=self.config['gui_default_savedir'],
-                size=(26 * self.FONT, -1), style=wx.wxTE_PROCESS_TAB)
+                size=(26 * self.FONT, -1), style=wx.TE_PROCESS_TAB)
             self.gui_default_savedir_ctrl.SetFont(self.default_font)
 
-            self.gui_savemode_data = wx.wxRadioBox(
+            self.gui_savemode_data = wx.RadioBox(
                 panel, -1, 'Ask where to save: *',
                 choices=['always', 'never', 'auto-resume'])
             self.gui_savemode_data.SetFont(self.default_font)
             self.gui_savemode_data.SetSelection(
                 1 - self.config['gui_saveas_ask'])
 
-            self.checkingcolor_icon = wx.wxEmptyBitmap(16, 16)
-            self.checkingcolor_iconptr = wx.wxStaticBitmap(
+            self.checkingcolor_icon = wx.EmptyBitmap(16, 16)
+            self.checkingcolor_iconptr = wx.StaticBitmap(
                 panel, -1, self.checkingcolor_icon)
             self.setColorIcon(self.checkingcolor_icon,
                               self.checkingcolor_iconptr, self.checkingcolor)
 
-            self.downloadcolor_icon = wx.wxEmptyBitmap(16, 16)
-            self.downloadcolor_iconptr = wx.wxStaticBitmap(
+            self.downloadcolor_icon = wx.EmptyBitmap(16, 16)
+            self.downloadcolor_iconptr = wx.StaticBitmap(
                 panel, -1, self.downloadcolor_icon)
             self.setColorIcon(self.downloadcolor_icon,
                               self.downloadcolor_iconptr, self.downloadcolor)
 
-            self.seedingcolor_icon = wx.wxEmptyBitmap(16, 16)
-            self.seedingcolor_iconptr = wx.wxStaticBitmap(
-                panel, -1, self.seedingcolor_icon)
+            self.seedingcolor_icon = wx.EmptyBitmap(16, 16)
+            self.seedingcolor_iconptr = wx.StaticBitmap(panel, -1,
+                                                        self.seedingcolor_icon)
             self.setColorIcon(self.seedingcolor_icon,
                               self.downloadcolor_iconptr, self.seedingcolor)
 
-            rowsizer = wx.wxFlexGridSizer(cols=2, hgap=20)
+            rowsizer = wx.FlexGridSizer(cols=2, hgap=20)
 
-            block12sizer = wx.wxFlexGridSizer(cols=1, vgap=12)
+            block12sizer = wx.FlexGridSizer(cols=1, vgap=12)
 
-            block1sizer = wx.wxFlexGridSizer(cols=1, vgap=2)
+            block1sizer = wx.FlexGridSizer(cols=1, vgap=2)
             if sys.platform == 'win32':
                 block1sizer.Add(self.win32_taskbar_icon_checkbox)
             block1sizer.Add(self.gui_stretchwindow_checkbox)
@@ -385,124 +385,115 @@ class configReader:
                 block1sizer.Add(self.ipv6enabled_checkbox)
             block1sizer.Add(self.gui_forcegreenonfirewall_checkbox)
             block12sizer.Add(block1sizer)
-            block12sizer.Add(cryptoButton, 0, wx.wxALIGN_CENTER)
+            block12sizer.Add(cryptoButton, 0, wx.ALIGN_CENTER)
 
-            colorsizer = wx.wxStaticBoxSizer(wx.wxStaticBox(
-                panel, -1, "Gauge Colors:"), wx.wxVERTICAL)
-            colorsizer1 = wx.wxFlexGridSizer(cols=7)
-            colorsizer1.Add(StaticText('           Checking: '), 1,
-                            wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(self.checkingcolor_iconptr, 1, wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(StaticText('   Downloading: '), 1,
-                            wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(self.downloadcolor_iconptr, 1, wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(StaticText('   Seeding: '), 1, wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(self.seedingcolor_iconptr, 1, wx.wxALIGN_BOTTOM)
-            colorsizer1.Add(StaticText('  '))
+            colorsizer = wx.StaticBoxSizer(wx.StaticBox(
+                panel, -1, "Gauge Colors:"), wx.VERTICAL)
+            colorsizer1 = wx.FlexGridSizer(cols=7)
+            colorsizer1.Add(sText('           Checking: '), 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(self.checkingcolor_iconptr, 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(sText('   Downloading: '), 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(self.downloadcolor_iconptr, 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(sText('   Seeding: '), 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(self.seedingcolor_iconptr, 1, wx.ALIGN_BOTTOM)
+            colorsizer1.Add(sText('  '))
             minsize = self.checkingcolor_iconptr.GetBestSize()
             minsize.SetHeight(minsize.GetHeight() + 5)
             colorsizer1.SetMinSize(minsize)
             colorsizer.Add(colorsizer1)
 
-            block12sizer.Add(colorsizer, 1, wx.wxALIGN_LEFT)
+            block12sizer.Add(colorsizer, 1, wx.ALIGN_LEFT)
 
             rowsizer.Add(block12sizer)
 
-            block3sizer = wx.wxFlexGridSizer(cols=1)
+            block3sizer = wx.FlexGridSizer(cols=1)
 
-            portsettingsSizer = wx.wxStaticBoxSizer(wx.wxStaticBox(
-                panel, -1, "Port Range:*"), wx.wxVERTICAL)
-            portsettingsSizer1 = wx.wxGridSizer(cols=2, vgap=1)
-            portsettingsSizer1.Add(
-                StaticText('From: '), 1,
-                wx.wxALIGN_CENTER_VERTICAL | wx.wxALIGN_RIGHT)
-            portsettingsSizer1.Add(self.minport_data, 1, wx.wxALIGN_BOTTOM)
-            portsettingsSizer1.Add(
-                StaticText('To: '), 1,
-                wx.wxALIGN_CENTER_VERTICAL | wx.wxALIGN_RIGHT)
-            portsettingsSizer1.Add(self.maxport_data, 1, wx.wxALIGN_BOTTOM)
+            portsettingsSizer = wx.StaticBoxSizer(wx.StaticBox(panel, -1,
+                                                               "Port Range:*"),
+                                                  wx.VERTICAL)
+            portsettingsSizer1 = wx.GridSizer(cols=2, vgap=1)
+            portsettingsSizer1.Add(sText('From: '), 1,
+                                   wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+            portsettingsSizer1.Add(self.minport_data, 1, wx.ALIGN_BOTTOM)
+            portsettingsSizer1.Add(sText('To: '), 1,
+                                   wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
+            portsettingsSizer1.Add(self.maxport_data, 1, wx.ALIGN_BOTTOM)
             portsettingsSizer.Add(portsettingsSizer1)
-            portsettingsSizer.Add(self.randomport_checkbox, 1,
-                                  wx.wxALIGN_CENTER)
-            block3sizer.Add(portsettingsSizer, 1, wx.wxALIGN_CENTER)
-            block3sizer.Add(StaticText(' '))
-            block3sizer.Add(self.gui_ratesettingsmode_data, 1,
-                            wx.wxALIGN_CENTER)
-            block3sizer.Add(StaticText(' '))
-            ratesettingsSizer = wx.wxFlexGridSizer(cols=1, vgap=2)
-            ratesettingsSizer.Add(StaticText('Default Rate Setting: *'), 1,
-                                  wx.wxALIGN_CENTER)
+            portsettingsSizer.Add(self.randomport_checkbox, 1, wx.ALIGN_CENTER)
+            block3sizer.Add(portsettingsSizer, 1, wx.ALIGN_CENTER)
+            block3sizer.Add(sText(' '))
+            block3sizer.Add(self.gui_ratesettingsmode_data, 1, wx.ALIGN_CENTER)
+            block3sizer.Add(sText(' '))
+            ratesettingsSizer = wx.FlexGridSizer(cols=1, vgap=2)
+            ratesettingsSizer.Add(sText('Default Rate Setting: *'), 1,
+                                  wx.ALIGN_CENTER)
             ratesettingsSizer.Add(self.gui_ratesettingsdefault_data, 1,
-                                  wx.wxALIGN_CENTER)
-            block3sizer.Add(ratesettingsSizer, 1, wx.wxALIGN_CENTER)
+                                  wx.ALIGN_CENTER)
+            block3sizer.Add(ratesettingsSizer, 1, wx.ALIGN_CENTER)
             if sys.platform == 'win32':
-                block3sizer.Add(StaticText(' '))
-                upnpSizer = wx.wxFlexGridSizer(cols=1, vgap=2)
-                upnpSizer.Add(StaticText('UPnP Port Forwarding: *'), 1,
-                              wx.wxALIGN_CENTER)
-                upnpSizer.Add(self.upnp_data, 1, wx.wxALIGN_CENTER)
-                block3sizer.Add(upnpSizer, 1, wx.wxALIGN_CENTER)
+                block3sizer.Add(sText(' '))
+                upnpSizer = wx.FlexGridSizer(cols=1, vgap=2)
+                upnpSizer.Add(sText('UPnP Port Forwarding: *'), 1,
+                              wx.ALIGN_CENTER)
+                upnpSizer.Add(self.upnp_data, 1, wx.ALIGN_CENTER)
+                block3sizer.Add(upnpSizer, 1, wx.ALIGN_CENTER)
 
             rowsizer.Add(block3sizer)
             colsizer.Add(rowsizer)
 
-            block4sizer = wx.wxFlexGridSizer(cols=3, hgap=15)
-            savepathsizer = wx.wxFlexGridSizer(cols=2, vgap=1)
-            savepathsizer.Add(StaticText('Default Save Path: *'))
-            savepathsizer.Add(StaticText(' '))
-            savepathsizer.Add(self.gui_default_savedir_ctrl, 1, wx.wxEXPAND)
-            savepathButton = wx.wxButton(panel, -1, '...', size=(18, 18))
+            block4sizer = wx.FlexGridSizer(cols=3, hgap=15)
+            savepathsizer = wx.FlexGridSizer(cols=2, vgap=1)
+            savepathsizer.Add(sText('Default Save Path: *'))
+            savepathsizer.Add(sText(' '))
+            savepathsizer.Add(self.gui_default_savedir_ctrl, 1, wx.EXPAND)
+            savepathButton = wx.Button(panel, -1, '...', size=(18, 18))
 #            savepathButton.SetFont(self.default_font)
-            savepathsizer.Add(savepathButton, 0, wx.wxALIGN_CENTER)
-            savepathsizer.Add(self.gui_savemode_data, 0, wx.wxALIGN_CENTER)
-            block4sizer.Add(savepathsizer, -1, wx.wxALIGN_BOTTOM)
+            savepathsizer.Add(savepathButton, 0, wx.ALIGN_CENTER)
+            savepathsizer.Add(self.gui_savemode_data, 0, wx.ALIGN_CENTER)
+            block4sizer.Add(savepathsizer, -1, wx.ALIGN_BOTTOM)
 
-            fontsizer = wx.wxFlexGridSizer(cols=1, vgap=2)
-            fontsizer.Add(StaticText(''))
-            fontsizer.Add(StaticText('Font: *'), 1, wx.wxALIGN_CENTER)
-            fontsizer.Add(self.gui_font_data, 1, wx.wxALIGN_CENTER)
-            block4sizer.Add(fontsizer, 1, wx.wxALIGN_CENTER_VERTICAL)
+            fontsizer = wx.FlexGridSizer(cols=1, vgap=2)
+            fontsizer.Add(sText(''))
+            fontsizer.Add(sText('Font: *'), 1, wx.ALIGN_CENTER)
+            fontsizer.Add(self.gui_font_data, 1, wx.ALIGN_CENTER)
+            block4sizer.Add(fontsizer, 1, wx.ALIGN_CENTER_VERTICAL)
 
-            dratesettingsSizer = wx.wxFlexGridSizer(cols=1, vgap=2)
-            dratesettingsSizer.Add(StaticText('Default Max'), 1,
-                                   wx.wxALIGN_CENTER)
-            dratesettingsSizer.Add(StaticText('Download Rate'), 1,
-                                   wx.wxALIGN_CENTER)
-            dratesettingsSizer.Add(StaticText('(kB/s): *'), 1,
-                                   wx.wxALIGN_CENTER)
-            dratesettingsSizer.Add(self.maxdownload_data, 1, wx.wxALIGN_CENTER)
-            dratesettingsSizer.Add(StaticText('(0 = disabled)'), 1,
-                                   wx.wxALIGN_CENTER)
+            dratesettingsSizer = wx.FlexGridSizer(cols=1, vgap=2)
+            dratesettingsSizer.Add(sText('Default Max'), 1, wx.ALIGN_CENTER)
+            dratesettingsSizer.Add(sText('Download Rate'), 1, wx.ALIGN_CENTER)
+            dratesettingsSizer.Add(sText('(kB/s): *'), 1, wx.ALIGN_CENTER)
+            dratesettingsSizer.Add(self.maxdownload_data, 1, wx.ALIGN_CENTER)
+            dratesettingsSizer.Add(sText('(0 = disabled)'), 1, wx.ALIGN_CENTER)
 
-            block4sizer.Add(dratesettingsSizer, 1, wx.wxALIGN_CENTER_VERTICAL)
+            block4sizer.Add(dratesettingsSizer, 1, wx.ALIGN_CENTER_VERTICAL)
 
-            colsizer.Add(block4sizer, 0, wx.wxALIGN_CENTER)
+            colsizer.Add(block4sizer, 0, wx.ALIGN_CENTER)
 
-            savesizer = wx.wxGridSizer(cols=4, hgap=10)
-            saveButton = wx.wxButton(panel, -1, 'Save')
+            savesizer = wx.GridSizer(cols=4, hgap=10)
+            saveButton = wx.Button(panel, -1, 'Save')
 #            saveButton.SetFont(self.default_font)
-            savesizer.Add(saveButton, 0, wx.wxALIGN_CENTER)
+            savesizer.Add(saveButton, 0, wx.ALIGN_CENTER)
 
-            cancelButton = wx.wxButton(panel, -1, 'Cancel')
+            cancelButton = wx.Button(panel, -1, 'Cancel')
 #            cancelButton.SetFont(self.default_font)
-            savesizer.Add(cancelButton, 0, wx.wxALIGN_CENTER)
+            savesizer.Add(cancelButton, 0, wx.ALIGN_CENTER)
 
-            defaultsButton = wx.wxButton(panel, -1, 'Revert to Defaults')
+            defaultsButton = wx.Button(panel, -1, 'Revert to Defaults')
 #            defaultsButton.SetFont(self.default_font)
-            savesizer.Add(defaultsButton, 0, wx.wxALIGN_CENTER)
+            savesizer.Add(defaultsButton, 0, wx.ALIGN_CENTER)
 
-            advancedButton = wx.wxButton(panel, -1, 'Advanced...')
+            advancedButton = wx.Button(panel, -1, 'Advanced...')
 #            advancedButton.SetFont(self.default_font)
-            savesizer.Add(advancedButton, 0, wx.wxALIGN_CENTER)
-            colsizer.Add(savesizer, 1, wx.wxALIGN_CENTER)
+            savesizer.Add(advancedButton, 0, wx.ALIGN_CENTER)
+            colsizer.Add(savesizer, 1, wx.ALIGN_CENTER)
 
-            resizewarningtext = StaticText(
-                '* These settings will not take effect until the next time '
-                'you start BitTorrent', self.FONT - 2)
-            colsizer.Add(resizewarningtext, 1, wx.wxALIGN_CENTER)
+            resizewarningtext = sText('* These settings will not take effect '
+                                      'until the next time you start '
+                                      'BitTorrent', self.FONT - 2)
+            colsizer.Add(resizewarningtext, 1, wx.ALIGN_CENTER)
 
-            border = wx.wxBoxSizer(wx.wxHORIZONTAL)
-            border.Add(colsizer, 1, wx.wxEXPAND | wx.wxALL, 4)
+            border = wx.BoxSizer(wx.HORIZONTAL)
+            border.Add(colsizer, 1, wx.EXPAND | wx.ALL, 4)
 
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
@@ -572,7 +563,7 @@ class configReader:
                     for key in ('ip', 'bind', 'min_peers', 'max_initiate',
                                 'display_interval', 'alloc_type', 'alloc_rate',
                                 'max_files_open', 'max_connections',
-                                'super_seeder',  'ipv6_binds_v4',
+                                'super_seeder', 'ipv6_binds_v4',
                                 'double_check', 'triple_check', 'lock_files',
                                 'lock_while_reading', 'expire_cache_data'):
                         self.advancedConfig[key] = self.defaults[key]
@@ -657,10 +648,11 @@ class configReader:
                     d = self.gui_default_savedir_ctrl.GetValue()
                     if d == '':
                         d = self.config['last_saved']
-                    dl = wx.wxDirDialog(
-                        self.panel, 'Choose a default directory to save to', d,
-                        style=wx.wxDD_DEFAULT_STYLE | wx.wxDD_NEW_DIR_BUTTON)
-                    if dl.ShowModal() == wx.wxID_OK:
+                    dl = wx.DirDialog(self.panel,
+                                      'Choose a default directory to save to',
+                                      d, style=wx.DD_DEFAULT_STYLE |
+                                      wx.DD_NEW_DIR_BUTTON)
+                    if dl.ShowModal() == wx.ID_OK:
                         self.gui_default_savedir_ctrl.SetValue(dl.GetPath())
                 except Exception:
                     self.parent.exception()
@@ -722,7 +714,7 @@ class configReader:
         if self.configMenuBox is not None:
             try:
                 self.configMenuBox.Close()
-            except wx.wxPyDeadObjectError:
+            except wx.PyDeadObjectError:
                 pass
             self.configMenuBox = None
 
@@ -740,81 +732,82 @@ class configReader:
             if self.advancedMenuBox is not None:
                 try:
                     self.advancedMenuBox.Close()
-                except wx.wxPyDeadObjectError:
+                except wx.PyDeadObjectError:
                     self.advancedMenuBox = None
 
-            self.advancedMenuBox = wx.wxFrame(
-                None, -1, 'BitTornado Advanced Preferences', size=(1, 1),
-                style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
+            self.advancedMenuBox = wx.Frame(None, -1, 'BitTornado Advanced '
+                                            'Preferences', size=(1, 1),
+                                            style=wx.DEFAULT_FRAME_STYLE |
+                                            wx.FULL_REPAINT_ON_RESIZE)
             if sys.platform == 'win32':
                 self.advancedMenuBox.SetIcon(self.icon)
 
-            panel = wx.wxPanel(self.advancedMenuBox, -1)
+            panel = wx.Panel(self.advancedMenuBox, -1)
 
-            def StaticText(text, font=self.FONT, underline=False, color=None,
-                           panel=panel):
-                x = wx.wxStaticText(panel, -1, text, style=wx.wxALIGN_LEFT)
-                x.SetFont(wx.wxFont(font, wx.wxDEFAULT, wx.wxNORMAL,
-                                    wx.wxNORMAL, underline))
-                if color is not None:
-                    x.SetForegroundColour(color)
-                return x
+            def sText(text, font=self.FONT, underline=False, color=None,
+                      panel=panel):
+                return StaticText(panel, text, font, underline, color)
 
-            colsizer = wx.wxFlexGridSizer(cols=1, hgap=13, vgap=13)
-            warningtext = StaticText('CHANGE THESE SETTINGS AT YOUR OWN RISK',
-                                     self.FONT + 4, True, 'Red')
-            colsizer.Add(warningtext, 1, wx.wxALIGN_CENTER)
+            colsizer = wx.FlexGridSizer(cols=1, hgap=13, vgap=13)
+            warningtext = sText('CHANGE THESE SETTINGS AT YOUR OWN RISK',
+                                self.FONT + 4, True, 'Red')
+            colsizer.Add(warningtext, 1, wx.ALIGN_CENTER)
 
-            self.ip_data = wx.wxTextCtrl(
-                parent=panel, id=-1, value=self.advancedConfig['ip'],
-                size=(self.FONT * 13, int(self.FONT * 2.2)),
-                style=wx.wxTE_PROCESS_TAB)
+            self.ip_data = wx.TextCtrl(parent=panel, id=-1,
+                                       value=self.advancedConfig['ip'],
+                                       size=(self.FONT * 13,
+                                             int(self.FONT * 2.2)),
+                                       style=wx.TE_PROCESS_TAB)
             self.ip_data.SetFont(self.default_font)
 
-            self.bind_data = wx.wxTextCtrl(
-                parent=panel, id=-1, value=self.advancedConfig['bind'],
-                size=(self.FONT * 13, int(self.FONT * 2.2)),
-                style=wx.wxTE_PROCESS_TAB)
+            self.bind_data = wx.TextCtrl(parent=panel, id=-1,
+                                         value=self.advancedConfig['bind'],
+                                         size=(self.FONT * 13,
+                                               int(self.FONT * 2.2)),
+                                         style=wx.TE_PROCESS_TAB)
             self.bind_data.SetFont(self.default_font)
 
             if socket.has_ipv6:
-                self.ipv6bindsv4_data = wx.wxChoice(
-                    panel, -1, choices=['separate sockets', 'single socket'])
+                self.ipv6bindsv4_data = wx.Choice(panel, -1,
+                                                  choices=['separate sockets',
+                                                           'single socket'])
                 self.ipv6bindsv4_data.SetFont(self.default_font)
                 self.ipv6bindsv4_data.SetSelection(
                     self.advancedConfig['ipv6_binds_v4'])
 
-            self.minpeers_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                               (self.FONT * 7, -1))
+            self.minpeers_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                             (self.FONT * 7, -1))
             self.minpeers_data.SetFont(self.default_font)
             self.minpeers_data.SetRange(10, 100)
             self.minpeers_data.SetValue(self.advancedConfig['min_peers'])
             # max_initiate = 2*minpeers
 
-            self.displayinterval_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                                      (self.FONT * 7, -1))
+            self.displayinterval_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                                    (self.FONT * 7, -1))
             self.displayinterval_data.SetFont(self.default_font)
             self.displayinterval_data.SetRange(100, 2000)
             self.displayinterval_data.SetValue(int(
                 self.advancedConfig['display_interval'] * 1000))
 
-            self.alloctype_data = wx.wxChoice(
-                panel, -1, choices=['normal', 'background', 'pre-allocate',
-                                    'sparse'])
+            self.alloctype_data = wx.Choice(panel, -1, choices=['normal',
+                                                                'background',
+                                                                'pre-allocate',
+                                                                'sparse'])
             self.alloctype_data.SetFont(self.default_font)
             self.alloctype_data.SetStringSelection(
                 self.advancedConfig['alloc_type'])
 
-            self.allocrate_data = wx.wxSpinCtrl(panel, -1, '', (-1, -1),
-                                                (self.FONT * 7, -1))
+            self.allocrate_data = wx.SpinCtrl(panel, -1, '', (-1, -1),
+                                              (self.FONT * 7, -1))
             self.allocrate_data.SetFont(self.default_font)
             self.allocrate_data.SetRange(1, 100)
             self.allocrate_data.SetValue(int(
                 self.advancedConfig['alloc_rate']))
 
-            self.locking_data = wx.wxChoice(
-                panel, -1, choices=['no locking', 'lock while writing',
-                                    'lock always'])
+            self.locking_data = wx.Choice(panel, -1,
+                                          choices=['no locking',
+                                                   'lock while writing',
+                                                   'lock always'])
             self.locking_data.SetFont(self.default_font)
             if self.advancedConfig['lock_files']:
                 if self.advancedConfig['lock_while_reading']:
@@ -824,9 +817,10 @@ class configReader:
             else:
                 self.locking_data.SetSelection(0)
 
-            self.doublecheck_data = wx.wxChoice(
-                panel, -1, choices=['no extra checking', 'double-check',
-                                    'triple-check'])
+            self.doublecheck_data = wx.Choice(panel, -1,
+                                              choices=['no extra checking',
+                                                       'double-check',
+                                                       'triple-check'])
             self.doublecheck_data.SetFont(self.default_font)
             if self.advancedConfig['double_check']:
                 if self.advancedConfig['triple_check']:
@@ -837,7 +831,7 @@ class configReader:
                 self.doublecheck_data.SetSelection(0)
 
             self.maxfilesopen_choices = ['50', '100', '200', 'no limit ']
-            self.maxfilesopen_data = wx.wxChoice(
+            self.maxfilesopen_data = wx.Choice(
                 panel, -1, choices=self.maxfilesopen_choices)
             self.maxfilesopen_data.SetFont(self.default_font)
             setval = self.advancedConfig['max_files_open']
@@ -851,7 +845,7 @@ class configReader:
 
             self.maxconnections_choices = ['no limit ', '20', '30', '40', '50',
                                            '60', '100', '200']
-            self.maxconnections_data = wx.wxChoice(
+            self.maxconnections_data = wx.Choice(
                 panel, -1, choices=self.maxconnections_choices)
             self.maxconnections_data.SetFont(self.default_font)
             setval = self.advancedConfig['max_connections']
@@ -863,15 +857,15 @@ class configReader:
                 setval = self.maxconnections_choices[0]
             self.maxconnections_data.SetStringSelection(setval)
 
-            self.superseeder_data = wx.wxChoice(
-                panel, -1, choices=['normal', 'super-seed'])
+            self.superseeder_data = wx.Choice(panel, -1,
+                                              choices=['normal', 'super-seed'])
             self.superseeder_data.SetFont(self.default_font)
             self.superseeder_data.SetSelection(
                 self.advancedConfig['super_seeder'])
 
             self.expirecache_choices = ['never ', '3', '5', '7', '10', '15',
                                         '30', '60', '90']
-            self.expirecache_data = wx.wxChoice(
+            self.expirecache_data = wx.Choice(
                 panel, -1, choices=self.expirecache_choices)
             setval = self.advancedConfig['expire_cache_data']
             if setval == 0:
@@ -883,81 +877,80 @@ class configReader:
             self.expirecache_data.SetFont(self.default_font)
             self.expirecache_data.SetStringSelection(setval)
 
-            twocolsizer = wx.wxFlexGridSizer(cols=2, hgap=20)
-            datasizer = wx.wxFlexGridSizer(cols=2, vgap=2)
-            datasizer.Add(StaticText('Local IP: '), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            twocolsizer = wx.FlexGridSizer(cols=2, hgap=20)
+            datasizer = wx.FlexGridSizer(cols=2, vgap=2)
+            datasizer.Add(sText('Local IP: '), 1, wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.ip_data)
-            datasizer.Add(StaticText('IP to bind to: '), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('IP to bind to: '), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.bind_data)
             if socket.has_ipv6:
-                datasizer.Add(StaticText('IPv6 socket handling: '), 1,
-                              wx.wxALIGN_CENTER_VERTICAL)
+                datasizer.Add(sText('IPv6 socket handling: '), 1,
+                              wx.ALIGN_CENTER_VERTICAL)
                 datasizer.Add(self.ipv6bindsv4_data)
-            datasizer.Add(StaticText('Minimum number of peers: '), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Minimum number of peers: '), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.minpeers_data)
-            datasizer.Add(StaticText('Display interval (ms): '), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Display interval (ms): '), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.displayinterval_data)
-            datasizer.Add(StaticText('Disk allocation type:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Disk allocation type:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.alloctype_data)
-            datasizer.Add(StaticText('Allocation rate (MiB/s):'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Allocation rate (MiB/s):'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.allocrate_data)
-            datasizer.Add(StaticText('File locking:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('File locking:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.locking_data)
-            datasizer.Add(StaticText('Extra data checking:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Extra data checking:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.doublecheck_data)
-            datasizer.Add(StaticText('Max files open:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Max files open:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.maxfilesopen_data)
-            datasizer.Add(StaticText('Max peer connections:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Max peer connections:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.maxconnections_data)
-            datasizer.Add(StaticText('Default seeding mode:'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Default seeding mode:'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.superseeder_data)
-            datasizer.Add(StaticText('Expire resume data(days):'), 1,
-                          wx.wxALIGN_CENTER_VERTICAL)
+            datasizer.Add(sText('Expire resume data(days):'), 1,
+                          wx.ALIGN_CENTER_VERTICAL)
             datasizer.Add(self.expirecache_data)
 
             twocolsizer.Add(datasizer)
 
-            infosizer = wx.wxFlexGridSizer(cols=1)
-            self.hinttext = StaticText('', self.FONT, False, 'Blue')
+            infosizer = wx.FlexGridSizer(cols=1)
+            self.hinttext = sText('', color='Blue')
             infosizer.Add(self.hinttext, 1,
-                          wx.wxALIGN_LEFT | wx.wxALIGN_CENTER_VERTICAL)
+                          wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
             infosizer.SetMinSize((180, 100))
-            twocolsizer.Add(infosizer, 1, wx.wxEXPAND)
+            twocolsizer.Add(infosizer, 1, wx.EXPAND)
 
             colsizer.Add(twocolsizer)
 
-            savesizer = wx.wxGridSizer(cols=3, hgap=20)
-            okButton = wx.wxButton(panel, -1, 'OK')
+            savesizer = wx.GridSizer(cols=3, hgap=20)
+            okButton = wx.Button(panel, -1, 'OK')
 #            okButton.SetFont(self.default_font)
-            savesizer.Add(okButton, 0, wx.wxALIGN_CENTER)
+            savesizer.Add(okButton, 0, wx.ALIGN_CENTER)
 
-            cancelButton = wx.wxButton(panel, -1, 'Cancel')
+            cancelButton = wx.Button(panel, -1, 'Cancel')
 #            cancelButton.SetFont(self.default_font)
-            savesizer.Add(cancelButton, 0, wx.wxALIGN_CENTER)
+            savesizer.Add(cancelButton, 0, wx.ALIGN_CENTER)
 
-            defaultsButton = wx.wxButton(panel, -1, 'Revert to Defaults')
+            defaultsButton = wx.Button(panel, -1, 'Revert to Defaults')
 #            defaultsButton.SetFont(self.default_font)
-            savesizer.Add(defaultsButton, 0, wx.wxALIGN_CENTER)
-            colsizer.Add(savesizer, 1, wx.wxALIGN_CENTER)
+            savesizer.Add(defaultsButton, 0, wx.ALIGN_CENTER)
+            colsizer.Add(savesizer, 1, wx.ALIGN_CENTER)
 
-            resizewarningtext = StaticText(
-                'None of these settings will take effect until the next time '
-                'you start BitTorrent', self.FONT - 2)
-            colsizer.Add(resizewarningtext, 1, wx.wxALIGN_CENTER)
+            resizewarningtext = sText('None of these settings will take '
+                                      'effect until the next time you start '
+                                      'BitTorrent', self.FONT - 2)
+            colsizer.Add(resizewarningtext, 1, wx.ALIGN_CENTER)
 
-            border = wx.wxBoxSizer(wx.wxHORIZONTAL)
-            border.Add(colsizer, 1, wx.wxEXPAND | wx.wxALL, 4)
+            border = wx.BoxSizer(wx.HORIZONTAL)
+            border.Add(colsizer, 1, wx.EXPAND | wx.ALL, 4)
 
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
@@ -1218,7 +1211,7 @@ class configReader:
         if self.advancedMenuBox is not None:
             try:
                 self.advancedMenuBox.Close()
-            except wx.wxPyDeadObjectError:
+            except wx.PyDeadObjectError:
                 self.advancedMenuBox = None
 
     def cryptoMenu(self, event=None):
@@ -1231,32 +1224,27 @@ class configReader:
             if self.cryptoMenuBox is not None:
                 try:
                     self.cryptoMenuBox.Close()
-                except wx.wxPyDeadObjectError:
+                except wx.PyDeadObjectError:
                     self.cryptoMenuBox = None
 
-            self.cryptoMenuBox = wx.wxFrame(
-                None, -1, 'BitTornado Encryption/Security Preferences',
-                size=(1, 1),
-                style=wx.wxDEFAULT_FRAME_STYLE | wx.wxFULL_REPAINT_ON_RESIZE)
+            self.cryptoMenuBox = wx.Frame(None, -1,
+                                          'BitTornado Encryption/Security '
+                                          'Preferences', size=(1, 1),
+                                          style=wx.DEFAULT_FRAME_STYLE |
+                                          wx.FULL_REPAINT_ON_RESIZE)
             if sys.platform == 'win32':
                 self.cryptoMenuBox.SetIcon(self.icon)
 
-            panel = wx.wxPanel(self.cryptoMenuBox, -1)
+            panel = wx.Panel(self.cryptoMenuBox, -1)
 #            self.panel = panel
 
-            def StaticText(text, font=self.FONT, underline=False, color=None,
-                           panel=panel):
-                x = wx.wxStaticText(panel, -1, text, style=wx.wxALIGN_LEFT)
-                x.SetFont(wx.wxFont(font, wx.wxDEFAULT, wx.wxNORMAL,
-                                    wx.wxNORMAL, underline))
-                if color is not None:
-                    x.SetForegroundColour(color)
-                return x
+            def sText(text, panel=panel):
+                return StaticText(panel, text, self.FONT-2)
 
-            colsizer = wx.wxFlexGridSizer(cols=1, hgap=13, vgap=13)
+            colsizer = wx.FlexGridSizer(cols=1, hgap=13, vgap=13)
 
-            self.cryptomode_data = wx.wxRadioBox(
-                panel, -1, 'Encryption', style=wx.wxRA_SPECIFY_COLS,
+            self.cryptomode_data = wx.RadioBox(
+                panel, -1, 'Encryption', style=wx.RA_SPECIFY_COLS,
                 majorDimension=1, choices=[
                     'no encryption permitted', 'encryption enabled (default)',
                     'encrypted connections only', 'full stealth encryption'
@@ -1274,41 +1262,41 @@ class configReader:
             if not CRYPTO_OK:   # no crypto library in place
                 self.cryptomode_data.Enable(False)
 
-            self.security_checkbox = wx.wxCheckBox(
+            self.security_checkbox = wx.CheckBox(
                 panel, -1, "Don't allow multiple connections from the same IP")
             self.security_checkbox.SetFont(self.default_font)
             self.security_checkbox.SetValue(self.cryptoConfig['security'])
 
-            self.autokick_checkbox = wx.wxCheckBox(
+            self.autokick_checkbox = wx.CheckBox(
                 panel, -1, "Kick/ban clients that send you bad data")
             self.autokick_checkbox.SetFont(self.default_font)
             self.autokick_checkbox.SetValue(self.cryptoConfig['auto_kick'])
 
             colsizer.Add(self.cryptomode_data)
 
-            block2sizer = wx.wxFlexGridSizer(cols=1, vgap=2)
+            block2sizer = wx.FlexGridSizer(cols=1, vgap=2)
             block2sizer.Add(self.security_checkbox)
             block2sizer.Add(self.autokick_checkbox)
             colsizer.Add(block2sizer)
 
-            savesizer = wx.wxGridSizer(cols=3, hgap=20)
-            okButton = wx.wxButton(panel, -1, 'OK')
-            savesizer.Add(okButton, 0, wx.wxALIGN_CENTER)
+            savesizer = wx.GridSizer(cols=3, hgap=20)
+            okButton = wx.Button(panel, -1, 'OK')
+            savesizer.Add(okButton, 0, wx.ALIGN_CENTER)
 
-            cancelButton = wx.wxButton(panel, -1, 'Cancel')
-            savesizer.Add(cancelButton, 0, wx.wxALIGN_CENTER)
+            cancelButton = wx.Button(panel, -1, 'Cancel')
+            savesizer.Add(cancelButton, 0, wx.ALIGN_CENTER)
 
-            defaultsButton = wx.wxButton(panel, -1, 'Revert to Defaults')
-            savesizer.Add(defaultsButton, 0, wx.wxALIGN_CENTER)
-            colsizer.Add(savesizer, 1, wx.wxALIGN_CENTER)
+            defaultsButton = wx.Button(panel, -1, 'Revert to Defaults')
+            savesizer.Add(defaultsButton, 0, wx.ALIGN_CENTER)
+            colsizer.Add(savesizer, 1, wx.ALIGN_CENTER)
 
-            resizewarningtext = StaticText(
-                'None of these settings will take effect until the next time '
-                'you start BitTorrent', self.FONT - 2)
-            colsizer.Add(resizewarningtext, 1, wx.wxALIGN_CENTER)
+            resizewarningtext = sText('None of these settings will take effect'
+                                      'until the next time you start '
+                                      'BitTorrent')
+            colsizer.Add(resizewarningtext, 1, wx.ALIGN_CENTER)
 
-            border = wx.wxBoxSizer(wx.wxHORIZONTAL)
-            border.Add(colsizer, 1, wx.wxEXPAND | wx.wxALL, 4)
+            border = wx.BoxSizer(wx.HORIZONTAL)
+            border.Add(colsizer, 1, wx.EXPAND | wx.ALL, 4)
 
             panel.SetSizer(border)
             panel.SetAutoLayout(True)
@@ -1362,5 +1350,5 @@ class configReader:
         if self.cryptMenuBox is not None:
             try:
                 self.cryptMenuBox.Close()
-            except wx.wxPyDeadObjectError:
+            except wx.PyDeadObjectError:
                 self.cryptMenuBox = None

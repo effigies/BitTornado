@@ -16,7 +16,7 @@ from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
 from .T2T import T2TList
 from .torrentlistparse import parsetorrentlist
-from BitTornado.Application.FormatNumbers import formatSize
+from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Meta.bencode import bencode, bdecode, Bencached

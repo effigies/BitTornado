@@ -706,7 +706,7 @@ class Tracker:
         if params('supportcrypto', 0):
             supportcrypto = 1
             try:
-                s = int(params['requirecrypto'], 0)
+                s = int(params('requirecrypto', 0))
                 chr(s)
             except (KeyError, ValueError):
                 s = 0

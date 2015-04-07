@@ -703,10 +703,10 @@ class Tracker:
             raise ValueError('invalid amount left')
         #uploaded = long(params('uploaded',''))
         #downloaded = long(params('downloaded',''))
-        if params('supportcrypto'):
+        if params('supportcrypto', 0):
             supportcrypto = 1
             try:
-                s = int(params['requirecrypto'])
+                s = int(params('requirecrypto', 0))
                 chr(s)
             except (KeyError, ValueError):
                 s = 0

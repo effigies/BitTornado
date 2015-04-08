@@ -703,17 +703,8 @@ class Tracker:
             raise ValueError('invalid amount left')
         #uploaded = long(params('uploaded',''))
         #downloaded = long(params('downloaded',''))
-        if params('supportcrypto'):
-            supportcrypto = 1
-            try:
-                s = int(params['requirecrypto'])
-                chr(s)
-            except (KeyError, ValueError):
-                s = 0
-            requirecrypto = s
-        else:
-            supportcrypto = 0
-            requirecrypto = 0
+        supportcrypto = int(bool(params('supportcrypto')))
+        requirecrypto = supportcrypto and int(bool(params('requirecrypto')))
 
         peer = peers.get(myid)
         islocal = ip in local_IPs

@@ -80,10 +80,7 @@ class Storage:
         self._reset_ranges()
 
         self.max_files_open = config['max_files_open']
-        if self.max_files_open > 0 and numfiles > self.max_files_open:
-            self.handlebuffer = []
-        else:
-            self.handlebuffer = None
+        self.handlebuffer = [] if 0 < self.max_files_open < numfiles else None
 
     if os.name == 'nt':
         def _lock_file(self, name, fileh):

@@ -162,12 +162,9 @@ class CursesDisplayer:
         if upRate is not None:
             self.upRate = '%.1f KB/s' % (float(upRate) / (1 << 10))
         if statistics is not None:
-            if statistics.shareRating < 0 or statistics.shareRating > 100:
-                shareRateString = "oo"
-            else:
-                shareRateString = '{:.3f}'.format(statistics.shareRating)
             self.shareRating = '{}  ({:.1f} MB up / {:.1f} MB down)'.format(
-                shareRateString,
+                '{:.3f}'.format(statistics.shareRating)
+                if 0 <= statistics.shareRating <= 100 else 'oo',
                 float(statistics.upTotal) / (1 << 20),
                 float(statistics.downTotal) / (1 << 20))
             if self.done:

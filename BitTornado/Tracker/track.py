@@ -696,7 +696,7 @@ class Tracker:
         if port is None:
             port = params('port', '')
         port = long(port)
-        if port < 0 or port > 65535:
+        if not 0 <= port <= 65535:
             raise ValueError('invalid port')
         left = long(params('left', ''))
         if left < 0:

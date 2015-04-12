@@ -24,7 +24,7 @@ class Bitfield(list):
                              'another array')
         if bitstring is not None:
             extra = len(bitstring) * 8 - length
-            if extra < 0 or extra >= 8:
+            if not 0 <= extra < 8:
                 raise ValueError
 
             bits = [bit for char in bitstring for bit in CHARBITMAP[ord(char)]]

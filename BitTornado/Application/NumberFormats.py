@@ -9,7 +9,7 @@ def formatInterval(secs, fmt):
     and seconds. e.g. fmt = '{h:d}:{m:02d}:{s:02d}'"""
     try:
         secs = int(secs)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
     if secs == 0:
         return None

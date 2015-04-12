@@ -61,13 +61,12 @@ class RawServer(object):
     def get_exception_flag(self):
         return self.excflag
 
-    def _add_task(self, func, delay, id=None):
-        assert float(delay) >= 0
-        bisect.insort(self.funcs, (clock() + delay, func, id))
+    def _add_task(self, func, delay, tid):
+        bisect.insort(self.funcs, (clock() + delay, func, tid))
 
-    def add_task(self, func, delay=0, id=None):
+    def add_task(self, func, delay=0, tid=None):
         assert float(delay) >= 0
-        self.externally_added.append((func, delay, id))
+        self.externally_added.append((func, delay, tid))
 
     def scan_for_timeouts(self):
         self.add_task(self.scan_for_timeouts, self.timeout_check_interval)
@@ -113,8 +112,8 @@ class RawServer(object):
                     if self.doneflag.isSet():
                         return
                     while self.funcs and self.funcs[0][0] <= clock():
-                        _, func, id = self.funcs.pop(0)
-                        if id in self.tasks_to_kill:
+                        _, func, tid = self.funcs.pop(0)
+                        if tid in self.tasks_to_kill:
                             pass
                         try:
 #                            print func.func_name
@@ -162,8 +161,8 @@ class RawServer(object):
                           if tid not in self.tasks_to_kill]
             self.tasks_to_kill = set()
 
-    def kill_tasks(self, id):
-        self.tasks_to_kill.add(id)
+    def kill_tasks(self, tid):
+        self.tasks_to_kill.add(tid)
 
     def exception(self, kbint=False):
         if not kbint:

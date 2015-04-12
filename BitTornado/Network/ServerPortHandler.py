@@ -2,8 +2,6 @@ from .BTcrypto import Crypto
 
 from .Encrypter import protocol_name
 
-default_task_id = []
-
 
 class SingleRawServer(object):
     def __init__(self, info_hash, multihandler, doneflag, protocol):
@@ -38,11 +36,10 @@ class SingleRawServer(object):
 
     ### RawServer functions ###
 
-    def add_task(self, func, delay=0, id=default_task_id):
-        if id is default_task_id:
-            id = self.info_hash
+    def add_task(self, func, delay=0, tid=None):
         if not self.finished:
-            self.rawserver.add_task(func, delay, id)
+            self.rawserver.add_task(func, delay,
+                                    self.info_hash if tid is None else tid)
 
 #    def bind(self, port, bind = '', reuse = False):
 #        pass    # not handled here

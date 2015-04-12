@@ -10,12 +10,34 @@ x.release()
 
 import threading
 import array
+import types
 
 
-class SingleBuffer(object):
+class Pool(list):
+    """Thread-safe stack of objects not currently in use, generates new object
+    when empty.
+
+    Use as a decorator. Decorated classes must have init() method to
+    prepare them for reuse."""
+    def __init__(self, klass):
+        super(Pool, self).__init__()
+
+        self.lock = threading.Lock()
+        klass.release = types.MethodType(self.append, None, klass)
+        self.klass = klass
+
+    def __call__(self):
+        "Get object from pool, generating a new one if empty"
+        with self.lock:
+            obj = self.pop() if self else self.klass()
+        obj.init()
+        return obj
+
+
+@Pool
+class PieceBuffer(object):
     """Non-shrinking array"""
-    def __init__(self, pool):
-        self.pool = pool
+    def __init__(self):
         self.buf = array.array('c')
         self.length = 0
 
@@ -44,30 +66,3 @@ class SingleBuffer(object):
     def getarray(self):
         """Get array containing contents of buffer"""
         return self.buf[:self.length]
-
-    def release(self):
-        """Return buffer to pool for reallocation"""
-        self.pool.release(self)
-
-
-class BufferPool(list):
-    """Thread-safe stack of buffers not currently in use, generates new buffer
-    when empty"""
-    release = list.append
-
-    def __init__(self):
-        self.lock = threading.Lock()
-        super(BufferPool, self).__init__()
-
-    def new(self):
-        "Get buffer from pool, generating a new one if empty"
-        with self.lock:
-            if self:
-                buf = self.pop()
-            else:
-                buf = SingleBuffer(self)
-            buf.init()
-        return buf
-
-_pool = BufferPool()
-PieceBuffer = _pool.new

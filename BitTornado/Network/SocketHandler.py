@@ -198,7 +198,7 @@ class SocketHandler(object):
                       ipv6_socket_style=1, upnp=0, randomizer=False):
         e = 'maxport less than minport - no ports to check'
         if maxport - minport < 50 or not randomizer:
-            portrange = range(minport, maxport + 1)
+            portrange = list(range(minport, maxport + 1))
             if randomizer:
                 random.shuffle(portrange)
                 portrange = portrange[:20]  # check a maximum of 20 ports
@@ -327,7 +327,7 @@ class SocketHandler(object):
             connects = len(self.single_sockets)
             to_close = int(connects * 0.05) + 1   # close 5% of sockets
             self.max_connects = connects - to_close
-            closelist = self.single_sockets.values()
+            closelist = list(self.single_sockets.values())
             random.shuffle(closelist)
             closelist = closelist[:to_close]
             for sock in closelist:

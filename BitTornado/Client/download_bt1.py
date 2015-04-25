@@ -206,8 +206,8 @@ def get_response(file, url, errorfunc):
             try:
                 # quick test to see if responsefile contains a dict
                 line = h.read(10)
-                front = line.split(':', 1)[0]
-                assert front[0] == 'd'
+                front = line.split(b':', 1)[0]
+                assert front[:1] == b'd'
                 int(front[1:])
             except (AssertionError, IOError):
                 errorfunc(file + ' is not a valid responsefile')

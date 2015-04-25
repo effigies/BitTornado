@@ -13,12 +13,12 @@ from io import StringIO
 from traceback import print_exc
 
 keys = {}
-basekeydata = str(os.getpid()) + repr(time.time()) + 'tracker'
+basekeydata = '{:d}{!r}tracker'.format(os.getpid(), time.time()).encode()
 
 
 def add_key(tracker):
     keys[tracker] = base64.urlsafe_b64encode(
-        hashlib.sha1(basekeydata + tracker).digest()[-6:])
+        hashlib.sha1(basekeydata + tracker.encode()).digest()[-6:]).decode()
 
 
 def get_key(tracker):

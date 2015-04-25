@@ -149,7 +149,7 @@ class FileSelector:
     def _set_piece_priority(self, new_priority):
         was_complete = self.storagewrapper.am_I_complete()
         new_piece_priority = self._get_piece_priority_list(new_priority)
-        pieces = range(self.numpieces)
+        pieces = list(range(self.numpieces))
         random.shuffle(pieces)
         new_blocked = []
         new_unblocked = []

@@ -828,7 +828,8 @@ class Tracker:
             if not cache or len(cache[1]) < rsize or cache[0] + \
                     self.config['min_time_between_cache_refreshes'] < clock():
                 bc = self.becache.setdefault(infohash, self.cache_default)
-                cache = [clock(), bc[0][0].values() + bc[0][1].values()]
+                cache = [clock(),
+                         list(bc[0][0].values()) + list(bc[0][1].values())]
                 self.cached_t[infohash] = cache
                 random.shuffle(cache[1])
                 cache = cache[1]
@@ -873,8 +874,8 @@ class Tracker:
                         vv[3].append({'ip': ip, 'port': port, 'peer id': key})
                         vv[4].append({'ip': ip, 'port': port})
             cache = [self.cachetime,
-                     bc[return_type][0].values() + vv[return_type],
-                     bc[return_type][1].values()]
+                     list(bc[return_type][0].values()) + vv[return_type],
+                     list(bc[return_type][1].values())]
             random.shuffle(cache[1])
             random.shuffle(cache[2])
             self.cached[infohash][return_type] = cache

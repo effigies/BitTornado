@@ -22,7 +22,7 @@ class Choker:
     def _round_robin(self):
         self.schedule(self._round_robin, 5)
         if self.super_seed:
-            cons = range(len(self.connections))
+            cons = list(range(len(self.connections)))
             to_close = []
             count = self.config['min_uploads'] - self.last_preferred
             if count > 0:   # optimization

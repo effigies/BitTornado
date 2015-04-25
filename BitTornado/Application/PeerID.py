@@ -43,7 +43,7 @@ class PeerID(object):
                                         toc1, toc2, toc3, os.getpid()).encode()
 
         self.randstr = base64.urlsafe_b64encode(
-            hashlib.sha1(x).digest()[-9:])[:11]
+            hashlib.sha1(x).digest()[-9:])[:11].decode()
 
     def __str__(self):
         return self.create()

@@ -165,7 +165,7 @@ class ConfigDir(object):
         """Read a torrent data file from cache"""
         if torrent in self.torrentDataBuffer:
             return self.torrentDataBuffer[torrent]
-        fname = os.path.join(self.dir_datacache, hexlify(torrent))
+        fname = os.path.join(self.dir_datacache, hexlify(torrent).decode())
         if not os.path.exists(fname):
             return None
         try:
@@ -179,7 +179,7 @@ class ConfigDir(object):
     def writeTorrentData(self, torrent, data):
         """Add a torrent data file to cache"""
         self.torrentDataBuffer[torrent] = data
-        fname = os.path.join(self.dir_datacache, hexlify(torrent))
+        fname = os.path.join(self.dir_datacache, hexlify(torrent).decode())
         try:
             with open(fname, 'wb') as f:
                 f.write(bencode(data))
@@ -192,13 +192,14 @@ class ConfigDir(object):
         """Remove a torrent data file from cache"""
         self.torrentDataBuffer.pop(torrent, None)
         try:
-            os.remove(os.path.join(self.dir_datacache, hexlify(torrent)))
+            os.remove(os.path.join(self.dir_datacache,
+                                   hexlify(torrent).decode()))
         except OSError:
             pass
 
     def getPieceDir(self, torrent):
         """Get torrent-specific piece cache directory"""
-        return os.path.join(self.dir_piececache, hexlify(torrent))
+        return os.path.join(self.dir_piececache, hexlify(torrent).decode())
 
     ###### EXPIRATION HANDLING ######
     def deleteOldCacheData(self, days, still_active=(), delete_torrents=False):

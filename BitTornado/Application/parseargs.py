@@ -121,33 +121,3 @@ def parseargs(argv, options, minargs=0, maxargs=None, presets={}):
         raise ValueError("Too many args - %d max." % maxargs)
 
     return (config, args)
-
-
-def _test_exception(exc, func, *data):
-    """Validate that func(data) raises exc"""
-    try:
-        func(*data)
-    except exc:
-        return True
-    except Exception:
-        pass
-    return False
-
-
-def test_parseargs():
-    assert parseargs(('d', '--a', 'pq', 'e', '--b', '3', '--c', '4.5', 'f'),
-                     (('a', 'x', ''), ('b', 1, ''), ('c', 2.3, ''))) == \
-        ({'a': 'pq', 'b': 3, 'c': 4.5}, ['d', 'e', 'f'])
-    assert parseargs([], [('a', 'x', '')]) == ({'a': 'x'}, [])
-    assert parseargs(['--a', 'x', '--a', 'y'], [('a', '', '')]) == \
-        ({'a': 'y'}, [])
-    assert parseargs(['x'], [], 1, 2) == ({}, ['x'])
-    assert parseargs(['x', 'y'], [], 1, 2) == ({}, ['x', 'y'])
-    assert _test_exception(ValueError, parseargs, ['--a', 'x'], [])
-    assert _test_exception(ValueError, parseargs, ['--a'], [('a', 'x', '')])
-    assert _test_exception(ValueError, parseargs, [], [], 1, 2)
-    assert _test_exception(ValueError, parseargs, ['x', 'y', 'z'], [], 1, 2)
-    assert _test_exception(ValueError, parseargs, ['--a', '2.0'],
-                           [('a', 3, '')])
-    assert _test_exception(ValueError, parseargs, ['--a', 'z'],
-                           [('a', 2.1, '')])

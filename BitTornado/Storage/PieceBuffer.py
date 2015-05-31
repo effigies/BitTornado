@@ -10,11 +10,11 @@ x.release()
 
 import threading
 import array
-import types
+import warnings
 
 
-class Pool(list):
-    """Thread-safe stack of objects not currently in use, generates new object
+class Pool(set):
+    """Thread-safe pool of objects not currently in use, generates new object
     when empty.
 
     Use as a decorator. Decorated classes must have init() method to
@@ -23,7 +23,14 @@ class Pool(list):
         super(Pool, self).__init__()
 
         self.lock = threading.Lock()
-        klass.release = types.MethodType(self.append, None, klass)
+
+        def release(obj):
+            if obj in self:
+                warnings.warn(RuntimeWarning('Attempting double-release of ' +
+                                             obj.__class__.__name__))
+            else:
+                self.add(obj)
+        klass.release = release
         self.klass = klass
 
     def __call__(self):
@@ -54,14 +61,35 @@ class PieceBuffer(object):
     def __len__(self):
         return self.length
 
-    def __getslice__(self, i, j):
-        if j > self.length:
-            j = self.length
-        if j < 0:
-            j += self.length
-        if i == 0 and j == self.length == len(self.buf):
-            return self.buf  # optimization
-        return self.buf[i:j]
+    def __getitem__(self, slc):
+        if isinstance(slc, slice):
+            start, stop, step = slc.start, slc.stop, slc.step
+
+            forward = step is None or step > 0
+
+            if start is None:
+                start = 0 if forward else self.length
+            if stop is None:
+                stop = self.length if forward else 0
+
+            if stop < 0:
+                stop %= self.length
+            if start < 0:
+                start %= self.length
+            if stop > self.length and forward:
+                stop = self.length
+            if start > self.length and not forward:
+                start = self.length
+
+            if start == 0 and stop == self.length == len(self.buf) and \
+                    step in (None, 1):
+                return self.buf  # optimization
+            slc = slice(start, stop, step)
+        elif not -self.length <= slc < self.length:
+            raise IndexError('SingleBuffer index out of range')
+        elif slc < 0:
+            slc += self.length
+        return self.buf[slc]
 
     def getarray(self):
         """Get array containing contents of buffer"""

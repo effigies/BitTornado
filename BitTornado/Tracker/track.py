@@ -21,8 +21,7 @@ from BitTornado.Application.parsedir import parsedir
 from BitTornado.Meta.bencode import bencode, bdecode, Bencached
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
-from BitTornado.Network.NetworkAddress import is_ipv4, is_valid_ip, \
-    ipv6_to_ipv4, to_ipv4, AddrList
+from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
 from BitTornado.Network.zurllib import urlopen
 from BitTornado.clock import clock
@@ -325,8 +324,8 @@ class Tracker:
                 if y.get('nat', -1):
                     continue
                 gip = y.get('given_ip')
-                if gip and is_valid_ip(gip) and \
-                        (not self.only_local_override_ip or ip in local_IPs):
+                if is_valid_ip(gip) and (not self.only_local_override_ip or
+                                         ip in local_IPs):
                     ip = gip
                 self.natcheckOK(infohash, x, ip, y['port'], y)
 
@@ -713,8 +712,7 @@ class Tracker:
             auth = peer.get('key', -1) == mykey or peer.get('ip') == ip
 
         gip = params('ip')
-        if gip and is_valid_ip(gip) and (islocal or
-                                         not self.only_local_override_ip):
+        if is_valid_ip(gip) and (islocal or not self.only_local_override_ip):
             ip1 = gip
         else:
             ip1 = ip
@@ -916,14 +914,11 @@ class Tracker:
     def get(self, connection, path, headers):
         real_ip = connection.get_ip()
         ip = real_ip
-        if is_ipv4(ip):
+        try:
+            ip = to_ipv4(ip)
             ipv4 = True
-        else:
-            try:
-                ip = ipv6_to_ipv4(ip)
-                ipv4 = True
-            except ValueError:
-                ipv4 = False
+        except ValueError:
+            ipv4 = False
 
         if self.allowed_IPs and ip not in self.allowed_IPs or \
                 self.banned_IPs and ip in self.banned_IPs:

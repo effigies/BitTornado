@@ -423,7 +423,7 @@ class StorageWrapper:
             self.request_lost(index, begin, length)
 
     def get_have_list(self):
-        return str(self.have)
+        return bytes(self.have)
 
     def get_have_list_cloaked(self):
         if self.have_cloaked_data is None:
@@ -437,7 +437,7 @@ class StorageWrapper:
                 if not unhave in unhaves:
                     unhaves.append(unhave)
                     newhave[unhave] = False
-            self.have_cloaked_data = (str(newhave), unhaves)
+            self.have_cloaked_data = (bytes(newhave), unhaves)
         return self.have_cloaked_data
 
     def do_I_have(self, index):
@@ -881,7 +881,7 @@ class StorageWrapper:
                     del pp[0]
             r.extend(pp[0])
             partials.extend([p, r])
-        return {'pieces': str(pieces), 'places': places,
+        return {'pieces': bytes(pieces), 'places': places,
                 'partials': partials}
 
     def unpickle(self, data, valid_places):

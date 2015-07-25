@@ -1,15 +1,10 @@
 """Manipulable boolean list structure and related functions"""
 
 
-def _int_to_booleans(integer):
-    """Produce a tuple of booleans corresponding to 8 least significant bits
-    in an integer
-    """
-    return tuple(bool((integer << nbits) & 0x80) for nbits in range(8))
+CHARBITMAP = [tuple(bool((integer << nbits) & 0x80) for nbits in range(8))
+              for integer in range(256)]
 
-CHARBITMAP = [_int_to_booleans(_chr) for _chr in range(256)]
-
-BITCHARMAP = dict((_bits, chr(_chr)) for _chr, _bits in enumerate(CHARBITMAP))
+BITCHARMAP = dict(zip(CHARBITMAP, range(256)))
 
 
 class Bitfield(list):
@@ -27,7 +22,9 @@ class Bitfield(list):
             if not 0 <= extra < 8:
                 raise ValueError
 
-            bits = [bit for char in bitstring for bit in CHARBITMAP[ord(char)]]
+            if isinstance(bitstring, str):
+                bitstring = map(ord, bitstring)
+            bits = [bit for byte in bitstring for bit in CHARBITMAP[byte]]
             if extra > 0:
                 if bits[-extra:] != [False] * extra:
                     raise ValueError
@@ -47,11 +44,11 @@ class Bitfield(list):
     def __repr__(self):
         return "<Bitfield ({})>".format(','.join(str(int(i)) for i in self))
 
-    def __str__(self):
+    def __bytes__(self):
         """Produce a bytestring corresponding to the current bitfield"""
         bits = self + [False] * (-len(self) % 8)
-        return ''.join(BITCHARMAP[tuple(bits[x:x + 8])]
-                       for x in range(0, len(bits), 8))
+        return bytes(BITCHARMAP[tuple(bits[x:x + 8])]
+                     for x in range(0, len(bits), 8))
 
     @property
     def complete(self):

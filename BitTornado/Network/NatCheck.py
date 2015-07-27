@@ -1,10 +1,8 @@
 import socket
 from .BTcrypto import Crypto, CRYPTO_OK, padding
-from .Encrypter import tobinary16, toint, option_pattern
+from .Encrypter import protocol_name, option_pattern
 
 CHECK_PEER_ID_ENCRYPTED = True
-
-protocol_name = 'BitTorrent protocol'
 
 # header, reserved, download id, my id, [length, message]
 
@@ -19,7 +17,7 @@ class NatCheck(object):
         self.port = port
         self.encrypted = encrypted
         self.closed = False
-        self.buffer = ''
+        self.buffer = b''
         self.read = self._read
         self.write = self._write
         try:
@@ -30,13 +28,12 @@ class NatCheck(object):
                 self.write(self.encrypter.padded_pubkey())
             else:
                 self.encrypter = None
-                self.write(chr(len(protocol_name)) + protocol_name +
-                           (chr(0) * 8) + downloadid)
+                self.write(protocol_name + bytes(8) + downloadid)
         except socket.error:
             self.answer(False)
         except IOError:
             self.answer(False)
-        self.next_len = 1 + len(protocol_name)
+        self.next_len = len(protocol_name)
         self.next_func = self.read_header
 
     def answer(self, result):
@@ -49,7 +46,7 @@ class NatCheck(object):
                         self.port)
 
     def _read_header(self, s):
-        if s == chr(len(protocol_name)) + protocol_name:
+        if s == protocol_name:
             return 8, self.read_options
         return None
 
@@ -75,16 +72,16 @@ class NatCheck(object):
     def read_crypto_header(self, s):
         self.encrypter.received_key(s)
         self.encrypter.set_skey(self.downloadid)
-        cryptmode = '\x00\x00\x00\x02'    # full stream encryption
+        cryptmode = b'\x00\x00\x00\x02'    # full stream encryption
         padc = padding()
         self.write(self.encrypter.block3a +
                    self.encrypter.block3b +
                    self.encrypter.encrypt(
-                       ('\x00' * 8)            # VC
-                       + cryptmode             # acceptable crypto modes
-                       + tobinary16(len(padc))
-                       + padc                  # PadC
-                       + '\x00\x00'))        # no initial payload data
+                       bytes(8)                       # VC
+                       + cryptmode                    # acceptable crypto modes
+                       + len(padc).to_bytes(2, 'big')
+                       + padc                         # PadC
+                       + bytes(2)))                   # no initial payload data
         self._max_search = 520
         return 1, self.read_crypto_block4a
 
@@ -113,10 +110,10 @@ class NatCheck(object):
         return 6, self.read_crypto_block4b
 
     def read_crypto_block4b(self, s):
-        self.cryptmode = toint(s[:4]) % 4
+        self.cryptmode = int.from_bytes(s[:4], 'big') % 4
         if self.cryptmode != 2:
             return None                     # unknown encryption
-        padlen = (ord(s[4]) << 8) + ord(s[5])
+        padlen = int.from_bytes(s[4:6], 2)
         if padlen > 512:
             return None
         if padlen:
@@ -132,9 +129,8 @@ class NatCheck(object):
             if not self.buffer:  # oops; check for exceptions to this
                 return None
             self._end_crypto()
-        self.write(chr(len(protocol_name)) + protocol_name +
-                   option_pattern + self.Encoder.download_id)
-        return 1 + len(protocol_name), self.read_encrypted_header
+        self.write(protocol_name + option_pattern + self.Encoder.download_id)
+        return len(protocol_name), self.read_encrypted_header
 
     ### START PROTOCOL OVER ENCRYPTED CONNECTION ###
 
@@ -179,7 +175,7 @@ class NatCheck(object):
             # complete
             if self.next_len <= 0:
                 m = self.buffer
-                self.buffer = ''
+                self.buffer = b''
             elif len(self.buffer) >= self.next_len:
                 m = self.buffer[:self.next_len]
                 self.buffer = self.buffer[self.next_len:]
@@ -199,7 +195,7 @@ class NatCheck(object):
             if self.next_len < 0:  # already checked buffer
                 return             # wait for additional data
             if self.bufferlen is not None:
-                self._read2('')
+                self._read2(b'')
                 return
 
     def connection_lost(self, connection):

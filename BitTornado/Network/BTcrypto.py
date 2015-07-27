@@ -1,12 +1,11 @@
 import os
 import random
 import hashlib
-import binascii
 
 URANDOM = getattr(os, 'urandom', None)
 if not URANDOM:
     random.seed()
-    URANDOM = lambda x: ''.join(chr(random.randint(0, 255)) for _ in range(x))
+    URANDOM = lambda x: bytes(random.randrange(256) for _ in range(x))
 
 try:
     from Crypto.Cipher import ARC4
@@ -23,19 +22,9 @@ PAD_MAX = 200   # less than protocol maximum, and later assumed to be < 256
 DH_BYTES = 96
 
 
-def bytetonum(bytestr):
-    """Convert a byte string to an equivalent integer"""
-    return int(binascii.hexlify(bytestr), 16)
-
-
-def numtobyte(integer):
-    """Convert an integer to a 96-byte byte string"""
-    return binascii.unhexlify('{:0192x}'.format(integer))
-
-
 def padding():
     """Return 16-200 random bytes"""
-    return URANDOM(random.randrange(PAD_MAX - 16) + 16)
+    return URANDOM(random.randrange(16, PAD_MAX))
 
 
 #pylint: disable=E1101
@@ -55,21 +44,21 @@ class Crypto(object):
         if not disable_crypto and not CRYPTO_OK:
             raise NotImplementedError("attempt to run encryption w/ none "
                                       "installed")
-        self.privkey = bytetonum(URANDOM(KEY_LENGTH / 8))
-        self.pubkey = numtobyte(pow(2, self.privkey, DH_PRIME))
+        self.privkey = int.from_bytes(URANDOM(KEY_LENGTH // 8), 'big')
+        self.pubkey = pow(2, self.privkey, DH_PRIME).to_bytes(96, 'big')
         self.keylength = DH_BYTES
         self._VC_pattern = None
 
     def received_key(self, k):
-        self.S = numtobyte(pow(bytetonum(k), self.privkey, DH_PRIME))
-        self.block3a = hashlib.sha1('req1' + self.S).digest()
-        self.block3bkey = hashlib.sha1('req3' + self.S).digest()
+        self.S = pow(int.from_bytes(k, 'big'), self.privkey,
+                     DH_PRIME).to_bytes(96, 'big')
+        self.block3a = hashlib.sha1(b'req1' + self.S).digest()
+        self.block3bkey = hashlib.sha1(b'req3' + self.S).digest()
         self.block3b = None
 
     def _gen_block3b(self, SKEY):
-        req2key = hashlib.sha1('req2' + SKEY).digest()
-        return ''.join(chr(ord(a) ^ ord(b))
-                       for a, b in zip(req2key, self.block3bkey))
+        req2key = hashlib.sha1(b'req2' + SKEY).digest()
+        return bytes(a ^ b for a, b in zip(req2key, self.block3bkey))
 
     def test_skey(self, s, SKEY):
         block3b = self._gen_block3b(SKEY)
@@ -83,20 +72,20 @@ class Crypto(object):
     def set_skey(self, SKEY):
         if not self.block3b:
             self.block3b = self._gen_block3b(SKEY)
-        crypta = ARC4.new(hashlib.sha1('keyA' + self.S + SKEY).digest())
-        cryptb = ARC4.new(hashlib.sha1('keyB' + self.S + SKEY).digest())
+        crypta = ARC4.new(hashlib.sha1(b'keyA' + self.S + SKEY).digest())
+        cryptb = ARC4.new(hashlib.sha1(b'keyB' + self.S + SKEY).digest())
         if self.initiator:
             self.encrypt = crypta.encrypt
             self.decrypt = cryptb.decrypt
         else:
             self.encrypt = cryptb.encrypt
             self.decrypt = crypta.decrypt
-        self.encrypt('x' * 1024)  # discard first 1024 bytes
-        self.decrypt('x' * 1024)
+        self.encrypt(b'x' * 1024)  # discard first 1024 bytes
+        self.decrypt(b'x' * 1024)
 
     def VC_pattern(self):
         if not self._VC_pattern:
-            self._VC_pattern = self.decrypt('\x00' * 8)
+            self._VC_pattern = self.decrypt(b'\x00' * 8)
         return self._VC_pattern
 
     def read(self, string):

@@ -71,7 +71,7 @@ class NewSocketHandler(object):     # hand a new socket off where it belongs
         self.connection = connection
         connection.set_handler(self)
         self.closed = False
-        self.buffer = ''
+        self.buffer = b''
         self.complete = False
         self.read = self._read
         self.write = connection.write
@@ -91,7 +91,7 @@ class NewSocketHandler(object):     # hand a new socket off where it belongs
     # copied from Encrypter and modified
 
     def _read_header(self, s):
-        if s == chr(len(protocol_name)) + protocol_name:
+        if s == protocol_name:
             self.protocol = protocol_name
             return 8, self.read_options
         return None
@@ -173,7 +173,7 @@ class NewSocketHandler(object):     # hand a new socket off where it belongs
             # or -1 = wait for next read, then all characters in the buffer
             if self.next_len <= 0:
                 m = self.buffer
-                self.buffer = ''
+                self.buffer = b''
             elif len(self.buffer) >= self.next_len:
                 m = self.buffer[:self.next_len]
                 self.buffer = self.buffer[self.next_len:]

@@ -314,7 +314,7 @@ class StorageWrapper:
         if not self.holes:
             return False
         self.numholes = float(len(self.holes))
-        self.alloc_buf = chr(0xFF) * self.piece_size
+        self.alloc_buf = b'\xff' * self.piece_size
         if self.alloc_type == 'pre-allocate':
             self.bgalloc_enabled = True
             return True

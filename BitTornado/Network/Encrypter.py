@@ -1,29 +1,21 @@
 import socket
 import urllib
-from binascii import hexlify, unhexlify
+from binascii import hexlify
 from .BTcrypto import Crypto, padding
 
 DEBUG = False
 
 MAX_INCOMPLETE = 8
 
-protocol_name = 'BitTorrent protocol'
-option_pattern = chr(0) * 8
-
-
-def toint(s):
-    return int(hexlify(s), 16)
-
-
-def tobinary16(i):
-    return unhexlify('{:04x}'.format(i & 0xFFFF))
+protocol_name = b'\x13BitTorrent protocol'
+option_pattern = bytes(8)
 
 
 def make_readable(s):
     if not s:
         return ''
     if urllib.parse.quote(s).find('%') >= 0:
-        return hexlify(s).upper()
+        return hexlify(s).upper().decode()
     return '"' + s + '"'
 
 
@@ -57,7 +49,7 @@ class Connection(object):
         self.complete = False
         self.keepalive = lambda: None
         self.closed = False
-        self.buffer = ''
+        self.buffer = b''
         self.bufferlen = None
         self.log = None
         self.read = self._read
@@ -72,9 +64,9 @@ class Connection(object):
                 self.write(self.encrypter.padded_pubkey())
             else:
                 self.encrypted = False
-                self.write(chr(len(protocol_name)) + protocol_name +
-                           option_pattern + self.Encoder.download_id)
-            self.next_len = 1 + len(protocol_name)
+                self.write(protocol_name + option_pattern +
+                           self.Encoder.download_id)
+            self.next_len = len(protocol_name)
             self.next_func = self.read_header
         elif ext_handshake:
             self.Encoder.connecter.external_connection_made += 1
@@ -90,7 +82,7 @@ class Connection(object):
                 self.next_len, self.next_func = 20, self.read_peer_id
         else:
             self.encrypted = None       # don't know yet
-            self.next_len = 1 + len(protocol_name)
+            self.next_len = len(protocol_name)
             self.next_func = self.read_header
         self.Encoder.raw_server.add_task(self._auto_close, 30)
 
@@ -105,7 +97,7 @@ class Connection(object):
         self.write = self._log_write
 
     def _log_write(self, s):
-        self.log.write('w:' + hexlify(s) + '\n')
+        self.log.write('w:' + hexlify(s).decode() + '\n')
         self._logwritefunc(s)
 
     def get_ip(self, real=False):
@@ -127,7 +119,7 @@ class Connection(object):
         return self.connection.is_flushed()
 
     def _read_header(self, s):
-        if s == chr(len(protocol_name)) + protocol_name:
+        if s == protocol_name:
             return 8, self.read_options
         return None
 
@@ -165,18 +157,18 @@ class Connection(object):
         self.encrypter.set_skey(self.Encoder.download_id)
         if self.locally_initiated:
             if self.Encoder.config['crypto_only']:
-                cryptmode = '\x00\x00\x00\x02'    # full stream encryption
+                cryptmode = b'\x00\x00\x00\x02'    # full stream encryption
             else:
-                cryptmode = '\x00\x00\x00\x03'    # header or full stream
+                cryptmode = b'\x00\x00\x00\x03'    # header or full stream
             padc = padding()
             self.write(self.encrypter.block3a +
                        self.encrypter.block3b +
                        self.encrypter.encrypt(
-                           ('\x00' * 8)            # VC
+                           (b'\x00' * 8)           # VC
                            + cryptmode             # acceptable crypto modes
-                           + tobinary16(len(padc))
+                           + len(padc).to_bytes(2, 'big')
                            + padc                  # PadC
-                           + '\x00\x00'))        # no initial payload data
+                           + b'\x00\x00'))         # no initial payload data
             self._max_search = 520
             return 1, self.read_crypto_block4a
         self.write(self.encrypter.padded_pubkey())
@@ -213,7 +205,7 @@ class Connection(object):
     def read_crypto_block3c(self, s):
         if s[:8] != ('\x00' * 8):             # check VC
             return None
-        self.cryptmode = toint(s[8:12]) % 4
+        self.cryptmode = int.from_bytes(s[8:12], 'big') % 4
         if self.cryptmode == 0:
             return None                     # no encryption selected
         # only header encryption
@@ -236,7 +228,7 @@ class Connection(object):
         padd = padding()
         self.write(('\x00' * 8)            # VC
                    + cryptmode             # encryption mode
-                   + tobinary16(len(padd))
+                   + len(padd).to_bytes(2, 'big')
                    + padd)                # PadD
         if ialen:
             return ialen, self.read_crypto_ia
@@ -245,9 +237,10 @@ class Connection(object):
     def read_crypto_ia(self, s):
         if DEBUG:
             self._log_start()
-            self.log.write('r:' + hexlify(s) + '(ia)\n')
+            self.log.write('r:' + hexlify(s).decode() + '(ia)\n')
             if self.buffer:
-                self.log.write('r:' + hexlify(self.buffer) + '(buffer)\n')
+                self.log.write('r:' + hexlify(self.buffer).decode() +
+                               '(buffer)\n')
         return self.read_crypto_block3done(s)
 
     def read_crypto_block3done(self, ia=''):
@@ -259,7 +252,7 @@ class Connection(object):
             self._end_crypto()
         if ia:
             self._write_buffer(ia)
-        return 1 + len(protocol_name), self.read_encrypted_header
+        return len(protocol_name), self.read_encrypted_header
 
     ### OUTGOING CONNECTION ###
 
@@ -270,7 +263,7 @@ class Connection(object):
         return 6, self.read_crypto_block4b
 
     def read_crypto_block4b(self, s):
-        self.cryptmode = toint(s[:4]) % 4
+        self.cryptmode = int.from_bytes(s[:4], 'big') % 4
         if self.cryptmode == 1:             # only header encryption
             if self.Encoder.config['crypto_only']:
                 return None
@@ -294,9 +287,8 @@ class Connection(object):
             if not self.buffer:  # oops; check for exceptions to this
                 return None
             self._end_crypto()
-        self.write(chr(len(protocol_name)) + protocol_name +
-                   option_pattern + self.Encoder.download_id)
-        return 1 + len(protocol_name), self.read_encrypted_header
+        self.write(protocol_name + option_pattern + self.Encoder.download_id)
+        return len(protocol_name), self.read_encrypted_header
 
     ### START PROTOCOL OVER ENCRYPTED CONNECTION ###
 
@@ -316,9 +308,8 @@ class Connection(object):
         if not self.locally_initiated:
             if not self.encrypted:
                 self.Encoder.connecter.external_connection_made += 1
-            self.write(chr(len(protocol_name)) + protocol_name +
-                       option_pattern + self.Encoder.download_id +
-                       self.Encoder.my_id)
+            self.write(protocol_name + option_pattern +
+                       self.Encoder.download_id + self.Encoder.my_id)
         return 20, self.read_peer_id
 
     def read_peer_id(self, s):
@@ -343,7 +334,7 @@ class Connection(object):
         return 4, self.read_len
 
     def read_len(self, s):
-        l = toint(s)
+        l = int.from_bytes(s, 'big')
         if l > self.Encoder.max_len:
             return None
         return l, self.read_message
@@ -391,7 +382,7 @@ class Connection(object):
 
     def _read(self, s):
         if self.log:
-            self.log.write('r:' + hexlify(s) + '\n')
+            self.log.write('r:' + hexlify(s).decode() + '\n')
         self.Encoder.measurefunc(len(s))
         self.buffer += s
         while True:
@@ -404,7 +395,7 @@ class Connection(object):
             # complete
             if self.next_len <= 0:
                 m = self.buffer
-                self.buffer = ''
+                self.buffer = b''
             elif len(self.buffer) >= self.next_len:
                 m = self.buffer[:self.next_len]
                 self.buffer = self.buffer[self.next_len:]
@@ -422,7 +413,7 @@ class Connection(object):
             if self.next_len < 0:  # already checked buffer
                 return             # wait for additional data
             if self.bufferlen is not None:
-                self._read2('')
+                self._read2(b'')
                 return
 
     def _switch_to_read2(self):
@@ -436,14 +427,14 @@ class Connection(object):
 
     def _read2(self, s):  # more efficient, requires buffer['',''] & bufferlen
         if self.log:
-            self.log.write('r:' + hexlify(s) + '\n')
+            self.log.write('r:' + hexlify(s).decode() + '\n')
         self.Encoder.measurefunc(len(s))
         while True:
             if self.closed:
                 return
             p = self.next_len - self.bufferlen
             if self.next_len == 0:
-                m = ''
+                m = b''
             elif s:
                 if p > len(s):
                     self.buffer.append(s)
@@ -451,12 +442,12 @@ class Connection(object):
                     return
                 self.bufferlen = len(s) - p
                 self.buffer.append(s[:p])
-                m = ''.join(self.buffer)
+                m = b''.join(self.buffer)
                 if p == len(s):
                     self.buffer = []
                 else:
                     self.buffer = [s[p:]]
-                s = ''
+                s = b''
             elif p <= 0:
                 # assert len(self.buffer) == 1
                 s = self.buffer[0]
@@ -466,7 +457,7 @@ class Connection(object):
                     self.buffer = []
                 else:
                     self.buffer = [s[self.next_len:]]
-                s = ''
+                s = b''
             else:
                 return
             try:

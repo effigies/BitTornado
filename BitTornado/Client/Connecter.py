@@ -21,38 +21,33 @@ PIECE = b'\x07'
 CANCEL = b'\x08'
 
 
-class Connection:
+class Connection(object):
     def __init__(self, connection, connecter, ccount):
-        self.connection = connection
-        self.connecter = connecter
-        self.ccount = ccount
-        self.got_anything = False
-        self.next_upload = None
-        self.outqueue = []
-        self.partial_message = None
-        self.download = None
-        self.send_choke_queued = False
-        self.just_unchoked = None
+        self.connection = connection    # Encrypter.Connection
+        self.connecter = connecter      # Connector
+        self.ccount = ccount            # Connector.ccount (at time of init)
+        self.got_anything = False       # Bool (set once)
+        self.next_upload = None         # Connection (linked-list)
+        self.outqueue = []              # [bytes]
+        self.partial_message = None     # bytes
+        self.download = None            # Downloader.SingleDownload
+        self.upload = None              # Uploader.Upload
+        self.send_choke_queued = False  # Bool (togglable)
+        self.just_unchoked = None       # None -> 0 <-> clock()
+
+        # Pass-through functions
+        self.get_id = connection.get_id
+        self.get_readable_id = connection.get_readable_id
+        self.is_locally_initiated = connection.is_locally_initiated
+        self.is_encrypted = connection.is_encrypted
 
     def get_ip(self, real=False):
         return self.connection.get_ip(real)
-
-    def get_id(self):
-        return self.connection.get_id()
-
-    def get_readable_id(self):
-        return self.connection.get_readable_id()
 
     def close(self):
         if DEBUG1:
             print (self.ccount, 'connection closed')
         self.connection.close()
-
-    def is_locally_initiated(self):
-        return self.connection.is_locally_initiated()
-
-    def is_encrypted(self):
-        return self.connection.is_encrypted()
 
     def send_interested(self):
         self._send_message(INTERESTED)
@@ -160,30 +155,33 @@ class Connection:
     def set_download(self, download):
         self.download = download
 
+    def set_upload(self, upload):
+        self.upload = upload
+
     def backlogged(self):
         return not self.connection.is_flushed()
 
-    def got_request(self, i, p, l):
-        self.upload.got_request(i, p, l)
+    def got_request(self, piece_num, pos, length):
+        self.upload.got_request(piece_num, pos, length)
         if self.just_unchoked:
             self.connecter.ratelimiter.ping(clock() - self.just_unchoked)
             self.just_unchoked = 0
 
 
-class Connecter:
+class Connecter(object):
     def __init__(self, make_upload, downloader, choker, numpieces, totalup,
                  config, ratelimiter, sched=None):
-        self.downloader = downloader
-        self.make_upload = make_upload
-        self.choker = choker
-        self.numpieces = numpieces
-        self.config = config
-        self.ratelimiter = ratelimiter
+        self.make_upload = make_upload  # BT1Download._makeupload
+        self.downloader = downloader    # Downloader
+        self.choker = choker            # Choker
+        self.numpieces = numpieces      # len(BT1Download.pieces) - From info
+        self.totalup = totalup          # Measure(max_rate_period,
+                                        #         upload_rate_fudge)
+        self.config = config            # {flag: value}
+        self.ratelimiter = ratelimiter  # RateLimiter
+        self.sched = sched              # RawServer.add_task
         self.rate_capped = False
-        self.sched = sched
-        self.totalup = totalup
-        self.rate_capped = False
-        self.connections = {}
+        self.connections = {}           # {Encrypter.Connection: Connection}
         self.external_connection_made = 0
         self.ccount = 0
 
@@ -196,8 +194,8 @@ class Connecter:
         if DEBUG2:
             print (c.ccount, 'connection made')
         self.connections[connection] = c
-        c.upload = self.make_upload(c, self.ratelimiter, self.totalup)
-        c.download = self.downloader.make_download(c)
+        c.set_upload(self.make_upload(c, self.ratelimiter, self.totalup))
+        c.set_download(self.downloader.make_download(c))
         self.choker.connection_made(c)
         return c
 

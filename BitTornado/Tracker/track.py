@@ -454,10 +454,8 @@ class Tracker:
         """just send, don't attempt to error check
         discard any returned data"""
         try:
-            h = urlopen(url)
-            h.read()
-            h.close()
-        except (IOError, socket.error):
+            urlopen(url).close()
+        except IOError:
             return
 
     def get_infopage(self):

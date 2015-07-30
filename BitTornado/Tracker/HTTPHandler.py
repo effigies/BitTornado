@@ -1,7 +1,7 @@
 import sys
 import time
+import io
 import gzip
-from io import StringIO, BytesIO
 from BitTornado.clock import clock
 
 DEBUG = False
@@ -14,7 +14,7 @@ class HTTPConnection:
     def __init__(self, handler, connection):
         self.handler = handler
         self.connection = connection
-        self.buf = ''
+        self.buf = b''
         self.closed = False
         self.done = False
         self.donereading = False
@@ -28,18 +28,18 @@ class HTTPConnection:
             return True
         self.buf += data
         while True:
-            val, nl, buf = self.buf.partition('\n')
+            val, nl, buf = self.buf.partition(b'\n')
             if not nl:
                 return True
             self.buf = buf
-            self.next_func = self.next_func(val)
+            self.next_func = self.next_func(val.decode())
             if self.donereading:
                 return True
             if self.next_func is None or self.closed:
                 return False
 
     def read_type(self, data):
-        self.header = data.strip()
+        self.request = data.strip()
         words = data.split()
         if len(words) == 3:
             self.command, self.path, _ = words
@@ -68,13 +68,14 @@ class HTTPConnection:
             if r is not None:
                 self.answer(r)
             return None
+
         try:
-            i = data.index(':')
+            key, colon, val = data.partition(':')
         except ValueError:
             return None
-        self.headers[data[:i].strip().lower()] = data[i + 1:].strip()
+        self.headers[key.strip().lower()] = val.strip()
         if DEBUG:
-            print(data[:i].strip() + ": " + data[i + 1:].strip())
+            print(key.strip() + ": " + val.strip())
         return self.read_header
 
     def answer(self, rrhd):
@@ -82,7 +83,7 @@ class HTTPConnection:
         if self.closed:
             return
         if self.encoding == 'gzip':
-            compressed = BytesIO()
+            compressed = io.BytesIO()
             gz = gzip.GzipFile(fileobj=compressed, mode='wb', compresslevel=9)
             gz.write(data)
             gz.close()
@@ -101,18 +102,19 @@ class HTTPConnection:
             ident = '-'
         else:
             ident = self.encoding
-        self.handler.log(self.connection.get_ip(), ident, '-', self.header,
+        self.handler.log(self.connection.get_ip(), ident, '-', self.request,
                          responsecode, len(data),
                          self.headers.get('referer', '-'),
                          self.headers.get('user-agent', '-'))
         self.done = True
-        r = StringIO()
-        r.write('HTTP/1.0 {} {}\r\n'.format(responsecode, responsestring))
+        r = io.BytesIO()
+        r.write('HTTP/1.0 {} {}\r\n'.format(responsecode,
+                                            responsestring).encode())
         if not self.pre1:
             headers['Content-Length'] = len(data)
             for key, value in headers.items():
-                r.write(key + ': ' + str(value) + '\r\n')
-            r.write('\r\n')
+                r.write('{}: {!s}\r\n'.format(key, value).encode())
+            r.write(b'\r\n')
         if self.command != 'HEAD':
             r.write(data)
         self.connection.write(r.getvalue())

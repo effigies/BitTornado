@@ -6,7 +6,6 @@ import signal
 import random
 import threading
 import urllib
-import socket
 from io import StringIO
 from traceback import print_exc
 from binascii import hexlify
@@ -185,7 +184,7 @@ def statefiletemplate(x):
                     raise ValueError
                 dirkeys.add(y[1])
 
-alas = 'your file may exist elsewhere in the universe\nbut alas, not here\n'
+alas = b'your file may exist elsewhere in the universe\nbut alas, not here\n'
 
 local_IPs = AddrList()
 local_IPs.set_intranet_addresses()
@@ -244,7 +243,7 @@ def compact_peer_info(ip, port):
     return s
 
 
-class Tracker:
+class Tracker(object):
     def __init__(self, config, rawserver):
         self.config = config
         self.response_size = config['response_size']
@@ -255,7 +254,7 @@ class Tracker:
         self.favicon = None
         if favicon:
             try:
-                with open(favicon, 'r') as h:
+                with open(favicon, 'rb') as h:
                     self.favicon = h.read()
             except IOError:
                 print("**warning** specified favicon file -- %s -- does not "
@@ -467,7 +466,7 @@ class Tracker:
             if red:
                 return (302, 'Found', {'Content-Type': 'text/html',
                                        'Location': red},
-                        '<A HREF="' + red + '">Click Here</A>')
+                        '<A HREF="{}">Click Here</A>'.format(red).encode())
 
             s = StringIO()
             s.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
@@ -481,12 +480,12 @@ class Tracker:
                     '</ul>\n' % (version, isotime()))
             if self.config['allowed_dir']:
                 if self.show_names:
-                    names = [(self.allowed[hash]['name'], hash)
-                             for hash in self.allowed]
+                    names = [(self.allowed[infohash]['name'], infohash)
+                             for infohash in self.allowed]
                 else:
-                    names = [(None, hash) for hash in self.allowed]
+                    names = [(None, infohash) for infohash in self.allowed]
             else:
-                names = [(None, hash) for hash in self.downloads]
+                names = [(None, infohash) for infohash in self.downloads]
             if not names:
                 s.write('<p>not tracking any files yet...</p>\n')
             else:
@@ -509,24 +508,24 @@ class Tracker:
                             '<tr><th>info hash</th><th align="right">complete'
                             '</th><th align="right">downloading</th>'
                             '<th align="right">downloaded</th></tr>\n')
-                for name, hash in names:
-                    l = self.downloads[hash]
-                    n = self.completed.get(hash, 0)
+                for name, infohash in names:
+                    l = self.downloads[infohash]
+                    n = self.completed.get(infohash, 0)
                     tn = tn + n
-                    c = self.seedcount[hash]
+                    c = self.seedcount[infohash]
                     tc = tc + c
                     d = len(l) - c
                     td = td + d
                     if self.config['allowed_dir'] and self.show_names:
-                        if hash in self.allowed:
+                        if infohash in self.allowed:
                             nf = nf + 1
-                            sz = self.allowed[hash]['length']  # size
+                            sz = self.allowed[infohash]['length']  # size
                             ts = ts + sz
                             szt = sz * n   # Transferred for this torrent
                             tt = tt + szt
                             if self.allow_get == 1:
                                 linkname = '<a href="/file?info_hash=' + \
-                                    urllib.parse.quote(hash) + '">' + name + \
+                                    urllib.parse.quote(infohash) + '">' + name + \
                                     '</a>'
                             else:
                                 linkname = name
@@ -536,14 +535,15 @@ class Tracker:
                                     '<td align="right">%i</td>'
                                     '<td align="right">%i</td>'
                                     '<td align="right">%s</td></tr>\n' %
-                                    (hexlify(hash), linkname, formatSize(sz),
-                                     c, d, n, formatSize(szt)))
+                                    (hexlify(infohash).decode(), linkname,
+                                     formatSize(sz), c, d, n, formatSize(szt)))
                     else:
                         s.write('<tr><td><code>%s</code></td>'
                                 '<td align="right"><code>%i</code></td>'
                                 '<td align="right"><code>%i</code></td>'
                                 '<td align="right"><code>%i</code></td>'
-                                '</tr>\n' % (hexlify(hash), c, d, n))
+                                '</tr>\n' % (hexlify(infohash).decode(), c, d,
+                                             n))
                 if self.config['allowed_dir'] and self.show_names:
                     s.write('<tr><td align="right" colspan="2">%i files</td>'
                             '<td align="right">%s</td><td align="right">%i'
@@ -571,21 +571,21 @@ class Tracker:
             s.write('</body>\n</html>\n')
             return (200, 'OK',
                     {'Content-Type': 'text/html; charset=iso-8859-1'},
-                    s.getvalue())
+                    s.getvalue().encode())
         except Exception:
             print_exc()
             return (500, 'Internal Server Error',
                     {'Content-Type': 'text/html; charset=iso-8859-1'},
-                    'Server Error')
+                    b'Server Error')
 
-    def scrapedata(self, hash, return_name=True):
-        l = self.downloads[hash]
-        n = self.completed.get(hash, 0)
-        c = self.seedcount[hash]
+    def scrapedata(self, infohash, return_name=True):
+        l = self.downloads[infohash]
+        n = self.completed.get(infohash, 0)
+        c = self.seedcount[infohash]
         d = len(l) - c
         f = {'complete': c, 'incomplete': d, 'downloaded': n}
         if return_name and self.show_names and self.config['allowed_dir']:
-            f['name'] = self.allowed[hash]['name']
+            f['name'] = self.allowed[infohash]['name']
         return f
 
     def get_scrape(self, paramslist):
@@ -596,12 +596,12 @@ class Tracker:
                                                 'Pragma': 'no-cache'},
                         bencode({'failure reason': 'specific scrape function '
                                  'is not available with this tracker.'}))
-            for hash in paramslist['info_hash']:
+            for infohash in paramslist['info_hash']:
                 if self.allowed is not None:
-                    if hash in self.allowed:
-                        fs[hash] = self.scrapedata(hash)
-                elif hash in self.downloads:
-                    fs[hash] = self.scrapedata(hash)
+                    if infohash in self.allowed:
+                        fs[infohash] = self.scrapedata(infohash)
+                elif infohash in self.downloads:
+                    fs[infohash] = self.scrapedata(infohash)
         else:
             if self.config['scrape_allowed'] != 'full':
                 return (400, 'Not Authorized', {'Content-Type': 'text/plain',
@@ -612,22 +612,22 @@ class Tracker:
                 keys = self.allowed.keys()
             else:
                 keys = self.downloads.keys()
-            for hash in keys:
-                fs[hash] = self.scrapedata(hash)
+            for infohash in keys:
+                fs[infohash] = self.scrapedata(infohash)
 
         return (200, 'OK', {'Content-Type': 'text/plain'},
                 bencode({'files': fs}))
 
-    def get_file(self, hash):
+    def get_file(self, infohash):
         if not self.allow_get:
             return (400, 'Not Authorized', {'Content-Type': 'text/plain',
                                             'Pragma': 'no-cache'},
                     'get function is not available with this tracker.')
-        if hash not in self.allowed:
+        if infohash not in self.allowed:
             return (404, 'Not Found', {'Content-Type': 'text/plain',
                                        'Pragma': 'no-cache'}, alas)
-        fname = self.allowed[hash]['file']
-        fpath = self.allowed[hash]['path']
+        fname = self.allowed[infohash]['file']
+        fpath = self.allowed[infohash]['path']
         return (200, 'OK',
                 {'Content-Type': 'application/x-bittorrent',
                  'Content-Disposition': 'attachment; filename=' + fname},
@@ -910,6 +910,7 @@ class Tracker:
         return data
 
     def get(self, connection, path, headers):
+        # Returns (int, str, {str: str}, bytes) or None
         real_ip = connection.get_ip()
         ip = real_ip
         try:
@@ -947,14 +948,17 @@ class Tracker:
                 path = path.replace('+', ' ')
                 query = query.replace('+', ' ')
             path = urllib.parse.unquote(path)[1:]
-            for s in query.split('&'):
-                if s:
-                    i = s.index('=')
-                    kw = urllib.parse.unquote(s[:i])
-                    paramslist.setdefault(kw, [])
-                    paramslist[kw] += [urllib.parse.unquote(s[i + 1:])]
+            for subquery in query.split('&'):
+                if subquery:
+                    key, eql, val = subquery.partition('=')
+                    key = urllib.parse.unquote(key)
+                    if key in ('info_hash', 'peer_id'):
+                        val = urllib.parse.unquote_to_bytes(val)
+                    else:
+                        val = urllib.parse.unquote(val)
+                    paramslist.setdefault(key, []).append(val)
 
-            if path == '' or path == 'index.html':
+            if path in ('', 'index.html'):
                 return self.get_infopage()
             if path == 'file':
                 return self.get_file(params('info_hash'))
@@ -994,7 +998,7 @@ class Tracker:
 
         except ValueError as e:
             return (400, 'Bad Request', {'Content-Type': 'text/plain'},
-                    'you sent me garbage - ' + str(e))
+                    'you sent me garbage - {!s}'.format(e).encode())
 
         if self.aggregate_forward and 'tracker' not in paramslist:
             self.aggregate_senddata(query)

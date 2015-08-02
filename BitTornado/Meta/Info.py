@@ -359,7 +359,10 @@ class MetaInfo(dict):
     validKeys = set(('info', 'announce', 'creation date', 'comment',
                      'announce-list', 'httpseeds'))
 
-    def __init__(self, **params):
+    def __init__(self, iterable=None, **params):
+        if iterable is not None:
+            params.update(dict(iterable))
+
         self.skip_check = params.pop('skip_check', False)
 
         real_announce_list = params.pop('real_announce_list', None)
@@ -417,17 +420,6 @@ class MetaInfo(dict):
         if key not in self:
             self[key] = default
         return self[key]
-
-    def write(self, torrent):
-        """Write MetaInfo to a torrent file"""
-        with open(torrent, 'wb') as torrentfile:
-            torrentfile.write(bencode(self))
-
-    @classmethod
-    def read(cls, torrent, skip_check=False):
-        """Read MetaInfo from a torrent file"""
-        with open(torrent, 'rb') as torrentfile:
-            return cls(skip_check=skip_check, **bdecode(torrentfile.read()))
 
     @property
     def info(self):             # pylint: disable=E0202

@@ -178,6 +178,23 @@ class BTDecoder(object):
         ord('9'):   decode_string,
     }
 
+
+class BencodedFile(object):
+    """Enable reading of bencoded files into bencodable objects, and writing
+    bencodable objects into bencoded files.
+
+    A bencodable object is one in which all values are lists, dictionaries,
+    (byte)strings or integers, or subclasses of these, and all dictionary keys
+    are (byte)strings or subclasses."""
+    def write(self, fname):
+        with open(fname, 'wb') as handle:
+            handle.write(bencode(self))
+
+    @classmethod
+    def read(klass, fname, *args, **kwargs):
+        with open(fname, 'rb') as handle:
+            return klass(bdecode(handle.read()), *args, **kwargs)
+
 #pylint: disable=C0103
 bencode = BTEncoder().__call__
 bdecode = BTDecoder().__call__

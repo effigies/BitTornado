@@ -17,7 +17,8 @@ from .torrentlistparse import parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
-from BitTornado.Meta.bencode import bencode, bdecode, Bencached
+from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
+from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList
@@ -115,6 +116,25 @@ defaults = [
      'seeded'),
     ('compact_reqd', 1, "only allow peers that accept a compact response"),
 ]
+
+
+class TrackerState(TypedDict, BencodedFile):
+    class Completed(BytesIndexed):
+        valtype = int
+
+    class Peers(BytesIndexed):
+        class Peer(BytesIndexed):
+            class PeerInfo(TypedDict):
+                typemap = {'ip': str, 'port': int, 'left': int, 'nat': bool,
+                           'requirecrypto': bool, 'supportcrypto': bool,
+                           'key': str}
+            keyconst = lambda self, key: len(key) == 20
+            valtype = PeerInfo
+        keyconst = lambda self, key: len(key) == 20
+        valtype = Peer
+
+    typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
+               'allowed_dir_files': dict}
 
 
 def statefiletemplate(x):
@@ -263,7 +283,7 @@ class Tracker(object):
         self.cached = {}    # format: infohash: [[time1, l1, s1], ...]
         self.cached_t = {}  # format: infohash: [time, cache]
         self.times = {}
-        self.state = {}
+        self.state = TrackerState()
         self.seedcount = {}
 
         self.allowed_IPs = None
@@ -283,11 +303,7 @@ class Tracker(object):
 
         if os.path.exists(self.dfile):
             try:
-                with open(self.dfile, 'rb') as h:
-                    ds = h.read()
-                tempstate = bdecode(ds)
-                if 'peers' not in tempstate:
-                    tempstate = {'peers': tempstate}
+                tempstate = TrackerState.read(self.dfile)
                 statefiletemplate(tempstate)
                 self.state = tempstate
             except (IOError, ValueError, TypeError):
@@ -1092,8 +1108,7 @@ class Tracker(object):
 
     def save_state(self):
         self.rawserver.add_task(self.save_state, self.save_dfile_interval)
-        with open(self.dfile, 'wb') as h:
-            h.write(bencode(self.state))
+        self.state.write(self.dfile)
 
     def parse_allowed(self):
         self.rawserver.add_task(self.parse_allowed, self.parse_dir_interval)

@@ -8,7 +8,8 @@ import os
 import re
 import time
 import hashlib
-from .bencode import bencode, bdecode
+from .TypedCollections import TypedDict, TypedList, SplitList
+from .bencode import BencodedFile
 
 
 def get_piece_len(size):
@@ -39,6 +40,8 @@ def check_type(obj, types, errmsg='', pred=lambda x: False):
     """Raise value error if obj does not match type or triggers predicate"""
     if not isinstance(obj, types) or pred(obj):
         raise ValueError(errmsg)
+
+VALID_NAME = re.compile(r'^[^/\\.~][^/\\]*$')
 
 
 def check_info(info):
@@ -169,7 +172,7 @@ class PieceHasher(object):
         return self._hash.name
 
 
-class Info(dict):   # pylint: disable=R0904
+class Info(TypedDict):   # pylint: disable=R0904
     """Info - information associated with a .torrent file
 
     Info attributes
@@ -179,7 +182,15 @@ class Info(dict):   # pylint: disable=R0904
         long        totalhashed - portion of total data hashed
         PieceHasher hasher      - object to manage hashed files
     """
-    validKeys = set(('name', 'piece length', 'pieces', 'files', 'length'))
+    class Files(TypedList):
+        class File(TypedDict):
+            class Path(TypedList):
+                valtype = str
+                valconst = lambda s, x: VALID_NAME.match(x)
+            typemap = {'length': int, 'path': Path}
+        valtype = File
+    typemap = {'name': str, 'piece length': int, 'pieces': bytes,
+               'files': Files, 'length': int}
 
     def __init__(self, name, size=None,
                  progress=lambda x: None, progress_percent=False, **params):
@@ -192,17 +203,32 @@ class Info(dict):   # pylint: disable=R0904
         """
         super(Info, self).__init__()
 
+        if not params and not isinstance(name, (str, bytes)):
+            params = name
+            # Accept iterables
+            if not isinstance(params, dict):
+                params = dict(params)
+            name = params.pop('name', None)
+            size = params.pop('size', None)
+            progress = params.pop('progress', lambda x: None)
+            progress_percent = params.pop('progress_percent', False)
+
+        if isinstance(name, bytes):
+            name = name.decode()
+
         self['name'] = name
 
         if 'files' in params:
-            self._files = params['files']
-            self.size = sum(entry['length'] for entry in self._files)
+            self['files'] = params['files']
+            self['length'] = sum(entry['length']
+                                 for entry in self._get('files'))
         elif 'length' in params:
-            self.size = params['length']
-            self._files = [{'path': self['name'], 'length': self.size}]
+            self['length'] = params['length']
+            self['files'] = [{'path': [self['name']],
+                              'length': self._get('length')}]
         else:
-            self._files = []
-            self.size = size
+            self['files'] = []
+            self['length'] = size
 
         if 'pieces' in params:
             pieces = params['pieces']
@@ -210,7 +236,7 @@ class Info(dict):   # pylint: disable=R0904
             self.hasher = PieceHasher(params['piece length'])
             self.hasher.pieces = [pieces[i:i + 20]
                                   for i in range(0, len(pieces), 20)]
-            self.totalhashed = self.size
+            self.totalhashed = self._get('length')
         elif size:
             # BitTorrent/BitTornado have traditionally allowed this parameter
             piece_len_exp = params.get('piece_size_pow2')
@@ -226,12 +252,12 @@ class Info(dict):   # pylint: disable=R0904
         # Call the given progress function according to whether it accpts
         # percent or update
         if progress_percent:
-            assert self.size
+            assert self._get('length')
 
             def totalprogress(update, self=self, base=progress):
                 """Update totalhashed and use percentage progress callback"""
                 self.totalhashed += update
-                base(self.totalhashed / self.size)
+                base(self.totalhashed / self._get('length'))
             self.progress = totalprogress
         else:
             def updateprogress(update, self=self, base=progress):
@@ -242,35 +268,33 @@ class Info(dict):   # pylint: disable=R0904
 
     def __contains__(self, key):
         """Test whether a key is in the Info dict"""
+        files = self._get('files')
         if key == 'files':
-            return len(self._files) != 1
+            return len(files) != 1
         elif key == 'length':
-            return len(self._files) == 1
+            return len(files) == 1
         else:
-            return key in self.validKeys
+            return key in self.valid_keys
 
     def __getitem__(self, key):
         """Retrieve value associated with key in Info dict"""
-        if key not in self.validKeys:
+        if key not in self.valid_keys:
             raise KeyError('Invalid Info key')
         if key == 'piece length':
             return self.hasher.pieceLength
         elif key == 'pieces':
             return bytes(self.hasher)
         elif key == 'files':
-            if 'files' in self:
-                return self._files
-            raise KeyError('files')
+            if 'files' not in self:
+                raise KeyError('files')
         elif key == 'length':
-            if 'length' in self:
-                return self.size
-            raise KeyError('length')
-        else:
-            return super(Info, self).__getitem__(key)
+            if 'length' not in self:
+                raise KeyError('length')
+        return super(Info, self).__getitem__(key)
 
     def keys(self):
         """Return iterator over keys in Info dict"""
-        keys = self.validKeys.copy()
+        keys = self.valid_keys.copy()
         if 'files' in self:
             keys.remove('length')
         else:
@@ -293,6 +317,9 @@ class Info(dict):   # pylint: disable=R0904
         except KeyError:
             return default
 
+    def _get(self, *args, **kwargs):
+        return super(Info, self).get(*args, **kwargs)
+
     def add_file_info(self, size, path):
         """Add file information to torrent.
 
@@ -300,7 +327,7 @@ class Info(dict):   # pylint: disable=R0904
             long        size    size of file (in bytes)
             str[]       path    file path e.g. ['path','to','file.ext']
         """
-        self._files.append({'length': size, 'path': path})
+        self._get('files').append({'length': size, 'path': path})
 
     def add_data(self, data):
         """Process a segment of data.
@@ -325,13 +352,15 @@ class Info(dict):   # pylint: disable=R0904
 
         Parameters
             str location    - base path for hashed files"""
-        excessLength = self.size % self.hasher.pieceLength
+        excessLength = self._get('length') % self.hasher.pieceLength
         if self.hasher.done != 0 or excessLength == 0:
             return
 
+        seek = 0
+
         # Construct list of files needed to provide the leftover data
         rehash = []
-        for entry in self._files[::-1]:
+        for entry in self._get('files')[::-1]:
             rehash.insert(0, entry)
             excessLength -= entry['length']
             if excessLength < 0:
@@ -354,88 +383,25 @@ class Info(dict):   # pylint: disable=R0904
             raise ValueError("Location does not produce same hash")
 
 
-class MetaInfo(dict):
+class MetaInfo(TypedDict, BencodedFile):
     """A constrained metainfo dictionary"""
-    validKeys = set(('info', 'announce', 'creation date', 'comment',
-                     'announce-list', 'httpseeds'))
+    class AnnounceList(SplitList):
+        class AnnounceTier(SplitList):
+            splitchar = ','
+            valtype = str
+        splitchar = '|'
+        valtype = AnnounceTier
 
-    def __init__(self, iterable=None, **params):
-        if iterable is not None:
-            params.update(dict(iterable))
+    class HTTPList(SplitList):
+        splitchar = '|'
+        valtype = str
 
-        self.skip_check = params.pop('skip_check', False)
+    typemap = {'info': Info, 'announce': str, 'creation date': int,
+               'comment': str, 'announce-list': AnnounceList,
+               'httpseeds': HTTPList}
 
-        real_announce_list = params.pop('real_announce_list', None)
-        announce_list = params.pop('announce_list', None)
-        real_httpseeds = params.pop('real_httpseeds', None)
-        httpseeds = params.pop('httpseeds', None)
+    def __init__(self, *args, **kwargs):
+        super(MetaInfo, self).__init__(*args, **kwargs)
 
-        # Since httpseeds may be passed as a parameter or a list, check this
-        # possibility
-        if isinstance(httpseeds, list):
-            real_httpseeds = httpseeds
-
-        if real_announce_list:
-            self['announce-list'] = real_announce_list
-        elif announce_list:
-            self['announce-list'] = [tier.split(',')
-                                     for tier in announce_list.split('|')]
-        if real_httpseeds:
-            self['httpseeds'] = real_httpseeds
-        elif httpseeds:
-            self['httpseeds'] = httpseeds.split('|')
-
-        self.info = params.pop('info', None)
-
-        if 'creation date' not in params:
+        if 'creation date' not in self:
             self['creation date'] = int(time.time())
-        super(MetaInfo, self).__init__((k, v) for k, v in params.items()
-                                       if k in self.validKeys and v != '')
-
-    def __setitem__(self, key, value):
-        """Set value associated with key if key is in MetaInfo.validKeys"""
-        if key not in self.validKeys:
-            raise KeyError('Invalid MetaInfo key')
-        super(MetaInfo, self).__setitem__(key, value)
-
-    def update(self, itr=None, **params):
-        """Update MetaInfo from an iterable/dict and/or from named parameters
-
-        Named parameters take precedence, but all arguments are filtered
-        against MetaInfo.validKeys
-        """
-        if itr is not None:
-            if hasattr(itr, 'keys'):
-                src = ((key, itr[key]) for key in itr if key in self.validKeys)
-            else:
-                src = ((key, val) for key, val in itr if key in self.validKeys)
-            super(MetaInfo, self).update(src)
-
-        super(MetaInfo, self).update((key, params[key]) for key in params
-                                     if key in self.validKeys)
-
-    def setdefault(self, key, default=None):
-        """Return value associated with key. If not present, try to set to
-        default, or None, if not given."""
-        if key not in self:
-            self[key] = default
-        return self[key]
-
-    @property
-    def info(self):             # pylint: disable=E0202
-        """Access and set Info struct through attribute"""
-        return self['info']
-
-    @info.setter                # pylint: disable=E1101
-    def info(self, newinfo):    # pylint: disable=E0102,E0202
-        """Access and set Info struct through attribute"""
-        # Allow no Info
-        if newinfo is None:
-            self.pop('info', None)
-            return
-
-        if not self.skip_check:
-            check_info(newinfo)
-        if not isinstance(newinfo, Info):
-            newinfo = Info(**newinfo)
-        self['info'] = newinfo

@@ -15,7 +15,7 @@ class TypedList(list):
             else:
                 try:
                     val = self.valtype(val)
-                except TypeError as e:
+                except TypeError:
                     raise TypeError('Values must be of type {!r}'.format(
                                     self.valtype))
 
@@ -34,7 +34,7 @@ class TypedList(list):
             else:
                 try:
                     val = self.valtype(val)
-                except TypeError as e:
+                except TypeError:
                     raise TypeError('Values must be of type {!r}'.format(
                                     self.valtype))
 
@@ -94,11 +94,14 @@ class TypedDict(dict):
                     raise TypeError('Values must be of type {!r}'.format(
                                     self.valtype))
 
-        if self.typemap is not None and key in self.typemap:
+        if self.typemap is not None and key in self.typemap and \
+                type(val) is not self.typemap[key]:
+            if self.valmap is not None and type(val) in self.valmap:
+                val = self.valmap[type(val)](val)
             val = self.typemap[key](val)
 
         if self.valid_keys is not None and key not in self.valid_keys:
-            raise KeyError('Invalid key')
+            raise KeyError('Invalid key: ' + key)
 
         if self.keyconst is not None:
             assert self.keyconst(key)
@@ -111,7 +114,7 @@ class TypedDict(dict):
         """
         if itr is not None:
             if hasattr(itr, 'keys'):
-                itr = ((key, itr[key]) for key in itr)
+                itr = itr.items()
             for key, val in itr:
                 self[key] = val
 

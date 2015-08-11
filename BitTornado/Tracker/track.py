@@ -17,11 +17,13 @@ from .torrentlistparse import parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
+from BitTornado.Client.Rerequester import Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
 from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
-from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList
+from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList, \
+    IPv4
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
 from BitTornado.Network.zurllib import urlopen
 from BitTornado.clock import clock
@@ -137,6 +139,12 @@ class TrackerState(TypedDict, BencodedFile):
                'allowed_dir_files': dict}
 
 
+class CompactResponse(TypedDict):
+    typemap = {'failure reason': str, 'warning message': str, 'interval': int,
+               'min interval': int, 'tracker id': bytes, 'complete': int,
+               'incomplete': int, 'crypto_flags': bytes, 'peers': bytes}
+
+
 def statefiletemplate(x):
     if not isinstance(x, dict):
         raise ValueError
@@ -238,11 +246,7 @@ def _get_forwarded_ip(headers):
             return x.group(1)
         except AttributeError:
             pass
-    header = headers.get('from')
-    #if header:
-    #    return header
-    #return None
-    return header
+    return headers.get('from')
 
 
 def get_forwarded_ip(headers):
@@ -254,13 +258,9 @@ def get_forwarded_ip(headers):
 
 def compact_peer_info(ip, port):
     try:
-        s = ''.join([chr(int(i)) for i in ip.split('.')]) + \
-            chr((port & 0xFF00) >> 8) + chr(port & 0xFF)
-        if len(s) != 6:
-            raise ValueError
-    except (ValueError, TypeError):
-        s = ''  # not a valid IP, must be a domain name
-    return s
+        return IPv4(ip).to_bytes(4, 'big') + port.to_bytes(2, 'big')
+    except ValueError:
+        return b''  # not a valid IP, must be a domain name
 
 
 class Tracker(object):
@@ -328,7 +328,7 @@ class Tracker(object):
         self.cache_default = [({}, {}) for _ in range(x)]
         for infohash, ds in self.downloads.items():
             self.seedcount[infohash] = 0
-            for x, y in ds.items():
+            for x, y in list(ds.items()):
                 ip = y['ip']
                 if self.allowed_IPs and ip not in self.allowed_IPs \
                         or self.banned_IPs and ip in self.banned_IPs:
@@ -344,10 +344,8 @@ class Tracker(object):
                     ip = gip
                 self.natcheckOK(infohash, x, ip, y['port'], y)
 
-        for x in self.downloads:
-            self.times[x] = {}
-            for y in self.downloads[x]:
-                self.times[x][y] = 0
+        self.times = {dl: {sub: 0 for sub in subs}
+                      for dl, subs in self.downloads.items()}
 
         self.trackerid = createPeerID(b'-T-')
         random.seed(self.trackerid)
@@ -541,8 +539,8 @@ class Tracker(object):
                             tt = tt + szt
                             if self.allow_get == 1:
                                 linkname = '<a href="/file?info_hash=' + \
-                                    urllib.parse.quote(infohash) + '">' + name + \
-                                    '</a>'
+                                    urllib.parse.quote(infohash) + '">' + \
+                                    name + '</a>'
                             else:
                                 linkname = name
                             s.write('<tr><td><code>%s</code></td><td>%s</td>'
@@ -644,10 +642,11 @@ class Tracker(object):
                                        'Pragma': 'no-cache'}, alas)
         fname = self.allowed[infohash]['file']
         fpath = self.allowed[infohash]['path']
-        return (200, 'OK',
-                {'Content-Type': 'application/x-bittorrent',
-                 'Content-Disposition': 'attachment; filename=' + fname},
-                open(fpath, 'rb').read())
+        with open(fpath, 'rb') as handle:
+            return (200, 'OK',
+                    {'Content-Type': 'application/x-bittorrent',
+                     'Content-Disposition': 'attachment; filename=' + fname},
+                    handle.read())
 
     def check_allowed(self, infohash, paramslist):
         if self.aggregator_key is not None and not (
@@ -737,9 +736,8 @@ class Tracker(object):
             rsize = self.response_size
 
         if event == 'stopped':
-            if peer:
-                if auth:
-                    self.delete_peer(infohash, myid)
+            if peer and auth:
+                self.delete_peer(infohash, myid)
 
         elif not peer:
             ts[myid] = clock()
@@ -823,7 +821,8 @@ class Tracker(object):
 
     def peerlist(self, infohash, stopped, tracker, is_seed,
                  return_type, rsize, supportcrypto):
-        data = {}    # return data
+        compact = tracker or return_type < 3
+        data = CompactResponse() if compact else Response()
         seeds = self.seedcount[infohash]
         data['complete'] = seeds
         data['incomplete'] = len(self.downloads[infohash]) - seeds
@@ -881,7 +880,7 @@ class Tracker(object):
                 if key not in peers:
                     cp = compact_peer_info(ip, port)
                     vv[0].append(cp)
-                    vv[2].append((cp, '\x00'))
+                    vv[2].append((cp, b'\x00'))
                     if not self.config['compact_reqd']:
                         vv[3].append({'ip': ip, 'port': port, 'peer id': key})
                         vv[4].append({'ip': ip, 'port': port})
@@ -914,13 +913,13 @@ class Tracker(object):
                 peerdata.extend(cache[1][-rsize:])
                 del cache[1][-rsize:]
         if return_type == 0:
-            data['peers'] = ''.join(peerdata)
+            data['peers'] = b''.join(peerdata)
         elif return_type == 1:
             data['crypto_flags'] = "0x01" * len(peerdata)
-            data['peers'] = ''.join(peerdata)
+            data['peers'] = b''.join(peerdata)
         elif return_type == 2:
-            data['crypto_flags'] = ''.join([p[1] for p in peerdata])
-            data['peers'] = ''.join([p[0] for p in peerdata])
+            data['crypto_flags'] = bytes(p[1] for p in peerdata)
+            data['peers'] = b''.join(p[0] for p in peerdata)
         else:
             data['peers'] = peerdata
         return data
@@ -1062,7 +1061,7 @@ class Tracker(object):
         bc = self.becache.setdefault(infohash, self.cache_default)
         cp = compact_peer_info(ip, port)
         reqc = peer['requirecrypto']
-        bc[2][seed][peerid] = (cp, chr(reqc))
+        bc[2][seed][peerid] = (cp, reqc)
         if peer['supportcrypto']:
             bc[1][seed][peerid] = cp
         if not reqc:

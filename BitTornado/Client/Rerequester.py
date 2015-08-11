@@ -7,14 +7,45 @@ import random
 import urllib
 import hashlib
 from BitTornado.Network.zurllib import urlopen
+from BitTornado.Network.NetworkAddress import IPv4
 from BitTornado.Meta.Info import check_type
 from BitTornado.Meta.bencode import bdecode
+from BitTornado.Meta.TypedCollections import TypedDict, TypedList
 from io import StringIO
 from traceback import print_exc
 
 keys = {}
 basekeydata = '{:d}{!r}tracker'.format(os.getpid(), time.time()).encode()
 
+
+class Response(TypedDict):
+    class Peers(TypedList):
+        class Peer(TypedDict):
+            typemap = {'ip': str, 'port': int, 'peer id': bytes}
+
+            def __init__(self, arg):
+                if isinstance(arg, bytes):
+                    arg = {'ip': IPv4.from_bytes(arg[:4], 'big'),
+                           'port': int.from_bytes(arg[4:], 'big')}
+                TypedDict.__init__(self, arg)
+
+            def __bytes__(self):
+                return IPv4(self['ip']).to_bytes(4, 'big') + \
+                    self['port'].to_bytes(2, 'big')
+        valtype = Peer
+
+        def __init__(self, arg):
+            if isinstance(arg, bytes):
+                arg = [arg[i:i+6] for i in range(0, len(arg), 6)]
+            TypedList.__init__(self, arg)
+
+        def __bytes__(self):
+            return b''.join(map(bytes, self))
+
+    typemap = {'failure reason': str, 'warning message': str, 'interval': int,
+               'min interval': int, 'tracker id': bytes, 'complete': int,
+               'incomplete': int, 'crypto_flags': bytes, 'peers': Peers}
+    valmap = {str: str.encode}
 
 def add_key(tracker):
     keys[tracker] = base64.urlsafe_b64encode(
@@ -55,8 +86,8 @@ def check_peers(message):
                 check_type(peer.get('peer id'), bytes,
                            pred=lambda x: len(x) != 20)
 
-    elif not isinstance(peers, str) or len(peers) % 6 != 0:
-        raise ValueError
+    elif not isinstance(peers, bytes) or len(peers) % 6 != 0:
+        raise ValueError('peers misencoded')
 
     check_type(message.get('interval', 1), int, pred=lambda x: x <= 0)
     check_type(message.get('min interval', 1), int,
@@ -257,31 +288,32 @@ class Rerequester:
     def _fail(self, callback):
         if self.upratefunc() < 100 and self.downratefunc() < 100 or \
                 not self.amount_left():
-            for f in ['rejected', 'bad_data', 'troublecode']:
-                if f in self.errorcodes:
-                    r = self.errorcodes[f]
+            for code in ['rejected', 'bad_data', 'troublecode']:
+                if code in self.errorcodes:
+                    msg = self.errorcodes[code]
                     break
             else:
-                r = 'Problem connecting to tracker - unspecified error'
-            self.errorfunc(r)
+                msg = 'Problem connecting to tracker - unspecified error'
+            self.errorfunc(msg)
 
         self.last_failed = True
         self.lock.give_up()
         self.externalsched(callback)
 
-    def rerequest_single(self, t, s, callback):
-        l = self.lock.set()
+    def rerequest_single(self, tracker, querystring, callback):
+        code = self.lock.set()
         rq = threading.Thread(target=self._rerequest_single,
-                              args=[t, s + get_key(t), l, callback])
+                              args=[tracker, querystring + get_key(tracker),
+                                    code, callback])
         rq.setDaemon(False)
         rq.start()
         self.lock.wait()
         if self.lock.success:
-            self.lastsuccessful = t
+            self.lastsuccessful = tracker
             self.last_failed = False
             self.never_succeeded = False
             return True
-        if not self.last_failed and self.lastsuccessful == t:
+        if not self.last_failed and self.lastsuccessful == tracker:
             # if the last tracker hit was successful, and you've just tried the
             # tracker you'd contacted before, don't go any further, just fail
             # silently.
@@ -291,15 +323,15 @@ class Rerequester:
             return True
         return False    # returns true if it wants rerequest() to exit
 
-    def _rerequest_single(self, t, s, l, callback):
+    def _rerequest_single(self, tracker, querystring, code, callback):
         try:
             closer = [None]
 
-            def timedout(self=self, l=l, closer=closer):
-                if self.lock.trip(l):
+            def timedout(self=self, code=code, closer=closer):
+                if self.lock.trip(code):
                     self.errorcodes['troublecode'] = 'Problem connecting to ' \
                         'tracker - timeout exceeded'
-                    self.lock.unwait(l)
+                    self.lock.unwait(code)
                 try:
                     closer[0]()
                 except Exception:
@@ -308,62 +340,58 @@ class Rerequester:
             self.externalsched(timedout, self.timeout)
 
             err = None
+            if '?' in tracker:
+                url, qstring = tracker.split('?', 1)
+                querystring = qstring + '&' + querystring
+            else:
+                url = tracker
+
             try:
-                url, q = t.split('?', 1)
-                q += '&' + s
-            except ValueError:
-                url = t
-                q = s
-            try:
-                h = urlopen(url + '?' + q)
-                closer[0] = h.close
-                data = h.read()
+                with urlopen(url + '?' + querystring) as h:
+                    closer[0] = h.close
+                    data = h.read()
             except (IOError, socket.error) as e:
                 err = 'Problem connecting to tracker - ' + str(e)
             except Exception:
                 err = 'Problem connecting to tracker'
-            try:
-                h.close()
-            except socket.error:
-                pass
             if err:
-                if self.lock.trip(l):
+                if self.lock.trip(code):
                     self.errorcodes['troublecode'] = err
-                    self.lock.unwait(l)
+                    self.lock.unwait(code)
                 return
 
             if data == '':
-                if self.lock.trip(l):
+                if self.lock.trip(code):
                     self.errorcodes['troublecode'] = 'no data from tracker'
-                    self.lock.unwait(l)
+                    self.lock.unwait(code)
                 return
 
             try:
-                r = bdecode(data, sloppy=1)
-                check_peers(r)
+                response = Response(bdecode(data, sloppy=1))
+                check_peers(response)
             except ValueError as e:
-                if self.lock.trip(l):
+                if self.lock.trip(code):
                     self.errorcodes['bad_data'] = 'bad data from tracker - ' \
                         + str(e)
-                    self.lock.unwait(l)
+                    self.lock.unwait(code)
                 return
 
-            if 'failure reason' in r:
-                if self.lock.trip(l):
+            if 'failure reason' in response:
+                if self.lock.trip(code):
                     self.errorcodes['rejected'] = self.rejectedmessage + \
-                        r['failure reason']
-                    self.lock.unwait(l)
+                        response['failure reason']
+                    self.lock.unwait(code)
                 return
 
-            if self.lock.trip(l, True):     # success!
-                self.lock.unwait(l)
+            if self.lock.trip(code, True):     # success!
+                self.lock.unwait(code)
             else:
                 # attempt timed out, don't do a callback
                 callback = lambda: None
 
             # even if the attempt timed out, go ahead and process data
-            def add(self=self, r=r, callback=callback):
-                self.postrequest(r, callback)
+            def add(self=self, response=response, callback=callback):
+                self.postrequest(response, callback)
             self.externalsched(add)
         except Exception:
             self.exception(callback)
@@ -375,29 +403,15 @@ class Rerequester:
         self.interval = r.get('min interval', self.interval)
         self.trackerid = r.get('tracker id', self.trackerid)
         self.last = r.get('last')
-#        ps = len(r['peers']) + self.howmany()
         p = r['peers']
         peers = []
-        if isinstance(p, str):
-            lenpeers = len(p) / 6
-        else:
-            lenpeers = len(p)
+        lenpeers = len(p)
         cflags = r.get('crypto_flags')
-        if not isinstance(cflags, str) or len(cflags) != lenpeers:
-            cflags = None
-        if cflags is None:
+        if cflags is None or len(cflags) != lenpeers:
             cflags = [None] * lenpeers
-        else:
-            cflags = map(ord, cflags)
-        if isinstance(p, str):
-            for x in range(0, len(p), 6):
-                ip = '.'.join([str(ord(i)) for i in p[x:x + 4]])
-                port = (ord(p[x + 4]) << 8) | ord(p[x + 5])
-                peers.append(((ip, port), 0, cflags[int(x / 6)]))
-        else:
-            for i, x in enumerate(p):
-                peers.append(((x['ip'].strip(), x['port']),
-                              x.get('peer id', 0), cflags[i]))
+        for i, x in enumerate(p):
+            peers.append(((x['ip'].strip(), x['port']), x.get('peer id', 0),
+                          cflags[i]))
         ps = len(peers) + self.howmany()
         if ps < self.maxpeers:
             if self.doneflag.isSet():
@@ -427,7 +441,7 @@ class Rerequester:
         self.externalsched(r)
 
 
-class SuccessLock:
+class SuccessLock(object):
     def __init__(self):
         self.lock = threading.Lock()
         self.pause = threading.Lock()

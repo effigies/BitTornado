@@ -11,7 +11,7 @@ import socket
 import hashlib
 import threading
 from BitTornado.Client.download_bt1 import BT1Download, defaults, \
-    parse_params, get_usage, get_response
+    parse_params, get_usage, get_metainfo
 from BitTornado.Network.RawServer import RawServer
 from BitTornado.Network.SocketHandler import UPnP_ERROR
 from BitTornado.Meta.bencode import bencode
@@ -124,7 +124,7 @@ def run(params):
     h = HeadlessDisplayer()
     while 1:
         configdir = ConfigDir('downloadheadless')
-        defaultsToIgnore = ['responsefile', 'url', 'priority']
+        defaultsToIgnore = ['metafile', 'url', 'priority']
         configdir.setDefaults(defaults, defaultsToIgnore)
         configdefaults = configdir.loadConfig()
         defaults.append(
@@ -171,7 +171,7 @@ def run(params):
                 h.failed()
                 return
 
-        response = get_response(config['responsefile'], config['url'], h.error)
+        response = get_metainfo(config['metafile'], config['url'], h.error)
         if not response:
             break
 

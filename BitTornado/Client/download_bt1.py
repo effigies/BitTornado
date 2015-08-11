@@ -1,7 +1,7 @@
 import os
-import socket
+import warnings
 import threading
-from BitTornado.Meta.Info import check_type, check_info
+from BitTornado.Meta.Info import MetaInfo, check_info
 from BitTornado.Network.zurllib import urlopen
 from urllib.parse import urlparse
 from .Choker import Choker
@@ -48,10 +48,10 @@ defaults = [
     ('maxport', 60000, 'maximum port to listen on'),
     ('random_port', 1, 'whether to choose randomly inside the port range '
         'instead of counting up linearly'),
-    ('responsefile', '',
+    ('metafile', '',
         'file the server response was stored in, alternative to url'),
     ('url', '',
-        'url to get file from, alternative to responsefile'),
+        'url to get file from, alternative to metafile'),
     ('crypto_allowed', int(CRYPTO_OK),
         'whether to allow the client to accept encrypted connections'),
     ('crypto_only', 0,
@@ -169,29 +169,25 @@ defaults = [
 argslistheader = 'Arguments are:\n\n'
 
 
-def _failfunc(x):
-    print(x)
-
-
 def parse_params(params, presets={}):
     if len(params) == 0:
         return None
     config, args = parseargs(params, defaults, 0, 1, presets=presets)
     if args:
-        if config['responsefile'] or config['url']:
-            raise ValueError('must have responsefile or url as arg or '
+        if config['metafile'] or config['url']:
+            raise ValueError('must have metafile or url as arg or '
                              'parameter, not both')
         if os.path.isfile(args[0]):
-            config['responsefile'] = args[0]
+            config['metafile'] = args[0]
         else:
             try:
                 urlparse(args[0])
             except ValueError:
                 raise ValueError('bad filename or url')
             config['url'] = args[0]
-    elif (config['responsefile'] == '') == (config['url'] == ''):
-        raise ValueError('need responsefile or url, must have one, cannot '
-                         'have both')
+    elif (config['metafile'] == '') == (config['url'] == ''):
+        raise ValueError('need metafile or url, must have one, cannot have '
+                         'both')
     return config
 
 
@@ -199,56 +195,32 @@ def get_usage(defaults=defaults, cols=100, presets={}):
     return argslistheader + formatDefinitions(defaults, cols, presets)
 
 
-def get_response(file, url, errorfunc):
-    try:
-        if file:
-            h = open(file, 'rb')
+def get_metainfo(fname, url, errorfunc):
+    with WarningLock(lambda *args: errorfunc("warning: bad data in metafile")):
+        if fname:
             try:
-                # quick test to see if responsefile contains a dict
-                line = h.read(10)
-                front = line.split(b':', 1)[0]
-                assert front[:1] == b'd'
-                int(front[1:])
-            except (AssertionError, IOError):
-                errorfunc(file + ' is not a valid responsefile')
+                metainfo = MetaInfo.read(fname)
+            except (OSError, TypeError, KeyError, ValueError):
+                errorfunc(fname + ' is not a valid metafile')
                 return None
-            try:
-                h.seek(0)
-            except IOError:
-                try:
-                    h.close()
-                except IOError:
-                    pass
-                h = open(file, 'rb')
         else:
             try:
-                h = urlopen(url)
-            except socket.error:
-                errorfunc(url + ' bad url')
+                with urlopen(url) as handle:
+                    metainfo = MetaInfo(bdecode(handle.read()))
+            except IOError as e:
+                errorfunc('problem getting response info - ' + str(e))
                 return None
-        response = h.read()
+            except (TypeError, KeyError, ValueError):
+                errorfunc(fname + ' is not a valid metafile')
+                return None
 
-    except IOError as e:
-        errorfunc('problem getting response info - ' + str(e))
-        return None
     try:
-        h.close()
-    except (IOError, socket.error):
-        pass
-    try:
-        try:
-            response = bdecode(response)
-        except ValueError:
-            errorfunc("warning: bad data in responsefile")
-            response = bdecode(response, sloppy=1)
-        check_type(response, dict)
-        check_info(response.get('info'))
-        check_type(response.get('announce'), str)
+        check_info(metainfo.get('info'))
     except ValueError as e:
         errorfunc("got bad file info - " + str(e))
         return None
 
-    return response
+    return metainfo
 
 
 class BT1Download:
@@ -808,3 +780,20 @@ class BT1Download:
 
     def get_transfer_stats(self):
         return self.upmeasure.get_total(), self.downmeasure.get_total()
+
+
+class WarningLock(object):
+    lock = threading.Lock()
+
+    def __init__(self, showwarning=lambda *args: None):
+        self.showwarning = showwarning
+
+    def __enter__(self):
+        self.lock.acquire()
+        self.old_showwarning = warnings.showwarning
+        warnings.showwarning = self.showwarning
+
+    def __exit__(self, _type, _value, _traceback):
+        warnings.showwarning = self.old_showwarning
+        del self.old_showwarning
+        self.lock.release()

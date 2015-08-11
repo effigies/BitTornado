@@ -9,6 +9,7 @@ import urllib
 from io import StringIO
 from traceback import print_exc
 from binascii import hexlify
+from collections import defaultdict
 
 from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
@@ -266,20 +267,21 @@ def compact_peer_info(ip, port):
 class Tracker(object):
     def __init__(self, config, rawserver):
         self.config = config
-        self.response_size = config['response_size']
-        self.dfile = config['dfile']
-        self.natcheck = config['nat_check']
-        favicon = config['favicon']
-        self.parse_dir_interval = config['parse_dir_interval']
-        self.favicon = None
+        self.response_size = config['response_size']            # int (# peers)
+        self.dfile = config['dfile']                            # str|None
+        self.natcheck = config['nat_check']                     # int
+        self.parse_dir_interval = config['parse_dir_interval']  # int (sec)
+        self.favicon = None                                     # bytes|None
+        favicon = config['favicon']                             # str
         if favicon:
             try:
-                with open(favicon, 'rb') as h:
-                    self.favicon = h.read()
+                with open(favicon, 'rb') as handle:
+                    self.favicon = handle.read()
             except IOError:
                 print("**warning** specified favicon file -- %s -- does not "
                       "exist." % favicon)
-        self.rawserver = rawserver
+
+        self.rawserver = rawserver  # RawServer
         self.cached = {}    # format: infohash: [[time1, l1, s1], ...]
         self.cached_t = {}  # format: infohash: [time, cache]
         self.times = {}
@@ -312,7 +314,9 @@ class Tracker(object):
         self.downloads = self.state.setdefault('peers', {})
         self.completed = self.state.setdefault('completed', {})
 
-        self.becache = {}
+        self.becache = defaultdict(
+            lambda: [({}, {})
+                     for _ in range(3 if config['compact_reqd'] else 5)])
         ''' format: infohash: [[l0, s0], [l1, s1], ...]
                 l0,s0 = compact, not requirecrypto=1
                 l1,s1 = compact, only supportcrypto=1
@@ -321,11 +325,6 @@ class Tracker(object):
                 l3,s3 = [ip,port,id]
                 l4,l4 = [ip,port] nopeerid
         '''
-        if config['compact_reqd']:
-            x = 3
-        else:
-            x = 5
-        self.cache_default = [({}, {}) for _ in range(x)]
         for infohash, ds in self.downloads.items():
             self.seedcount[infohash] = 0
             for x, y in list(ds.items()):
@@ -821,6 +820,10 @@ class Tracker(object):
 
     def peerlist(self, infohash, stopped, tracker, is_seed,
                  return_type, rsize, supportcrypto):
+        # Returns: Response|CompactResponse
+        #
+        # This does not but should resort to Response for DNS/IPv6 addresses
+        # even when compact response is requested
         compact = tracker or return_type < 3
         data = CompactResponse() if compact else Response()
         seeds = self.seedcount[infohash]
@@ -838,7 +841,7 @@ class Tracker(object):
             cache = self.cached_t.setdefault(infohash, None)
             if not cache or len(cache[1]) < rsize or cache[0] + \
                     self.config['min_time_between_cache_refreshes'] < clock():
-                bc = self.becache.setdefault(infohash, self.cache_default)
+                bc = self.becache[infohash]
                 cache = [clock(),
                          list(bc[0][0].values()) + list(bc[0][1].values())]
                 self.cached_t[infohash] = cache
@@ -854,7 +857,7 @@ class Tracker(object):
             data['peers'] = []
             return data
 
-        bc = self.becache.setdefault(infohash, self.cache_default)
+        bc = self.becache[infohash]
         len_l = len(bc[2][0])
         len_s = len(bc[2][1])
         if not len_l + len_s:   # caches are empty!
@@ -1058,7 +1061,7 @@ class Tracker(object):
 
     def natcheckOK(self, infohash, peerid, ip, port, peer):
         seed = not peer['left']
-        bc = self.becache.setdefault(infohash, self.cache_default)
+        bc = self.becache[infohash]
         cp = compact_peer_info(ip, port)
         reqc = peer['requirecrypto']
         bc[2][seed][peerid] = (cp, reqc)

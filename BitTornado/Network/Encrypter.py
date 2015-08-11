@@ -41,7 +41,7 @@ class Connection(object):
     def __init__(self, Encoder, connection, id,
                  ext_handshake=False, encrypted=None, options=None):
         self.Encoder = Encoder
-        self.connection = connection
+        self.connection = connection        # SingleSocket
         self.connecter = Encoder.connecter
         self.id = id
         self.locally_initiated = (id is not None)

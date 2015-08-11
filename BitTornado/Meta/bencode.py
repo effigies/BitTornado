@@ -2,6 +2,9 @@
 """
 #pylint: disable=R0903
 
+import warnings
+import mmap
+
 BENCACHED_MARKER = []
 
 
@@ -73,7 +76,7 @@ class BTEncoder(object):
 #pylint: disable=R0201
 class BTDecoder(object):
     """Stateless object that decodes bencoded strings into data structures"""
-    def __call__(self, ctext, sloppy=0):
+    def __call__(self, ctext, sloppy=False, stacklevel=1):
         """Decode a string encoded with bencode, such as the contents of a
         .torrent file"""
         try:
@@ -81,7 +84,7 @@ class BTDecoder(object):
         except (IndexError, KeyError, ValueError):
             raise ValueError("bad bencoded data")
         if not sloppy and length != len(ctext):
-            raise ValueError("bad bencoded data")
+            warnings.warn("bad bencoded data", stacklevel=stacklevel + 1)
         return data
 
     def decode_int(self, ctext, pos):
@@ -94,7 +97,7 @@ class BTDecoder(object):
         Returns (parsed integer, next token start position)
         """
         pos += 1
-        newpos = ctext.index(ord('e'), pos)
+        newpos = ctext.find(b'e', pos)
         data = int(ctext[pos:newpos])
 
         # '-0' is invalid and strings beginning with '0' must be == '0'
@@ -113,7 +116,7 @@ class BTDecoder(object):
 
         Returns (parsed string, next token start position)
         """
-        colon = ctext.index(ord(':'), pos)
+        colon = ctext.find(b':', pos)
         length = int(ctext[pos:colon])
 
         # '0:' is the only valid string beginning with '0'
@@ -192,8 +195,12 @@ class BencodedFile(object):
 
     @classmethod
     def read(klass, fname, *args, **kwargs):
+        sloppy = kwargs.pop('sloppy', False)
         with open(fname, 'rb') as handle:
-            return klass(bdecode(handle.read()), *args, **kwargs)
+            # Using memory maps allows Python to handle some standard errors
+            mm = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ)
+            return klass(bdecode(mm, sloppy=sloppy, stacklevel=2), *args,
+                         **kwargs)
 
 #pylint: disable=C0103
 bencode = BTEncoder().__call__

@@ -16,7 +16,7 @@ def make_readable(s):
         return ''
     if urllib.parse.quote(s).find('%') >= 0:
         return hexlify(s).upper().decode()
-    return '"' + s + '"'
+    return '"' + s.decode() + '"'
 
 
 class IncompleteCounter(object):

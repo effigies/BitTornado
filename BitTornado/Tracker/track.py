@@ -349,7 +349,7 @@ class Tracker(object):
             for y in self.downloads[x]:
                 self.times[x][y] = 0
 
-        self.trackerid = createPeerID('-T-')
+        self.trackerid = createPeerID(b'-T-')
         random.seed(self.trackerid)
 
         self.reannounce_interval = config['reannounce_interval']

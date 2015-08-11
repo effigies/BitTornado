@@ -7,7 +7,7 @@ from BitTornado.Application.PeerID import createPeerID
 DEBUG = False
 
 EXPIRE_CACHE = 30   # seconds
-ID = "BT-" + createPeerID()[-4:]
+ID = b'BT-' + createPeerID()[-4:]
 
 try:
     import pythoncom
@@ -46,7 +46,7 @@ class _UPnP1(object):   # derived from Myers Carpenter's code
     def open(self, ip, p):
         map = self._get_map()
         try:
-            map.Add(p, 'TCP', p, ip, True, ID)
+            map.Add(p, 'TCP', p, ip, True, ID.decode())
             if DEBUG:
                 print('port opened: {}:{}'.format(ip, p))
             success = True
@@ -137,7 +137,7 @@ class _UPnP2(object):   # derived from Yejun Yang's code
         for s in svcs:
             try:
                 s.InvokeAction('AddPortMapping',
-                               ['', p, 'TCP', p, ip, True, ID, 0], '')
+                               ['', p, 'TCP', p, ip, True, ID.decode(), 0], '')
                 success = True
             except Exception:
                 pass

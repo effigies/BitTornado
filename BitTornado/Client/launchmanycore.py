@@ -13,7 +13,7 @@ from BitTornado.Application.NumberFormats import formatIntClock
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Network.natpunch import UPnP_test
 from BitTornado.clock import clock
-from BitTornado.Application.PeerID import createPeerID, mapbase64
+from BitTornado.Application.PeerID import createPeerID
 
 
 class SingleDownload:
@@ -270,13 +270,8 @@ class LaunchMany:
         del self.downloads[hash]
 
     def add(self, hash, data):
-        c = self.counter
+        peer_id = createPeerID(self.counter)
         self.counter += 1
-        x = ''
-        for _ in range(3):
-            x = mapbase64[c & 0x3F] + x
-            c >>= 6
-        peer_id = createPeerID(x)
         d = SingleDownload(self, hash, data['metainfo'], self.config, peer_id)
         self.torrent_list.append(hash)
         self.downloads[hash] = d

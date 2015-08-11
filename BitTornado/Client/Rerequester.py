@@ -52,7 +52,7 @@ def check_peers(message):
             check_type(peer.get('ip'), str)
             check_type(peer.get('port'), int, pred=lambda x: x <= 0)
             if 'peer id' in peer:
-                check_type(peer.get('peer id'), str,
+                check_type(peer.get('peer id'), bytes,
                            pred=lambda x: len(x) != 20)
 
     elif not isinstance(peers, str) or len(peers) % 6 != 0:

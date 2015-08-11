@@ -4,18 +4,29 @@ import base64
 import threading
 import socket
 import random
-import urllib
 import hashlib
 from BitTornado.Network.zurllib import urlopen
 from BitTornado.Network.NetworkAddress import IPv4
 from BitTornado.Meta.Info import check_type
 from BitTornado.Meta.bencode import bdecode
-from BitTornado.Meta.TypedCollections import TypedDict, TypedList
+from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
 from io import StringIO
 from traceback import print_exc
 
-keys = {}
-basekeydata = '{:d}{!r}tracker'.format(os.getpid(), time.time()).encode()
+
+class KeyDict(dict):
+    def __init__(self):
+        self.basekeydata = '{:d}{!r}tracker'.format(os.getpid(),
+                                                    time.time()).encode()
+
+    def __getitem__(self, tracker):
+        if tracker not in self:
+            self[tracker] = base64.urlsafe_b64encode(
+                hashlib.sha1(self.basekeydata + tracker.encode()).digest()[-6:]
+                ).decode()
+        return super(KeyDict, self).__getitem__(tracker)
+
+keys = KeyDict()
 
 
 class Response(TypedDict):
@@ -47,15 +58,20 @@ class Response(TypedDict):
                'incomplete': int, 'crypto_flags': bytes, 'peers': Peers}
     valmap = {str: str.encode}
 
-def add_key(tracker):
-    keys[tracker] = base64.urlsafe_b64encode(
-        hashlib.sha1(basekeydata + tracker.encode()).digest()[-6:]).decode()
 
+class RequestURL(QueryDict):
+    typemap = {'info_hash': bytes, 'peer_id': bytes, 'port': int,
+               'supportcrypto': bool, 'requirecrypto': bool, 'cryptoport': int,
+               'seed_id': bytes, 'check_seeded': bool, 'uploaded': int,
+               'downloaded': int, 'left': int, 'numwant': int,
+               'no_peer_id': bool, 'compact': bool, 'last': int,
+               'trackerid': bytes, 'event': str, 'tracker': bool,
+               'key': str}
 
-def get_key(tracker):
-    if tracker not in keys:
-        add_key(tracker)
-    return "&key=" + keys[tracker]
+    def __add__(self, newdict):
+        x = self.__class__(self)
+        x.update(newdict)
+        return x
 
 
 class fakeflag:
@@ -87,6 +103,7 @@ def check_peers(message):
                            pred=lambda x: len(x) != 20)
 
     elif not isinstance(peers, bytes) or len(peers) % 6 != 0:
+        print(peers.encode())
         raise ValueError('peers misencoded')
 
     check_type(message.get('interval', 1), int, pred=lambda x: x <= 0)
@@ -137,27 +154,21 @@ class Rerequester:
         self.lastsuccessful = ''
         self.rejectedmessage = 'rejected by tracker - '
 
-        self.url = ('info_hash=%s&peer_id=%s' %
-                    (urllib.parse.quote(infohash), urllib.parse.quote(myid)))
-        if not config.get('crypto_allowed'):
-            self.url += "&port="
-        else:
-            self.url += "&supportcrypto=1"
-            if not config.get('crypto_only'):
-                    self.url += "&port="
-            else:
-                self.url += "&requirecrypto=1"
-                if not config.get('crypto_stealth'):
-                    self.url += "&port="
-                else:
-                    self.url += "&port=0&cryptoport="
-        self.url += str(port)
+        self.url = RequestURL({'info_hash': infohash, 'peer_id': myid,
+                               'port': port})
+        if config.get('crypto_allowed'):
+            self.url['supportcrypto'] = True
+            if config.get('crypto_only'):
+                self.url['requirecrypto'] = True
+                if config.get('crypto_stealth'):
+                    self.url['port'] = 0
+                    self.url['cryptoport'] = port
 
         seed_id = config.get('dedicated_seed_id')
         if seed_id:
-            self.url += '&seed_id=' + urllib.parse.quote(seed_id)
+            self.url['seed_id'] = seed_id
         if self.seededfunc:
-            self.url += '&check_seeded=1'
+            self.url['check_seeded'] = True
 
         self.last = None
         self.trackerid = None
@@ -210,36 +221,38 @@ class Rerequester:
 
         if specialurl is not None:
             # don't add to statistics
-            s = self.url + '&uploaded=0&downloaded=0&left=1'
+            s = self.url + {'uploaded': 0, 'downloaded': 0, 'left': 1}
             if self.howmany() >= self.maxpeers:
-                s += '&numwant=0'
+                s['numwant'] = 0
             else:
-                s += '&no_peer_id=1&compact=1'
+                s['no_peer_id'] = True
+                s['compact'] = True
             self.last_failed = True     # force true, so will display an error
             self.special = specialurl
             self.rerequest(s, callback)
             return
 
-        else:
-            s = '{}&uploaded={}&downloaded={}&left={}'.format(
-                self.url, self.up(), self.down(), self.amount_left())
+        s = self.url + {'uploaded': self.up(), 'downloaded': self.down(),
+                        'left': self.amount_left()}
         if self.last is not None:
-            s += '&last=' + urllib.parse.quote(str(self.last))
+            s['last'] = self.last
         if self.trackerid is not None:
-            s += '&trackerid=' + urllib.parse.quote(str(self.trackerid))
+            s['trackerid'] = self.trackerid
         if self.howmany() >= self.maxpeers:
-            s += '&numwant=0'
+            s['numwant'] = 0
         else:
-            s += '&no_peer_id=1&compact=1'
+            s['no_peer_id'] = True
+            s['compact'] = True
         if event != 3:
-            s += '&event=' + ['started', 'completed', 'stopped'][event]
+            s['event'] = ['started', 'completed', 'stopped'][event]
         if event == 2:
             self.stopped = True
         self.rerequest(s, callback)
 
-    def snoop(self, peers, callback=lambda: None):  # tracker call support
-        self.rerequest(self.url + '&event=stopped&port=0&uploaded=0&'
-                       'downloaded=0&left=1&tracker=1&numwant=' + str(peers),
+    def snoop(self, npeers, callback=lambda: None):  # tracker call support
+        self.rerequest(self.url + {'event': 'stopped', 'port': 0,
+                                   'uploaded': 0, 'downloaded': 0, 'left': 1,
+                                   'tracker': True, 'numwant': npeers},
                        callback)
 
     def rerequest(self, s, callback):
@@ -260,7 +273,7 @@ class Rerequester:
                 self._fail(callback)
             if self.ip:
                 try:
-                    s += '&ip=' + socket.gethostbyname(self.ip)
+                    s['ip'] = socket.gethostbyname(self.ip)
                 except socket.error:
                     self.errorcodes['troublecode'] = 'unable to resolve: ' + \
                         self.ip
@@ -302,9 +315,9 @@ class Rerequester:
 
     def rerequest_single(self, tracker, querystring, callback):
         code = self.lock.set()
+        querystring['key'] = keys[tracker]
         rq = threading.Thread(target=self._rerequest_single,
-                              args=[tracker, querystring + get_key(tracker),
-                                    code, callback])
+                              args=[tracker, str(querystring), code, callback])
         rq.setDaemon(False)
         rq.start()
         self.lock.wait()

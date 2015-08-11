@@ -1,3 +1,6 @@
+import urllib
+
+
 class TypedList(list):
     valtype = valmap = valconst = None
 
@@ -130,3 +133,20 @@ class TypedDict(dict):
 class BytesIndexed(TypedDict):
     keytype = bytes
     keymap = {str: str.encode}
+
+
+class QueryDict(TypedDict):
+    """Dictionary to generate a query string (with no preceding ?)
+
+    Keys must be strings, values must be int(-castable), strings or bytes
+
+    Use str(qdict) to produce a query string with cast and quoted values"""
+    keytype = str
+
+    def __str__(self):
+        parts = []
+        for key, val in self.items():
+            if not isinstance(val, (str, bytes)):
+                val = str(int(val))
+            parts.append('{:s}={:s}'.format(key, urllib.parse.quote(val)))
+        return '&'.join(parts)

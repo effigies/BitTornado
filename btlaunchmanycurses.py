@@ -153,7 +153,7 @@ class CursesDisplayer:
                     break
             (name, status, progress, peers, seeds, _, dist, uprate, dnrate,
              upamt, dnamt, size, t, msg) = data[ii]
-            if t > 0:
+            if t is not None and t > 0:
                 status = 'ETA in ' + formatIntClock(t)
             name = ljust(name, self.mainwinw - 32)
             size = rjust(formatSize(size), 8)

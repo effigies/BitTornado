@@ -68,7 +68,7 @@ class HeadlessDisplayer:
         if fractionDone is not None:
             self.percentDone = str(float(int(fractionDone * 1000)) / 10)
         if timeEst is not None:
-            self.timeEst = formatIntText(timeEst) or 'complete!'
+            self.timeEst = formatIntText(timeEst)
         if activity is not None and not self.done:
             self.timeEst = activity
         if downRate is not None:

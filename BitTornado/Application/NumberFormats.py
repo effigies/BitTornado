@@ -11,8 +11,6 @@ def formatInterval(secs, fmt):
         secs = int(secs)
     except (TypeError, ValueError):
         return None
-    if secs == 0:
-        return None
     if not 0 < secs < 5184000:        # 60 days
         return '<unknown>'
     mins, secs = divmod(secs, 60)
@@ -24,7 +22,9 @@ def formatIntText(secs):
     """Format an interval of length secs seconds with a textual representation
 
     e.g. formatIntText(9861) = '2 hours 44 min 21 sec'"""
-    if secs >= 7200:
+    if secs < 1:
+        return 'complete'
+    elif secs >= 7200:
         fmt = '{h:d} hours {m:02d} min {s:02d} sec'
     elif secs >= 3600:
         fmt = '{h:d} hour {m:02d} min {s:02d} sec'

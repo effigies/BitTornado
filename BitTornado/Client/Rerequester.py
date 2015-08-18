@@ -6,7 +6,7 @@ import socket
 import random
 import hashlib
 from BitTornado.Network.zurllib import urlopen
-from BitTornado.Network.NetworkAddress import IPv4
+from BitTornado.Network.NetworkAddress import IPv4, IPv6
 from BitTornado.Meta.Info import check_type
 from BitTornado.Meta.bencode import bdecode
 from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
@@ -29,20 +29,23 @@ class KeyDict(dict):
 keys = KeyDict()
 
 
+class Peer(TypedDict):
+    iptype = IPv4
+    typemap = {'ip': str, 'port': int, 'peer id': bytes}
+    def __init__(self, arg):
+        if isinstance(arg, bytes):
+            nbytes = self.iptype.bits // 8
+            arg = {'ip': self.iptype.from_bytes(arg[:nbytes], 'big'),
+                   'port': int.from_bytes(arg[nbytes:], 'big')}
+        TypedDict.__init__(self, arg)
+
+
+class Peer6(Peer):
+    iptype = IPv6
+
+
 class Response(TypedDict):
     class Peers(TypedList):
-        class Peer(TypedDict):
-            typemap = {'ip': str, 'port': int, 'peer id': bytes}
-
-            def __init__(self, arg):
-                if isinstance(arg, bytes):
-                    arg = {'ip': IPv4.from_bytes(arg[:4], 'big'),
-                           'port': int.from_bytes(arg[4:], 'big')}
-                TypedDict.__init__(self, arg)
-
-            def __bytes__(self):
-                return IPv4(self['ip']).to_bytes(4, 'big') + \
-                    self['port'].to_bytes(2, 'big')
         valtype = Peer
 
         def __init__(self, arg):
@@ -50,12 +53,18 @@ class Response(TypedDict):
                 arg = [arg[i:i+6] for i in range(0, len(arg), 6)]
             TypedList.__init__(self, arg)
 
-        def __bytes__(self):
-            return b''.join(map(bytes, self))
+    class Peers6(TypedList):
+        valtype = Peer6
+
+        def __init__(self, arg):
+            assert isinstance(arg, bytes)
+            arg = [arg[i:i+18] for i in range(0, len(arg), 18)]
+            TypedList.__init__(self, arg)
 
     typemap = {'failure reason': str, 'warning message': str, 'interval': int,
                'min interval': int, 'tracker id': bytes, 'complete': int,
-               'incomplete': int, 'crypto_flags': bytes, 'peers': Peers}
+               'incomplete': int, 'crypto_flags': bytes, 'peers': Peers,
+               'peers6': Peers6}
     valmap = {str: str.encode}
 
 

@@ -8,11 +8,30 @@ in 2006, and thus many newer features are missing, but BitTornado is also an
 accessible Python library, and has several simple tools for editing torrent
 files.
 
-After several years of intermittent modifications, cleanups and modernization,
-it seems like a good time to give this code an actual version number. All
-applications have been tested and work as well as they did in version 0.3.18.
-The library components have been substantially reorganized, so this is highly
-likely to break dependent applications.
+After several years of intermittent modifications, cleanups, modernization, and
+porting to Python 3.4, I have begun assigning version numbers. I have done my
+best to ensure that tagged versions and python-labelled branches (see below)
+work at least as well as they did in version 0.3.18. Since 0.4.0, the library
+components have been substantially reorganized, so expect dependent
+applications to break on upgrade.
+
+Branches/Tags
+=============
+
+Further development will be done in Python 3, although patches to the other
+branches may be accepted.
+
+* [v0.3.18](https://github.com/effigies/BitTornado/tree/v0.3.18): Original
+    import
+* [legacy](https://github.com/effigies/BitTornado/tree/legacy): Library
+    structure unchanged, some fixes/cleanups made
+* [python2.6](https://github.com/effigies/BitTornado/tree/python2.6): Python
+    2.6 compatibility maintained (legacy)
+* [v0.4.0](https://github.com/effigies/BitTornado/tree/v0.4.0): Major
+    restructuring, breaking depending applications
+* [python2.7](https://github.com/effigies/BitTornado/tree/python2.7): Python
+    2.7 compatibility maintained (library structure updated)
+* [master](https://github.com/effigies/BitTornado/tree/master): Python 3
 
 Using BitTornado Applications
 =============================

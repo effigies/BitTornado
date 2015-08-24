@@ -579,7 +579,7 @@ class BT1Download:
         if self.rerequest:
             self.rerequest.hit()
 
-    def startRerequester(self, seededfunc=None, force_rapid_update=False):
+    def startRerequester(self, force_rapid_update=False):
         trackerlist = self.response.get('announce-list',
                                         [[self.response['announce']]])
 
@@ -591,7 +591,7 @@ class BT1Download:
             self.storagewrapper.get_amount_left, self.upmeasure.get_total,
             self.downmeasure.get_total, self.upmeasure.get_rate,
             self.downmeasure.get_rate, self.doneflag, self.unpauseflag,
-            seededfunc, force_rapid_update)
+            force_rapid_update)
 
         self.rerequest.start()
 

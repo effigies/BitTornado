@@ -129,25 +129,24 @@ class Rerequester:
                  sched, externalsched, errorfunc, excfunc, connect,
                  howmany, amount_left, up, down, upratefunc, downratefunc,
                  doneflag, unpauseflag=fakeflag(True),
-                 seededfunc=None, force_rapid_update=False):
+                 force_rapid_update=False):
 
-        self.sched = sched
-        self.externalsched = externalsched
-        self.errorfunc = errorfunc
-        self.excfunc = excfunc
-        self.connect = connect
-        self.howmany = howmany
-        self.amount_left = amount_left
-        self.up = up
-        self.down = down
-        self.upratefunc = upratefunc
-        self.downratefunc = downratefunc
-        self.doneflag = doneflag
-        self.unpauseflag = unpauseflag
-        self.seededfunc = seededfunc
-        self.force_rapid_update = force_rapid_update
+        self.sched = sched                  # RawServer.add_task
+        self.externalsched = externalsched  # RawServer.add_task
+        self.errorfunc = errorfunc          # f(str) -> None
+        self.excfunc = excfunc              # f(str) -> None
+        self.connect = connect              # Encoder.start_connections
+        self.howmany = howmany              # Connector.how_many_connections
+        self.amount_left = amount_left      # StorageWrapper.get_amount_left
+        self.up = up                        # Measure.get_total
+        self.down = down                    # Measure.get_total
+        self.upratefunc = upratefunc        # Measure.get_rate
+        self.downratefunc = downratefunc    # Measure.get_rate
+        self.doneflag = doneflag            # threading.Event
+        self.unpauseflag = unpauseflag      # threading.Event|fakeflag(True)
+        self.force_rapid_update = force_rapid_update    # Bool
 
-        self.ip = config.get('ip', '')
+        self.ip = config.get('ip', '')          # str (external IP)
         self.minpeers = config['min_peers']
         self.maxpeers = config['max_initiate']
         self.interval = config['rerequest_interval']
@@ -157,7 +156,7 @@ class Rerequester:
         self.trackerlist = [random.sample(tier, len(tier))
                             for tier in trackerlist]
 
-        self.lastsuccessful = ''
+        self.lastsuccessful = ''    # str (tracker URL)
         self.rejectedmessage = 'rejected by tracker - '
 
         self.url = RequestURL({'info_hash': infohash, 'peer_id': myid,
@@ -173,8 +172,6 @@ class Rerequester:
         seed_id = config.get('dedicated_seed_id')
         if seed_id:
             self.url['seed_id'] = seed_id
-        if self.seededfunc:
-            self.url['check_seeded'] = True
 
         self.last = None
         self.trackerid = None
@@ -440,9 +437,7 @@ class Rerequester:
             else:
                 if r.get('num peers', 1000) > ps * 1.2:
                     self.last = None
-        if self.seededfunc and r.get('seeded'):
-            self.seededfunc()
-        elif peers:
+        if peers:
             random.shuffle(peers)
             self.connect(peers)
         callback()

@@ -114,8 +114,7 @@ class SocketHandler(object):
         self.ipv6_enable = ipv6_enable
         self.readsize = readsize
         self.poll = poll()
-        # {socket: SingleSocket}
-        self.single_sockets = {}
+        self.single_sockets = {}  # {socket: SingleSocket}
         self.dead_from_write = []
         self.max_connects = 1000
         self.port_forwarded = None

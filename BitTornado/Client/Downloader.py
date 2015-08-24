@@ -458,21 +458,13 @@ class Downloader:
         self.endgame_queued_pieces = []
 
     def add_disconnected_seed(self, id):
-#        if id not in self.disconnectedseeds:
-#            self.picker.seed_seen_recently()
         self.disconnectedseeds[id] = clock()
-
-#    def expire_disconnected_seeds(self):
 
     def num_disconnected_seeds(self):
         # first expire old ones
-        expired = []
-        for id, t in self.disconnectedseeds.items():
-            if clock() - t > EXPIRE_TIME:     # Expire old seeds after so long
-                expired.append(id)
-        for id in expired:
-#            self.picker.seed_disappeared()
-            del self.disconnectedseeds[id]
+        for peerid, refreshtime in list(self.disconnectedseeds.items()):
+            if clock() - refreshtime > EXPIRE_TIME:
+                del self.disconnectedseeds[peerid]
         return len(self.disconnectedseeds)
         # if this isn't called by a stats-gathering function
         # it should be scheduled to run every minute or two.

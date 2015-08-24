@@ -24,7 +24,6 @@ class SingleSocket(object):
         self.fileno = sock.fileno()
         self.connected = False
         self.skipped = 0
-#        self.check = StreamCheck()
         try:
             self.ip = self.socket.getpeername()[0]
         except socket.error:
@@ -197,17 +196,10 @@ class SocketHandler(object):
     def find_and_bind(self, minport, maxport, bind='', reuse=False,
                       ipv6_socket_style=1, upnp=0, randomizer=False):
         e = 'maxport less than minport - no ports to check'
-        if maxport - minport < 50 or not randomizer:
-            portrange = list(range(minport, maxport + 1))
-            if randomizer:
-                random.shuffle(portrange)
-                portrange = portrange[:20]  # check a maximum of 20 ports
-        else:
-            portrange = []
-            while len(portrange) < 20:
-                listen_port = random.randrange(minport, maxport + 1)
-                if not listen_port in portrange:
-                    portrange.append(listen_port)
+        # Check a maximum of 20 ports
+        nports = max(maxport - minport, 20)
+        portrange = random.sample(range(minport, maxport + 1), nports) \
+            if randomizer else range(minport, minport + nports)
         for listen_port in portrange:
             try:
                 self.bind(listen_port, bind,

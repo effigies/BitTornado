@@ -111,13 +111,10 @@ class ConfigDir(object):
 
     def getTorrentVariations(self, torrent):
         """Retrieve set of versions of a given torrent"""
-        torrent = hexlify(torrent)
-        variations = []
-        for fname in map(os.path.basename, os.listdir(self.dir_torrentcache)):
-            if fname[:len(torrent)] == torrent:
-                torrent, _, version = torrent.partition('.')
-                variations.append(int(version or '0'))
-        return sorted(variations)
+        return sorted(int(t.partition('.')[2] or 0)
+                      for t in map(os.path.basename,
+                                   os.listdir(self.dir_torrentcache))
+                      if t.startswith(torrent))
 
     def getTorrent(self, torrent, version=-1):
         """Return the contents of a torrent file

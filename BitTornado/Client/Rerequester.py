@@ -153,12 +153,9 @@ class Rerequester:
         self.interval = config['rerequest_interval']
         self.timeout = config['http_timeout']
 
-        newtrackerlist = []
-        for tier in trackerlist:
-            if len(tier) > 1:
-                random.shuffle(tier)
-            newtrackerlist += [tier]
-        self.trackerlist = newtrackerlist
+        # Permute trackers within each tier
+        self.trackerlist = [random.sample(tier, len(tier))
+                            for tier in trackerlist]
 
         self.lastsuccessful = ''
         self.rejectedmessage = 'rejected by tracker - '

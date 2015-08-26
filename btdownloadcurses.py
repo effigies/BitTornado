@@ -146,7 +146,7 @@ class CursesDisplayer:
             self.activity = 'download complete!'
         elif timeEst is not None:
             self.activity = 'finishing in ' + formatIntClock(timeEst)
-        if self.changeflag.isSet() or \
+        if self.changeflag.is_set() or \
                 self.last_update_time + 0.1 > clock() and \
                 fractionDone not in (0.0, 1.0) and \
                 activity is not None:

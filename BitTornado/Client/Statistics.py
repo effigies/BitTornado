@@ -119,7 +119,7 @@ class Statistics:
         if self.piecescomplete is None:     # not a multi-file torrent
             return s
 
-        if self.fdatflag.isSet():
+        if self.fdatflag.is_set():
             if not self.fdatactive:
                 self.fdatactive = True
         else:
@@ -143,7 +143,7 @@ class Statistics:
 
             self.piecescomplete = self.picker.numgot
 
-        if self.filelistupdated.isSet() or \
+        if self.filelistupdated.is_set() or \
                 self.placesopen != len(self.storage.places):
             for i, complete in enumerate(self.filecomplete):
                 if not complete or self.fileinplace[i]:

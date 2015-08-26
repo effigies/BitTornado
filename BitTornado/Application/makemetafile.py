@@ -66,7 +66,7 @@ def make_meta_file(loc, url, params=None, flag=None,
     info = tree.makeInfo(flag=flag, progress=progress,
                          progress_percent=progress_percent, **params)
 
-    if flag is not None and flag.isSet():
+    if flag is not None and flag.is_set():
         return
 
     metainfo = MetaInfo(announce=url, info=info, **params)

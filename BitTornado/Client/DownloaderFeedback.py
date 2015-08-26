@@ -90,12 +90,12 @@ class DownloaderFeedback:
 
     def gather(self, displayfunc=None):
         s = {'stats': self.statistics.update()}
-        if self.sp.isSet():
+        if self.sp.is_set():
             s['spew'] = self.spews()
         else:
             s['spew'] = None
         s['up'] = self.upfunc()
-        if self.finflag.isSet():
+        if self.finflag.is_set():
             s['done'] = self.file_length
             return s
         s['down'] = self.downfunc()
@@ -113,11 +113,11 @@ class DownloaderFeedback:
         return s
 
     def display(self, displayfunc):
-        if not self.doneprocessing.isSet():
+        if not self.doneprocessing.is_set():
             return
         self.doneprocessing.clear()
         stats = self.gather()
-        if self.finflag.isSet():
+        if self.finflag.is_set():
             displayfunc(dpflag=self.doneprocessing, upRate=stats['up'],
                         statistics=stats['stats'], spew=stats['spew'])
         elif stats['time'] is not None:

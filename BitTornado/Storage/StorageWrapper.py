@@ -32,7 +32,7 @@ class fakeflag:
     def wait(self):
         pass
 
-    def isSet(self):
+    def is_set(self):
         return self.state
 
 
@@ -123,7 +123,7 @@ class StorageWrapper:
                         t = clock() + STATS_INTERVAL
                         self.statusfunc(fractionDone=x)
                     self.unpauseflag.wait()
-                    if self.flag.isSet():
+                    if self.flag.is_set():
                         return False
                     x = next()
 
@@ -140,7 +140,7 @@ class StorageWrapper:
         self.backfunc(self._initialize)
 
     def _initialize(self):
-        if not self.unpauseflag.isSet():
+        if not self.unpauseflag.is_set():
             self.backfunc(self._initialize, 1)
             return
 
@@ -162,7 +162,7 @@ class StorageWrapper:
         self.backfunc(self._initialize)
 
     def init_hashcheck(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return False
         self.check_list = []
         if len(self.hashes) == 0 or self.amount_left == 0:
@@ -221,7 +221,7 @@ class StorageWrapper:
         self.stat_numfound += 1
 
     def hashcheckfunc(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return None
         if not self.check_list:
             return None
@@ -262,7 +262,7 @@ class StorageWrapper:
         return self.numchecked / self.check_total
 
     def init_movedata(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return False
         if self.alloc_type != 'sparse':
             return False
@@ -283,7 +283,7 @@ class StorageWrapper:
         return True
 
     def movedatafunc(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return None
         if not self.movelist:
             return None
@@ -309,7 +309,7 @@ class StorageWrapper:
         return self.tomove / self.out_of_place
 
     def init_alloc(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return False
         if not self.holes:
             return False
@@ -344,7 +344,7 @@ class StorageWrapper:
         return None
 
     def allocfunc(self):
-        if self.flag.isSet():
+        if self.flag.is_set():
             return None
 
         if self.blocked_moveout:
@@ -618,7 +618,7 @@ class StorageWrapper:
             if DEBUG:
                 print('new place for {} at {}'.format(index,
                                                       self.places[index]))
-        if self.flag.isSet():
+        if self.flag.is_set():
             return
 
         if index in self.failed_pieces:

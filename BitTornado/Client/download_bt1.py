@@ -273,7 +273,7 @@ class BT1Download:
                                   config['rarest_first_cutoff'],
                                   config['rarest_first_priority_cutoff'])
         self.choker = Choker(config, rawserver.add_task,
-                             self.picker, self.finflag.isSet)
+                             self.picker, self.finflag.is_set)
 
     def saveAs(self, filefunc, pathfunc=None):
         try:
@@ -348,7 +348,7 @@ class BT1Download:
             self.storage.set_readonly()
         except (IOError, OSError) as e:
             self.errorfunc('trouble setting readonly at end - ' + str(e))
-        if self.superseedflag.isSet():
+        if self.superseedflag.is_set():
             self._set_super_seed()
         self.choker.set_round_robin_period(
             max(self.config['round_robin_period'],
@@ -359,7 +359,7 @@ class BT1Download:
 
     def _data_flunked(self, amount, index):
         self.ratemeasure_datarejected(amount)
-        if not self.doneflag.isSet():
+        if not self.doneflag.is_set():
             self.errorfunc('piece {:d} failed hash check, re-downloading it'
                            ''.format(index))
 
@@ -370,7 +370,7 @@ class BT1Download:
             self.errorfunc(reason)
 
     def initFiles(self, old_style=False, statusfunc=None):
-        if self.doneflag.isSet():
+        if self.doneflag.is_set():
             return None
         if not statusfunc:
             statusfunc = self.statusfunc
@@ -409,7 +409,7 @@ class BT1Download:
             except IOError as e:
                 self.errorfunc('trouble accessing files - ' + str(e))
                 return None
-            if self.doneflag.isSet():
+            if self.doneflag.is_set():
                 return None
 
             self.storagewrapper = StorageWrapper(
@@ -423,7 +423,7 @@ class BT1Download:
             self._failed('bad data - ' + str(e))
         except IOError as e:
             self._failed('IOError - ' + str(e))
-        if self.doneflag.isSet():
+        if self.doneflag.is_set():
             return None
 
         if self.selector_enabled:
@@ -474,7 +474,7 @@ class BT1Download:
         self.downloader.requeue_piece_download(pieces)
 
     def startEngine(self, ratelimiter=None, statusfunc=None):
-        if self.doneflag.isSet():
+        if self.doneflag.is_set():
             return False
         if not statusfunc:
             statusfunc = self.statusfunc
@@ -528,7 +528,7 @@ class BT1Download:
             self.storagewrapper, self.picker, self.rawserver, self.finflag,
             self.errorfunc, self.downloader, self.config['max_rate_period'],
             self.infohash, self._received_http_data, self.connecter.got_piece)
-        if 'httpseeds' in self.response and not self.finflag.isSet():
+        if 'httpseeds' in self.response and not self.finflag.is_set():
             for u in self.response['httpseeds']:
                 self.httpdownloader.make_download(u)
 
@@ -629,7 +629,7 @@ class BT1Download:
             except Exception as e:
                 print(e)
                 self.appdataobj.deleteTorrentData(self.infohash)  # clear it
-        return not self.failed and not self.excflag.isSet()
+        return not self.failed and not self.excflag.is_set()
         # if returns false, you may wish to auto-restart the torrent
 
     def setConns(self, conns, conns2=None):
@@ -650,7 +650,7 @@ class BT1Download:
             self.superseedflag.set()
 
             def s(self=self):
-                if self.finflag.isSet():
+                if self.finflag.is_set():
                     self._set_super_seed()
             self.rawserver.add_task(s)
         except AttributeError:
@@ -667,14 +667,14 @@ class BT1Download:
                 self.choker.set_super_seed()
             self.rawserver.add_task(s)
             # mode started when already finished
-            if self.finflag.isSet():
+            if self.finflag.is_set():
                 def r(self=self):
                     # so after kicking everyone off, reannounce
                     self.rerequest.announce(3)
                 self.rawserver.add_task(r)
 
     def am_I_finished(self):
-        return self.finflag.isSet()
+        return self.finflag.is_set()
 
 
 class WarningLock(object):

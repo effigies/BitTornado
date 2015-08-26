@@ -236,7 +236,7 @@ class HTTPDownloader:
         return self.downloads[-1]
 
     def get_downloads(self):
-        if self.finflag.isSet():
+        if self.finflag.is_set():
             return []
         return self.downloads
 

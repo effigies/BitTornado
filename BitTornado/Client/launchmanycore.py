@@ -77,7 +77,7 @@ class SingleDownload:
         self.working = True
 
     def is_dead(self):
-        return self.doneflag.isSet()
+        return self.doneflag.is_set()
 
     def _shutdown(self):
         self.shutdown(False)
@@ -108,7 +108,7 @@ class SingleDownload:
         self.seed = True
 
     def error(self, msg):
-        if self.doneflag.isSet():
+        if self.doneflag.is_set():
             self._shutdown()
         self.status_err.append(msg)
         self.status_errtime = clock()

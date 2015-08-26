@@ -90,7 +90,7 @@ class fakeflag:
     def wait(self):
         pass
 
-    def isSet(self):
+    def is_set(self):
         return self.state
 
 
@@ -189,7 +189,7 @@ class Rerequester:
     def c(self):
         if self.stopped:
             return
-        if not self.unpauseflag.isSet() and (
+        if not self.unpauseflag.is_set() and (
                 self.howmany() < self.minpeers or self.force_rapid_update):
             self.announce(3, self._c)
         else:
@@ -201,7 +201,7 @@ class Rerequester:
     def d(self, event=3):
         if self.stopped:
             return
-        if not self.unpauseflag.isSet():
+        if not self.unpauseflag.is_set():
             self._d()
             return
         self.announce(event, self._d)
@@ -215,7 +215,7 @@ class Rerequester:
             self.sched(self.d, self.announce_interval)
 
     def hit(self, event=3):
-        if not self.unpauseflag.isSet() and (
+        if not self.unpauseflag.is_set() and (
                 self.howmany() < self.minpeers or self.force_rapid_update):
             self.announce(event)
 
@@ -410,7 +410,7 @@ class Rerequester:
                           cflags[i]))
         ps = len(peers) + self.howmany()
         if ps < self.maxpeers:
-            if self.doneflag.isSet():
+            if self.doneflag.is_set():
                 if r.get('num peers', 1000) - r.get('done peers', 0) > \
                         ps * 1.2:
                     self.last = None

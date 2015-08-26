@@ -45,7 +45,7 @@ class Storage:
             disabled_files = [False] * len(files)
 
         for (fname, length), disabled in zip(files, disabled_files):
-            if doneflag.isSet():    # bail out if doneflag is set
+            if doneflag.is_set():   # bail out if doneflag is set
                 return
             self.disabled_ranges.append(None)
             if length == 0:

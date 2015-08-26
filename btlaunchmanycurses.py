@@ -174,7 +174,7 @@ class CursesDisplayer:
             i += 1
 
     def display(self, data):
-        if self.changeflag.isSet():
+        if self.changeflag.is_set():
             return
 
         inchar = self.mainwin.getch()

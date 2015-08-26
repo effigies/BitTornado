@@ -89,7 +89,7 @@ class RawServer(object):
     def listen_forever(self, handler):
         self.sockethandler.set_handler(handler)
         try:
-            while not self.doneflag.isSet():
+            while not self.doneflag.is_set():
                 try:
                     self.pop_external()
                     self._kill_tasks()
@@ -98,7 +98,7 @@ class RawServer(object):
                     else:
                         period = 2 ** 30
                     events = self.sockethandler.do_poll(period)
-                    if self.doneflag.isSet():
+                    if self.doneflag.is_set():
                         return
                     while self.funcs and self.funcs[0][0] <= clock():
                         _, func, tid = self.funcs.pop(0)
@@ -118,14 +118,14 @@ class RawServer(object):
                                 self.exception()
                     self.sockethandler.close_dead()
                     self.sockethandler.handle_events(events)
-                    if self.doneflag.isSet():
+                    if self.doneflag.is_set():
                         return
                     self.sockethandler.close_dead()
                 except (SystemError, MemoryError) as e:
                     self.failfunc(str(e))
                     return
                 except select.error:
-                    if self.doneflag.isSet():
+                    if self.doneflag.is_set():
                         return
                 except KeyboardInterrupt:
 #                    self.exception(True)
@@ -139,7 +139,7 @@ class RawServer(object):
             self.finished.set()
 
     def is_finished(self):
-        return self.finished.isSet()
+        return self.finished.is_set()
 
     def wait_until_finished(self):
         self.finished.wait()

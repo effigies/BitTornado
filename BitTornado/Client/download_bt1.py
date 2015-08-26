@@ -23,9 +23,7 @@ from .PiecePicker import PiecePicker
 from .Statistics import Statistics
 from BitTornado.Application.ConfigDir import ConfigDir
 from BitTornado.Meta.bencode import bdecode
-from BitTornado.Application.parseargs import parseargs, formatDefinitions, \
-    defaultargs
-from BitTornado.clock import clock
+from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 
 defaults = [
@@ -277,12 +275,6 @@ class BT1Download:
         self.choker = Choker(config, rawserver.add_task,
                              self.picker, self.finflag.isSet)
 
-    def checkSaveLocation(self, loc):
-        if 'length' in self.info:
-            return os.path.exists(loc)
-        return any(os.path.exists(os.path.join(loc, x['path'][0]))
-                   for x in self.info['files'])
-
     def saveAs(self, filefunc, pathfunc=None):
         try:
             def make(f, forcedir=False):
@@ -349,9 +341,6 @@ class BT1Download:
         self.datalength = file_length
 
         return file
-
-    def getFilename(self):
-        return self.filename
 
     def _finished(self):
         self.finflag.set()
@@ -451,9 +440,6 @@ class BT1Download:
         if old_style:
             return self.storagewrapper.old_style_init()
         return self.storagewrapper.initialize
-
-    def getCachedTorrentData(self):
-        return self.appdataobj.getTorrentData(self.infohash)
 
     def _make_upload(self, connection, ratelimiter, totalup):
         return Upload(connection, ratelimiter, totalup,
@@ -646,15 +632,6 @@ class BT1Download:
         return not self.failed and not self.excflag.isSet()
         # if returns false, you may wish to auto-restart the torrent
 
-    def setUploadRate(self, rate):
-        try:
-            def s(self=self, rate=rate):
-                self.config['max_upload_rate'] = rate
-                self.ratelimiter.set_upload_rate(rate)
-            self.rawserver.add_task(s)
-        except AttributeError:
-            pass
-
     def setConns(self, conns, conns2=None):
         if not conns2:
             conns2 = conns
@@ -667,85 +644,6 @@ class BT1Download:
             self.rawserver.add_task(s)
         except AttributeError:
             pass
-
-    def setDownloadRate(self, rate):
-        try:
-            def s(self=self, rate=rate):
-                self.config['max_download_rate'] = rate
-                self.downloader.set_download_rate(rate)
-            self.rawserver.add_task(s)
-        except AttributeError:
-            pass
-
-    def startConnection(self, ip, port, id):
-        self.encoder._start_connection((ip, port), id)
-
-    def _startConnection(self, ipandport, id):
-        self.encoder._start_connection(ipandport, id)
-
-    def setInitiate(self, initiate):
-        try:
-            def s(self=self, initiate=initiate):
-                self.config['max_initiate'] = initiate
-            self.rawserver.add_task(s)
-        except AttributeError:
-            pass
-
-    def getConfig(self):
-        return self.config
-
-    def getDefaults(self):
-        return defaultargs(defaults)
-
-    def getUsageText(self):
-        return self.argslistheader
-
-    def reannounce(self, special=None):
-        try:
-            def r(self=self, special=special):
-                if special is None:
-                    self.rerequest.announce()
-                else:
-                    self.rerequest.announce(specialurl=special)
-            self.rawserver.add_task(r)
-        except AttributeError:
-            pass
-
-    def getResponse(self):
-        try:
-            return self.response
-        except Exception:   # How?
-            return None
-
-    def Pause(self):
-        if not self.storagewrapper:
-            return False
-        self.unpauseflag.clear()
-        self.rawserver.add_task(self.onPause)
-        return True
-
-    def onPause(self):
-        self.whenpaused = clock()
-        if not self.downloader:
-            return
-        self.downloader.pause(True)
-        self.encoder.pause(True)
-        self.choker.pause(True)
-
-    def Unpause(self):
-        self.unpauseflag.set()
-        self.rawserver.add_task(self.onUnpause)
-
-    def onUnpause(self):
-        if not self.downloader:
-            return
-        self.downloader.pause(False)
-        self.encoder.pause(False)
-        self.choker.pause(False)
-        # rerequest automatically if paused for >60 seconds
-        if self.rerequest and self.whenpaused and \
-                clock() - self.whenpaused > 60:
-            self.rerequest.announce(3)
 
     def set_super_seed(self):
         try:
@@ -777,9 +675,6 @@ class BT1Download:
 
     def am_I_finished(self):
         return self.finflag.isSet()
-
-    def get_transfer_stats(self):
-        return self.upmeasure.get_total(), self.downmeasure.get_total()
 
 
 class WarningLock(object):

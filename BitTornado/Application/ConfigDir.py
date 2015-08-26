@@ -57,10 +57,6 @@ class ConfigDir(object):
         for key in ignore:
             self.config.pop(key, None)
 
-    def checkConfig(self):
-        """True if configfile exists"""
-        return os.path.exists(self.configfile)
-
     def loadConfig(self):
         """Read configuration file and update local config dictionary"""
         newconfig = ini_read(self.configfile).get('')
@@ -98,64 +94,6 @@ class ConfigDir(object):
                          ''.format(BitTornado.product_name,
                                    BitTornado.version_short,
                                    time.strftime('%x %X')))
-
-    def getConfig(self):
-        """Return config dictionary"""
-        return self.config
-
-    ###### TORRENT HANDLING ######
-    def getTorrents(self):
-        """Retrieve set of torrents in torrent cache"""
-        return set(unhexlify(os.path.basename(torrent).split('.')[0])
-                   for torrent in os.listdir(self.dir_torrentcache))
-
-    def getTorrentVariations(self, torrent):
-        """Retrieve set of versions of a given torrent"""
-        return sorted(int(t.partition('.')[2] or 0)
-                      for t in map(os.path.basename,
-                                   os.listdir(self.dir_torrentcache))
-                      if t.startswith(torrent))
-
-    def getTorrent(self, torrent, version=-1):
-        """Return the contents of a torrent file
-
-        If version is -1 (default), get the most recent.
-        If version is specified and > -1, retrieve specified version."""
-        torrent = hexlify(torrent)
-        fname = os.path.join(self.dir_torrentcache, torrent)
-
-        if version == -1:
-            version = max(self.getTorrentVariations(torrent))
-        if version:
-            fname += '.' + str(version)
-
-        try:
-            with open(fname, 'rb') as f:
-                return bdecode(f.read())
-        except (IOError, ValueError):
-            return None
-
-    def writeTorrent(self, data, torrent, version=-1):
-        """Write data to a torrent file
-
-        If no version is provided, create a new version"""
-        torrent = hexlify(torrent)
-        fname = os.path.join(self.dir_torrentcache, torrent)
-
-        if version == -1:
-            try:
-                version = max(self.getTorrentVariations(torrent)) + 1
-            except ValueError:
-                version = 0
-        if version:
-            fname += '.' + str(version)
-        try:
-            with open(fname, 'wb') as f:
-                f.write(bencode(data))
-        except (IOError, TypeError, KeyError):
-            return None
-
-        return version
 
     ###### TORRENT DATA HANDLING ######
     def getTorrentData(self, torrent):
@@ -258,7 +196,3 @@ class ConfigDir(object):
                             os.removedirs(fname)
                         except OSError:
                             pass
-
-    def deleteOldTorrents(self, days, still_active=()):
-        """Synonym for deleteOldCacheData with delete_torrents set"""
-        self.deleteOldCacheData(days, still_active, True)

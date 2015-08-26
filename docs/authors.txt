@@ -9,8 +9,6 @@ BitTornado/
     Application/
         ConfigDir.py
             - John Hoffman and Christopher J. Markiewicz
-        ConnChoice.py
-            - John Hoffman
         inifile.py
             - John Hoffman and Christopher J. Markiewicz
         makemetafile.py
@@ -121,6 +119,8 @@ BitTornado/BT1/fakeopen.py
 BitTornado/BT1/StreamCheck.py
     - Bram Cohen
 BitTornado/ConfigReader.py
+    - John Hoffman
+BitTornado/ConnChoice.py
     - John Hoffman
 BitTornado/CreateIcons.py
     - John Hoffman

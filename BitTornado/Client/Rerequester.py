@@ -180,7 +180,6 @@ class Rerequester:
         self.never_succeeded = True
         self.errorcodes = {}
         self.lock = SuccessLock()
-        self.special = None
         self.stopped = False
 
     def start(self):
@@ -220,21 +219,7 @@ class Rerequester:
                 self.howmany() < self.minpeers or self.force_rapid_update):
             self.announce(event)
 
-    def announce(self, event=3, callback=lambda: None, specialurl=None):
-
-        if specialurl is not None:
-            # don't add to statistics
-            s = self.url + {'uploaded': 0, 'downloaded': 0, 'left': 1}
-            if self.howmany() >= self.maxpeers:
-                s['numwant'] = 0
-            else:
-                s['no_peer_id'] = True
-                s['compact'] = True
-            self.last_failed = True     # force true, so will display an error
-            self.special = specialurl
-            self.rerequest(s, callback)
-            return
-
+    def announce(self, event=3, callback=lambda: None):
         s = self.url + {'uploaded': self.up(), 'downloaded': self.down(),
                         'left': self.amount_left()}
         if self.last is not None:
@@ -282,20 +267,15 @@ class Rerequester:
                         self.ip
                     self.externalsched(fail)
             self.errorcodes = {}
-            if self.special is None:
-                for tier in self.trackerlist:
-                    # Iterating is ok, as the loop is ended after modification
-                    for i, tracker in enumerate(tier):
-                        if self.rerequest_single(tracker, s, callback):
-                            if not self.last_failed and i != 0:
-                                tier.pop(i)
-                                tier.insert(0, tracker)
-                            return
-            else:
-                tracker = self.special
-                self.special = None
-                if self.rerequest_single(tracker, s, callback):
-                    return
+            for tier in self.trackerlist:
+                # Iterating is ok, as the loop is ended after modification
+                for i, tracker in enumerate(tier):
+                    if self.rerequest_single(tracker, s, callback):
+                        # Move successful tracker to front of tier
+                        if not self.last_failed and i != 0:
+                            tier.pop(i)
+                            tier.insert(0, tracker)
+                        return
             # no success from any tracker
             self.externalsched(fail)
         except Exception:

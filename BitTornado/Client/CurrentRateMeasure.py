@@ -22,14 +22,5 @@ class Measure:
         self.update_rate(0)
         return self.rate
 
-    def get_rate_noupdate(self):
-        return self.rate
-
-    def time_until_rate(self, newrate):
-        if self.rate <= newrate:
-            return 0
-        t = clock() - self.ratesince
-        return ((self.rate * t) / newrate) - t
-
     def get_total(self):
         return self.total

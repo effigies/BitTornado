@@ -773,15 +773,17 @@ class Tracker(object):
                 self.seedcount[infohash] += 1
                 if not peer.get('nat', -1):
                     for bc in self.becache[infohash]:
-                        bc[1][myid] = bc[0][myid]
-                        del bc[0][myid]
+                        if myid in bc[0]:
+                            bc[1][myid] = bc[0][myid]
+                            del bc[0][myid]
             elif left and not peer['left']:
                 self.completed[infohash] -= 1
                 self.seedcount[infohash] -= 1
                 if not peer.get('nat', -1):
                     for bc in self.becache[infohash]:
-                        bc[0][myid] = bc[1][myid]
-                        del bc[1][myid]
+                        if myid in bc[1]:
+                            bc[0][myid] = bc[1][myid]
+                            del bc[1][myid]
             peer['left'] = left
 
             if port:
@@ -918,7 +920,7 @@ class Tracker(object):
         if return_type == 0:
             data['peers'] = b''.join(peerdata)
         elif return_type == 1:
-            data['crypto_flags'] = "0x01" * len(peerdata)
+            data['crypto_flags'] = b'\x01' * len(peerdata)
             data['peers'] = b''.join(peerdata)
         elif return_type == 2:
             data['crypto_flags'] = bytes(p[1] for p in peerdata)
@@ -1026,33 +1028,34 @@ class Tracker(object):
                                 'Pragma': 'no-cache'},
                     bencode({'response': 'OK'}))
 
-        if params('compact') and ipv4:
-            if params('requirecrypto'):
+        if int(params('compact', 0)) and ipv4:
+            if int(params('requirecrypto', 0)):
                 return_type = 1
-            elif params('supportcrypto'):
+            elif int(params('supportcrypto', 0)):
                 return_type = 2
             else:
                 return_type = 0
         elif self.config['compact_reqd'] and ipv4:
             return (400, 'Bad Request', {'Content-Type': 'text/plain'},
                     'your client is outdated, please upgrade')
-        elif params('no_peer_id'):
+        elif int(params('no_peer_id', 0)):
             return_type = 4
         else:
             return_type = 3
 
         data = self.peerlist(infohash, event == 'stopped',
-                             params('tracker'), not params('left'),
-                             return_type, rsize, params('supportcrypto'))
+                             params('tracker'), not int(params('left', 1)),
+                             return_type, rsize,
+                             int(params('supportcrypto', 0)))
 
         if 'scrape' in paramslist:    # deprecated
             data['scrape'] = self.scrapedata(infohash, False)
 
         if self.dedicated_seed_id:
             if params('seed_id') == self.dedicated_seed_id and \
-                    params('left') == 0:
+                    int(params('left', 1)) == 0:
                 self.is_seeded[infohash] = True
-            if params('check_seeded') and self.is_seeded.get(infohash):
+            if int(params('check_seeded', 0)) and self.is_seeded.get(infohash):
                 data['seeded'] = 1
 
         return (200, 'OK', {'Content-Type': 'text/plain',

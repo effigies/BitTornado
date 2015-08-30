@@ -450,7 +450,7 @@ class BT1Download:
         self.rawserver.add_task(connection.close, 0)
 
     def _ban_peer(self, ip):
-        self.encoder_ban(ip)
+        self.encoder.ban(ip)
 
     def _received_raw_data(self, x):
         if self.tcp_ack_fudge:
@@ -522,7 +522,6 @@ class BT1Download:
             self.config['max_message_length'], self.rawserver.add_task,
             self.config['keepalive_interval'], self.infohash,
             self._received_raw_data, self.config)
-        self.encoder_ban = self.encoder.ban
 
         self.httpdownloader = HTTPDownloader(
             self.storagewrapper, self.picker, self.rawserver, self.finflag,
@@ -571,8 +570,8 @@ class BT1Download:
 
         self.rerequest = Rerequester(
             self.port, self.myid, self.infohash, trackerlist, self.config,
-            self.rawserver.add_task, self.rawserver.add_task, self.errorfunc,
-            self.excfunc, self.encoder.start_connections,
+            self.rawserver.add_task, self.errorfunc, self.excfunc,
+            self.encoder.start_connections,
             self.connecter.how_many_connections,
             self.storagewrapper.get_amount_left, self.upmeasure.get_total,
             self.downmeasure.get_total, self.upmeasure.get_rate,

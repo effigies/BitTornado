@@ -36,8 +36,8 @@ class T2TConnection:
                'http_timeout': timeout}
         self.rerequester = Rerequester(
             0, myid, hash, [[tracker]], cfg, rawserver.add_task,
-            rawserver.add_task, self.errorfunc, excfunc, self.addtolist, R_0,
-            R_1, R_0, R_0, R_0, R_0, threading.Event())
+            self.errorfunc, excfunc, self.addtolist, R_0, R_1, R_0, R_0, R_0,
+            R_0, threading.Event())
 
         # stagger announces
         if self.isactive():

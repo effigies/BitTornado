@@ -32,6 +32,7 @@ keys = KeyDict()
 class Peer(TypedDict):
     iptype = IPv4
     typemap = {'ip': str, 'port': int, 'peer id': bytes}
+
     def __init__(self, arg):
         if isinstance(arg, bytes):
             nbytes = self.iptype.bits // 8
@@ -112,7 +113,6 @@ def check_peers(message):
                            pred=lambda x: len(x) != 20)
 
     elif not isinstance(peers, bytes) or len(peers) % 6 != 0:
-        print(peers.encode())
         raise ValueError('peers misencoded')
 
     check_type(message.get('interval', 1), int, pred=lambda x: x <= 0)
@@ -126,13 +126,12 @@ def check_peers(message):
 
 class Rerequester:
     def __init__(self, port, myid, infohash, trackerlist, config,
-                 sched, externalsched, errorfunc, excfunc, connect,
+                 sched, errorfunc, excfunc, connect,
                  howmany, amount_left, up, down, upratefunc, downratefunc,
                  doneflag, unpauseflag=fakeflag(True),
                  force_rapid_update=False):
 
         self.sched = sched                  # RawServer.add_task
-        self.externalsched = externalsched  # RawServer.add_task
         self.errorfunc = errorfunc          # f(str) -> None
         self.excfunc = excfunc              # f(str) -> None
         self.connect = connect              # Encoder.start_connections
@@ -191,12 +190,9 @@ class Rerequester:
             return
         if not self.unpauseflag.is_set() and (
                 self.howmany() < self.minpeers or self.force_rapid_update):
-            self.announce(3, self._c)
+            self.announce(3, lambda: self.sched(self.c, self.interval))
         else:
-            self._c()
-
-    def _c(self):
-        self.sched(self.c, self.interval)
+            self.sched(self.c, self.interval)
 
     def d(self, event=3):
         if self.stopped:
@@ -265,7 +261,7 @@ class Rerequester:
                 except socket.error:
                     self.errorcodes['troublecode'] = 'unable to resolve: ' + \
                         self.ip
-                    self.externalsched(fail)
+                    self.sched(fail)
             self.errorcodes = {}
             for tier in self.trackerlist:
                 # Iterating is ok, as the loop is ended after modification
@@ -277,7 +273,7 @@ class Rerequester:
                             tier.insert(0, tracker)
                         return
             # no success from any tracker
-            self.externalsched(fail)
+            self.sched(fail)
         except Exception:
             self.exception(callback)
 
@@ -294,7 +290,7 @@ class Rerequester:
 
         self.last_failed = True
         self.lock.give_up()
-        self.externalsched(callback)
+        self.sched(callback)
 
     def rerequest_single(self, tracker, querystring, callback):
         code = self.lock.set()
@@ -314,7 +310,7 @@ class Rerequester:
             # tracker you'd contacted before, don't go any further, just fail
             # silently.
             self.last_failed = True
-            self.externalsched(callback)
+            self.sched(callback)
             self.lock.give_up()
             return True
         return False    # returns true if it wants rerequest() to exit
@@ -333,7 +329,7 @@ class Rerequester:
                 except Exception:
                     pass
 
-            self.externalsched(timedout, self.timeout)
+            self.sched(timedout, self.timeout)
 
             err = None
             if '?' in tracker:
@@ -388,7 +384,7 @@ class Rerequester:
             # even if the attempt timed out, go ahead and process data
             def add(self=self, response=response, callback=callback):
                 self.postrequest(response, callback)
-            self.externalsched(add)
+            self.sched(add)
         except Exception:
             self.exception(callback)
 
@@ -432,7 +428,7 @@ class Rerequester:
             else:
                 print(s)
             callback()
-        self.externalsched(r)
+        self.sched(r)
 
 
 class SuccessLock(object):

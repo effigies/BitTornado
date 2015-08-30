@@ -1,6 +1,7 @@
 import random
 import threading
 import urllib
+from BitTornado.Client.Announce import Announcer
 from BitTornado.Client.Rerequester import Rerequester
 
 DEBUG = True
@@ -35,7 +36,7 @@ class T2TConnection:
                'rerequest_interval': interval,
                'http_timeout': timeout}
         self.rerequester = Rerequester(
-            0, myid, hash, [[tracker]], cfg, rawserver.add_task,
+            0, myid, hash, [[Announcer(tracker)]], cfg, rawserver.add_task,
             self.errorfunc, excfunc, self.addtolist, R_0, R_1, R_0, R_0, R_0,
             R_0, threading.Event())
 

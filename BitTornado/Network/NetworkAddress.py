@@ -42,6 +42,11 @@ class Address(int):
 
         if isinstance(val, str):
             try:
+                val = socket.gethostbyname(val)
+            except socket.gaierror:
+                pass
+
+            try:
                 return cls.from_bytes(socket.inet_pton(cls.family, val), 'big')
             except OSError:
                 raise ValueError("invalid literal for {}(): {!r}".format(

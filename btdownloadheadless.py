@@ -171,15 +171,15 @@ def run(params):
                 h.failed()
                 return
 
-        response = get_metainfo(config['metafile'], config['url'], h.error)
-        if not response:
+        metainfo = get_metainfo(config['metafile'], config['url'], h.error)
+        if not metainfo:
             break
 
-        infohash = hashlib.sha1(bencode(response['info'])).digest()
+        infohash = hashlib.sha1(bencode(metainfo['info'])).digest()
 
         dow = BT1Download(
             h.display, h.finished, h.error, disp_exception, doneflag, config,
-            response, infohash, myid, rawserver, listen_port, configdir)
+            metainfo, infohash, myid, rawserver, listen_port, configdir)
 
         if not dow.saveAs(h.chooseFile, h.newpath):
             break

@@ -223,7 +223,7 @@ def get_metainfo(fname, url, errorfunc):
 
 class BT1Download:
     def __init__(self, statusfunc, finfunc, errorfunc, excfunc, doneflag,
-                 config, response, infohash, id, rawserver, port,
+                 config, metainfo, infohash, peerid, rawserver, port,
                  appdataobj=None):
         self.statusfunc = statusfunc
         self.finfunc = finfunc
@@ -231,15 +231,13 @@ class BT1Download:
         self.excfunc = excfunc
         self.doneflag = doneflag
         self.config = config
-        self.response = response
-        self.infohash = infohash
-        self.myid = id
+        self.metainfo = metainfo    # MetaInfo
+        self.infohash = infohash    # bytes[20]
+        self.myid = peerid          # bytes
         self.rawserver = rawserver
         self.port = port
 
-        self.info = self.response['info']
-        self.pieces = [self.info['pieces'][x:x + 20]
-                       for x in range(0, len(self.info['pieces']), 20)]
+        self.pieces = self.metainfo['info'].hasher.pieces   # [bytes[20]]
         self.len_pieces = len(self.pieces)
         self.argslistheader = argslistheader
         self.unpauseflag = threading.Event()
@@ -283,64 +281,65 @@ class BT1Download:
                 if f != '' and not os.path.exists(f):
                     os.makedirs(f)
 
-            if 'length' in self.info:
-                file_length = self.info['length']
-                file = filefunc(self.info['name'], file_length,
-                                self.config['saveas'], False)
-                if file is None:
+            info = self.metainfo['info']
+            if 'length' in info:
+                file_length = info['length']
+                fname = filefunc(info['name'], file_length,
+                                 self.config['saveas'], False)
+                if fname is None:
                     return None
-                make(file)
-                files = [(file, file_length)]
+                make(fname)
+                files = [(fname, file_length)]
             else:
-                file_length = sum(x['length'] for x in self.info['files'])
-                file = filefunc(self.info['name'], file_length,
-                                self.config['saveas'], True)
-                if file is None:
+                file_length = sum(x['length'] for x in info['files'])
+                fname = filefunc(info['name'], file_length,
+                                 self.config['saveas'], True)
+                if fname is None:
                     return None
 
                 # if this path exists, and no files from the info dict exist,
                 # we assume it's a new download and the user wants to create a
                 # new directory with the default name
                 existing = 0
-                if os.path.exists(file):
-                    if not os.path.isdir(file):
-                        self.errorfunc(file + 'is not a dir')
+                if os.path.exists(fname):
+                    if not os.path.isdir(fname):
+                        self.errorfunc(fname + 'is not a dir')
                         return None
-                    if len(os.listdir(file)) > 0:  # if it's not empty
+                    if len(os.listdir(fname)) > 0:  # if it's not empty
                         existing = any(
-                            os.path.exists(os.path.join(file, x['path'][0]))
-                            for x in self.info['files'])
+                            os.path.exists(os.path.join(fname, x['path'][0]))
+                            for x in info['files'])
                         if not existing:
-                            file = os.path.join(file, self.info['name'])
-                            if os.path.exists(file) and \
-                                    not os.path.isdir(file):
-                                if file[-8:] == '.torrent':
-                                    file = file[:-8]
-                                if os.path.exists(file) and \
-                                        not os.path.isdir(file):
+                            fname = os.path.join(fname, info['name'])
+                            if os.path.exists(fname) and \
+                                    not os.path.isdir(fname):
+                                if fname[-8:] == '.torrent':
+                                    fname = fname[:-8]
+                                if os.path.exists(fname) and \
+                                        not os.path.isdir(fname):
                                     self.errorfunc("Can't create dir - " +
-                                                   self.info['name'])
+                                                   info['name'])
                                     return None
-                make(file, True)
+                make(fname, True)
 
                 # alert the UI to any possible change in path
                 if pathfunc is not None:
-                    pathfunc(file)
+                    pathfunc(fname)
 
                 files = []
-                for x in self.info['files']:
-                    n = os.path.join(file, *x['path'])
+                for x in info['files']:
+                    n = os.path.join(fname, *x['path'])
                     files.append((n, x['length']))
                     make(n)
         except OSError as e:
             self.errorfunc("Couldn't allocate dir - " + str(e))
             return None
 
-        self.filename = file
+        self.filename = fname
         self.files = files
         self.datalength = file_length
 
-        return file
+        return fname
 
     def _finished(self):
         self.finflag.set()
@@ -353,7 +352,7 @@ class BT1Download:
         self.choker.set_round_robin_period(
             max(self.config['round_robin_period'],
                 self.config['round_robin_period'] *
-                self.info['piece length'] / 200000))
+                self.metainfo['info']['piece length'] / 200000))
         self.rerequest_complete()
         self.finfunc()
 
@@ -401,11 +400,11 @@ class BT1Download:
                 except TypeError:
                     pass
 
+        piece_length = self.metainfo['info']['piece length']
         try:
             try:
-                self.storage = Storage(
-                    self.files, self.info['piece length'], self.doneflag,
-                    self.config, disabled_files)
+                self.storage = Storage(self.files, piece_length, self.doneflag,
+                                       self.config, disabled_files)
             except IOError as e:
                 self.errorfunc('trouble accessing files - ' + str(e))
                 return None
@@ -414,7 +413,7 @@ class BT1Download:
 
             self.storagewrapper = StorageWrapper(
                 self.storage, self.config['download_slice_size'],
-                self.pieces, self.info['piece length'], self._finished,
+                self.pieces, piece_length, self._finished,
                 self._failed, statusfunc, self.doneflag,
                 self.config['check_hashes'], self._data_flunked,
                 self.rawserver.add_task, self.config, self.unpauseflag)
@@ -428,7 +427,7 @@ class BT1Download:
 
         if self.selector_enabled:
             self.fileselector = FileSelector(
-                self.files, self.info['piece length'],
+                self.files, piece_length,
                 self.appdataobj.getPieceDir(self.infohash), self.storage,
                 self.storagewrapper, self.rawserver.add_task, self._failed)
             if data:
@@ -527,8 +526,8 @@ class BT1Download:
             self.storagewrapper, self.picker, self.rawserver, self.finflag,
             self.errorfunc, self.downloader, self.config['max_rate_period'],
             self.infohash, self._received_http_data, self.connecter.got_piece)
-        if 'httpseeds' in self.response and not self.finflag.is_set():
-            for u in self.response['httpseeds']:
+        if 'httpseeds' in self.metainfo and not self.finflag.is_set():
+            for u in self.metainfo['httpseeds']:
                 self.httpdownloader.make_download(u)
 
         if self.selector_enabled:
@@ -565,8 +564,8 @@ class BT1Download:
             self.rerequest.hit()
 
     def startRerequester(self, force_rapid_update=False):
-        trackerlist = self.response.get('announce-list',
-                                        [[self.response['announce']]])
+        trackerlist = self.metainfo.get('announce-list',
+                                        [[self.metainfo['announce']]])
 
         self.rerequest = Rerequester(
             self.port, self.myid, self.infohash, trackerlist, self.config,
@@ -585,8 +584,9 @@ class BT1Download:
             self.upmeasure, self.downmeasure, self.connecter,
             self.httpdownloader, self.ratelimiter, self.rerequest_lastfailed,
             self.filedatflag)
-        if 'files' in self.info:
-            self.statistics.set_dirstats(self.files, self.info['piece length'])
+        if 'files' in self.metainfo['info']:
+            self.statistics.set_dirstats(self.files,
+                                         self.metainfo['info']['piece length'])
         if self.config['spew']:
             self.spewflag.set()
 

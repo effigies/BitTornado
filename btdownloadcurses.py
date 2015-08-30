@@ -335,15 +335,15 @@ def run(scrwin, errlist, params):
                     d.failed()
                     return
 
-            response = get_metainfo(config['metafile'], config['url'], d.error)
-            if not response:
+            metainfo = get_metainfo(config['metafile'], config['url'], d.error)
+            if not metainfo:
                 break
 
-            infohash = hashlib.sha1(bencode(response['info'])).digest()
+            infohash = hashlib.sha1(bencode(metainfo['info'])).digest()
 
             dow = BT1Download(
                 d.display, d.finished, d.error, d.error, doneflag, config,
-                response, infohash, myid, rawserver, listen_port, configdir)
+                metainfo, infohash, myid, rawserver, listen_port, configdir)
 
             if not dow.saveAs(d.chooseFile):
                 break

@@ -17,10 +17,10 @@ from BitTornado.Application.PeerID import createPeerID
 
 
 class SingleDownload:
-    def __init__(self, controller, hash, response, config, myid):
+    def __init__(self, controller, hash, metainfo, config, myid):
         self.controller = controller
         self.hash = hash
-        self.response = response
+        self.metainfo = metainfo
         self.config = config
 
         self.doneflag = threading.Event()
@@ -38,7 +38,7 @@ class SingleDownload:
         self.rawserver = controller.handler.newRawServer(hash, self.doneflag)
 
         d = BT1Download(self.display, self.finished, self.error,
-                        controller.exchandler, self.doneflag, config, response,
+                        controller.exchandler, self.doneflag, config, metainfo,
                         hash, myid, self.rawserver, controller.listen_port)
         self.d = d
 

@@ -18,7 +18,7 @@ from .torrentlistparse import parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
-from BitTornado.Client.Rerequester import Response
+from BitTornado.Client.Announce import Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
 from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK

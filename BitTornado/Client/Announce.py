@@ -8,10 +8,64 @@ import random
 import urllib
 import base64
 import threading
-from BitTornado.Client.Rerequester import Response, RequestURL
 from BitTornado.Meta.bencode import bdecode
-from BitTornado.Network.NetworkAddress import IPv4
+from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
+from BitTornado.Network.NetworkAddress import IPv4, IPv6
 from BitTornado.Network.Stream import SharedStream
+
+
+class _Peer(TypedDict):
+    """IPv4 peer descriptor"""
+    iptype = IPv4
+    typemap = {'ip': str, 'port': int, 'peer id': bytes}
+
+    def __init__(self, arg):
+        """Accept bytes or dict representations"""
+        if isinstance(arg, bytes):
+            nbytes = self.iptype.bits // 8
+            arg = {'ip': self.iptype.from_bytes(arg[:nbytes], 'big'),
+                   'port': int.from_bytes(arg[nbytes:], 'big')}
+        TypedDict.__init__(self, arg)
+
+
+class _Peer6(_Peer):
+    """IPv6 peer descriptor"""
+    iptype = IPv6
+
+
+class Response(TypedDict):
+    """Parse and validate tracker responses"""
+    class Peers(TypedList):
+        valtype = _Peer
+
+        def __init__(self, arg):
+            if isinstance(arg, bytes):
+                arg = [arg[i:i+6] for i in range(0, len(arg), 6)]
+            TypedList.__init__(self, arg)
+
+    class Peers6(TypedList):
+        valtype = _Peer6
+
+        def __init__(self, arg):
+            assert isinstance(arg, bytes)
+            arg = [arg[i:i+18] for i in range(0, len(arg), 18)]
+            TypedList.__init__(self, arg)
+
+    typemap = {'failure reason': str, 'warning message': str, 'interval': int,
+               'min interval': int, 'tracker id': bytes, 'complete': int,
+               'incomplete': int, 'crypto_flags': bytes, 'peers': Peers,
+               'peers6': Peers6}
+    valmap = {str: str.encode}
+
+
+class RequestURL(QueryDict):
+    typemap = {'info_hash': bytes, 'peer_id': bytes, 'port': int,
+               'supportcrypto': bool, 'requirecrypto': bool, 'cryptoport': int,
+               'seed_id': bytes, 'check_seeded': bool, 'uploaded': int,
+               'downloaded': int, 'left': int, 'numwant': int,
+               'no_peer_id': bool, 'compact': bool, 'last': int,
+               'trackerid': bytes, 'event': str, 'tracker': bool,
+               'key': str}
 
 
 class Announcer(object):

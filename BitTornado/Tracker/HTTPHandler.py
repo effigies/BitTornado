@@ -92,7 +92,7 @@ class HTTPConnection:
                 self.encoding = 'identity'
             else:
                 if DEBUG:
-                    print("Compressed: %i  Uncompressed: %i\n".format(
+                    print("Compressed: {:d}  Uncompressed: {:d}\n".format(
                           len(cdata), len(data)))
                 data = cdata
                 headers['Content-Encoding'] = 'gzip'

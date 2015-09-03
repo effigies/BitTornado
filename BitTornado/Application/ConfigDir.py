@@ -15,6 +15,7 @@ DIRNAME = '.' + BitTornado.product_name
 
 class ConfigDir(object):
     """Class for managing configuration data and caches"""
+    dir_torrentcache = dir_datacache = dir_piececache = ''
 
     def __init__(self, config_type=None):
         # Figure out a sensible application data location

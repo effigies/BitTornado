@@ -327,8 +327,8 @@ class Storage:
             print('file spans pieces {}-{}'.format(
                 int(start / self.piece_length),
                 int((end - 1) / self.piece_length) + 1))
-        pieces = range(int(start / self.piece_length),
-                       int((end - 1) / self.piece_length) + 1)
+        pieces = list(range(int(start / self.piece_length),
+                            int((end - 1) / self.piece_length) + 1))
         offset = 0
         disabled_files = []
         if len(pieces) == 1:

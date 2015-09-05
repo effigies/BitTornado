@@ -46,7 +46,7 @@ class Connection(object):
 
     def close(self):
         if DEBUG1:
-            print (self.ccount, 'connection closed')
+            print((self.ccount, 'connection closed'))
         self.connection.close()
 
     def send_interested(self):
@@ -67,7 +67,7 @@ class Connection(object):
         if self.send_choke_queued:
             self.send_choke_queued = False
             if DEBUG1:
-                print (self.ccount, 'CHOKE SUPPRESSED')
+                print((self.ccount, 'CHOKE SUPPRESSED'))
         else:
             self._send_message(UNCHOKE)
             if (self.partial_message or self.just_unchoked is None or
@@ -82,14 +82,14 @@ class Connection(object):
                            begin.to_bytes(4, 'big') +
                            length.to_bytes(4, 'big'))
         if DEBUG1:
-            print (self.ccount, 'sent request', index, begin, begin + length)
+            print((self.ccount, 'sent request', index, begin, begin + length))
 
     def send_cancel(self, index, begin, length):
         self._send_message(CANCEL + index.to_bytes(4, 'big') +
                            begin.to_bytes(4, 'big') +
                            length.to_bytes(4, 'big'))
         if DEBUG1:
-            print (self.ccount, 'sent cancel', index, begin, begin + length)
+            print((self.ccount, 'sent cancel', index, begin, begin + length))
 
     def send_bitfield(self, bitfield):
         self._send_message(BITFIELD + bitfield)
@@ -103,9 +103,9 @@ class Connection(object):
     def _send_message(self, s):
         if DEBUG2:
             if s:
-                print (self.ccount, 'SENDING MESSAGE', ord(s[0]), len(s))
+                print((self.ccount, 'SENDING MESSAGE', ord(s[0]), len(s)))
             else:
-                print (self.ccount, 'SENDING MESSAGE', -1, 0)
+                print((self.ccount, 'SENDING MESSAGE', -1, 0))
         s = len(s).to_bytes(4, 'big') + s
         if self.partial_message:
             self.outqueue.append(s)
@@ -125,8 +125,8 @@ class Connection(object):
                                             begin.to_bytes(4, 'big'),
                                             piece.tostring()))
             if DEBUG1:
-                print (self.ccount, 'sending chunk', index, begin,
-                       begin + len(piece))
+                print((self.ccount, 'sending chunk', index, begin,
+                       begin + len(piece)))
 
         if nbytes < len(self.partial_message):
             self.connection.send_message_raw(self.partial_message[:nbytes])
@@ -192,7 +192,7 @@ class Connecter(object):
         self.ccount += 1
         c = Connection(connection, self, self.ccount)
         if DEBUG2:
-            print (c.ccount, 'connection made')
+            print((c.ccount, 'connection made'))
         self.connections[connection] = c
         c.set_upload(self.make_upload(c, self.ratelimiter, self.totalup))
         c.set_download(self.downloader.make_download(c))
@@ -202,7 +202,7 @@ class Connecter(object):
     def connection_lost(self, connection):
         c = self.connections[connection]
         if DEBUG2:
-            print (c.ccount, 'connection closed')
+            print((c.ccount, 'connection closed'))
         del self.connections[connection]
         if c.download:
             c.download.disconnected()
@@ -222,17 +222,17 @@ class Connecter(object):
         c = self.connections[connection]
         t = message[:1]
         if DEBUG2:
-            print (c.ccount, 'message received', ord(t))
+            print((c.ccount, 'message received', ord(t)))
         if t == BITFIELD and c.got_anything:
             if DEBUG2:
-                print (c.ccount, 'misplaced bitfield')
+                print((c.ccount, 'misplaced bitfield'))
             connection.close()
             return
         c.got_anything = True
         if (t in [CHOKE, UNCHOKE, INTERESTED, NOT_INTERESTED] and
                 len(message) != 1):
             if DEBUG2:
-                print (c.ccount, 'bad message length')
+                print((c.ccount, 'bad message length'))
             connection.close()
             return
         if t == CHOKE:
@@ -247,13 +247,13 @@ class Connecter(object):
         elif t == HAVE:
             if len(message) != 5:
                 if DEBUG2:
-                    print (c.ccount, 'bad message length')
+                    print((c.ccount, 'bad message length'))
                 connection.close()
                 return
             i = int.from_bytes(message[1:], 'big')
             if i >= self.numpieces:
                 if DEBUG2:
-                    print (c.ccount, 'bad piece number')
+                    print((c.ccount, 'bad piece number'))
                 connection.close()
                 return
             if c.download.got_have(i):
@@ -263,7 +263,7 @@ class Connecter(object):
                 b = Bitfield(self.numpieces, message[1:])
             except ValueError:
                 if DEBUG2:
-                    print (c.ccount, 'bad bitfield')
+                    print((c.ccount, 'bad bitfield'))
                 connection.close()
                 return
             if c.download.got_have_bitfield(b):
@@ -271,13 +271,13 @@ class Connecter(object):
         elif t == REQUEST:
             if len(message) != 13:
                 if DEBUG2:
-                    print (c.ccount, 'bad message length')
+                    print((c.ccount, 'bad message length'))
                 connection.close()
                 return
             piece_num = int.from_bytes(message[1:5], 'big')
             if piece_num >= self.numpieces:
                 if DEBUG2:
-                    print (c.ccount, 'bad piece number')
+                    print((c.ccount, 'bad piece number'))
                 connection.close()
                 return
             c.got_request(piece_num, int.from_bytes(message[5:9], 'big'),
@@ -285,13 +285,13 @@ class Connecter(object):
         elif t == CANCEL:
             if len(message) != 13:
                 if DEBUG2:
-                    print (c.ccount, 'bad message length')
+                    print((c.ccount, 'bad message length'))
                 connection.close()
                 return
             i = int.from_bytes(message[1:5], 'big')
             if i >= self.numpieces:
                 if DEBUG2:
-                    print (c.ccount, 'bad piece number')
+                    print((c.ccount, 'bad piece number'))
                 connection.close()
                 return
             c.upload.got_cancel(i, int.from_bytes(message[5:9], 'big'),
@@ -299,13 +299,13 @@ class Connecter(object):
         elif t == PIECE:
             if len(message) <= 9:
                 if DEBUG2:
-                    print (c.ccount, 'bad message length')
+                    print((c.ccount, 'bad message length'))
                 connection.close()
                 return
             i = int.from_bytes(message[1:5], 'big')
             if i >= self.numpieces:
                 if DEBUG2:
-                    print (c.ccount, 'bad piece number')
+                    print((c.ccount, 'bad piece number'))
                 connection.close()
                 return
             if c.download.got_piece(i, int.from_bytes(message[5:9], 'big'),

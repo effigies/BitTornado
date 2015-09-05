@@ -1,5 +1,5 @@
 product_name = 'BitTornado'
-version_short = 'T-0.4.0'
+version_short = 'T-0.4.1'
 
 version = version_short + ' (' + product_name + ')'
 report_url = 'https://github.com/effigies/BitTornado/issues/new'

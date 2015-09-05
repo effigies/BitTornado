@@ -391,14 +391,7 @@ class HTTPAnnouncer(Announcer):
         # keep using RequestURL
         query = str(RequestURL(options))
         #query = urllib.parse.urlencode(options, quote_via=urllib.parse.quote)
-
-        # Don't allow other requests while potentially redirecting,
-        # which can change stream and basequery
-        with self.redirect_lock:
-            response, raw = self.stream.request(self.basequery + query)
-            while response.status in (301, 302):
-                self._redirect(raw, query)
-                response, raw = self.stream.request(self.basequery + query)
+        response, raw = self.send_query(query)
 
         if response.status == 200:
             ret = Response(bdecode(raw))
@@ -410,6 +403,28 @@ class HTTPAnnouncer(Announcer):
             return Response(bdecode(raw))
         except ValueError:
             raise IOError(('http error', response.status, response.reason))
+
+    def send_query(self, query):
+        """Send query, redirecting as needed"""
+        with self.redirect_lock:
+            response, raw = self.stream.request(self.basequery + query)
+            while response.status in (301, 302):
+                self._redirect(raw, query)
+                response, raw = self.stream.request(self.basequery + query)
+
+        return response, raw
+
+    def forward_query(self, query, password=None):
+        """Send a pre-formed query, optionally appending password
+
+        Do not attempt to check errors or parse a response."""
+        if password is not None:
+            query += '&password=' + password
+
+        try:
+            self.send_query(query)
+        except IOError:
+            pass
 
 Announcer.subclasses = {'http': HTTPAnnouncer, 'https': HTTPAnnouncer,
                         'udp': UDPAnnouncer}

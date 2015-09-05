@@ -2,7 +2,6 @@ import os
 import warnings
 import threading
 from BitTornado.Meta.Info import MetaInfo, check_info
-from BitTornado.Network.zurllib import urlopen
 from urllib.parse import urlparse
 from .Announce import urls_to_announcers
 from .Choker import Choker
@@ -17,6 +16,7 @@ from .RateLimiter import RateLimiter
 from BitTornado.Network.Encrypter import Encoder
 from BitTornado.Network.NetworkAddress import IPv4
 from BitTornado.Network.RawServer import autodetect_socket_style
+from BitTornado.Network.Stream import geturl
 from .Rerequester import Rerequester
 from .DownloaderFeedback import DownloaderFeedback
 from .RateMeasure import RateMeasure
@@ -205,8 +205,7 @@ def get_metainfo(fname, url, errorfunc):
                 return None
         else:
             try:
-                with urlopen(url) as handle:
-                    metainfo = MetaInfo(bdecode(handle.read()))
+                metainfo = MetaInfo(bdecode(geturl(url)))
             except IOError as e:
                 errorfunc('problem getting response info - ' + str(e))
                 return None

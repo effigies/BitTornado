@@ -245,3 +245,21 @@ try:
     SharedStream.subclasses['https'] = ShareHTTPS
 except ImportError:
     pass
+
+
+def geturl(url, max_redirects=10):
+    """Simple URL fetcher"""
+    for _ in range(max_redirects):
+        try:
+            stream = SharedStream(url)  # HTTP(S)
+        except KeyError:
+            raise IOError(('url error', 'unknown url type', url))
+        query = urllib.parse.urlunsplit(('', '') +
+                                        urllib.parse.urlsplit(url)[2:])
+        response, raw = stream.request(query)
+        if response.status == 200:
+            return raw
+        elif response.status in (301, 302):
+            url = raw
+        else:
+            raise IOError(('http error', response.status, raw))

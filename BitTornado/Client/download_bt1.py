@@ -2,8 +2,8 @@ import os
 import warnings
 import threading
 from BitTornado.Meta.Info import MetaInfo, check_info
-from BitTornado.Network.zurllib import urlopen
 from urllib.parse import urlparse
+from .Announce import urls_to_announcers
 from .Choker import Choker
 from BitTornado.Storage.Storage import Storage
 from BitTornado.Storage.StorageWrapper import StorageWrapper
@@ -14,7 +14,9 @@ from .HTTPDownloader import HTTPDownloader
 from .Connecter import Connecter
 from .RateLimiter import RateLimiter
 from BitTornado.Network.Encrypter import Encoder
+from BitTornado.Network.NetworkAddress import IPv4
 from BitTornado.Network.RawServer import autodetect_socket_style
+from BitTornado.Network.Stream import geturl
 from .Rerequester import Rerequester
 from .DownloaderFeedback import DownloaderFeedback
 from .RateMeasure import RateMeasure
@@ -203,8 +205,7 @@ def get_metainfo(fname, url, errorfunc):
                 return None
         else:
             try:
-                with urlopen(url) as handle:
-                    metainfo = MetaInfo(bdecode(handle.read()))
+                metainfo = MetaInfo(bdecode(geturl(url)))
             except IOError as e:
                 errorfunc('problem getting response info - ' + str(e))
                 return None
@@ -548,11 +549,11 @@ class BT1Download:
 
     def rerequest_complete(self):
         if self.rerequest:
-            self.rerequest.announce(1)
+            self.rerequest.announce(2)
 
     def rerequest_stopped(self):
         if self.rerequest:
-            self.rerequest.announce(2)
+            self.rerequest.announce(3)
 
     def rerequest_lastfailed(self):
         if self.rerequest:
@@ -564,11 +565,20 @@ class BT1Download:
             self.rerequest.hit()
 
     def startRerequester(self, force_rapid_update=False):
-        trackerlist = self.metainfo.get('announce-list',
-                                        [[self.metainfo['announce']]])
+        tracker_urls = self.metainfo.get('announce-list',
+                                         [[self.metainfo['announce']]])
+        kwargs = {'port': self.port,
+                  'ip': IPv4(self.config['ip']),
+                  'seed_id': self.config['dedicated_seed_id'],
+                  'supportcrypto': self.config['crypto_allowed'],
+                  'requirecrypto': self.config['crypto_only'],
+                  'cryptostealth': self.config['crypto_stealth'],
+                  'no_peer_id': True,
+                  'compact': True}
+        announcers = urls_to_announcers(tracker_urls, **kwargs)
 
         self.rerequest = Rerequester(
-            self.port, self.myid, self.infohash, trackerlist, self.config,
+            self.myid, self.infohash, announcers, self.config,
             self.rawserver.add_task, self.errorfunc, self.excfunc,
             self.encoder.start_connections,
             self.connecter.how_many_connections,
@@ -669,7 +679,7 @@ class BT1Download:
             if self.finflag.is_set():
                 def r(self=self):
                     # so after kicking everyone off, reannounce
-                    self.rerequest.announce(3)
+                    self.rerequest.announce(0)
                 self.rawserver.add_task(r)
 
     def am_I_finished(self):

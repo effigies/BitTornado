@@ -18,7 +18,7 @@ from .torrentlistparse import parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
-from BitTornado.Client.Rerequester import Response
+from BitTornado.Client.Announce import HTTPAnnouncer, Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
 from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK
@@ -26,7 +26,6 @@ from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList, \
     IPv4
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
-from BitTornado.Network.zurllib import urlopen
 from BitTornado.clock import clock
 
 from BitTornado import version
@@ -441,7 +440,7 @@ class Tracker(object):
             self.aggregate_forward = None
         else:
             sends = send.split(',')
-            self.aggregate_forward = sends[0]
+            self.aggregate_forward = HTTPAnnouncer(sends[0])
             self.aggregate_password = sends[1] if len(sends) > 1 else None
 
         self.dedicated_seed_id = config['dedicated_seed_id']
@@ -455,20 +454,9 @@ class Tracker(object):
         self.rawserver.add_task(self.cachetimeupdate, 1)
 
     def aggregate_senddata(self, query):
-        url = self.aggregate_forward + '?' + query
-        if self.aggregate_password is not None:
-            url += '&password=' + self.aggregate_password
-        rq = threading.Thread(target=self._aggregate_senddata, args=[url])
-        rq.setDaemon(False)
-        rq.start()
-
-    def _aggregate_senddata(self, url):
-        """just send, don't attempt to error check
-        discard any returned data"""
-        try:
-            urlopen(url).close()
-        except IOError:
-            return
+        threading.Thread(target=self.aggregate_forward.forward_query,
+                         args=(query, self.aggregate_password),
+                         daemon=False).start()
 
     def get_infopage(self):
         try:

@@ -199,8 +199,9 @@ class TestAddrList(unittest.TestCase):
         self.assertIn('127.0.0.1', alist)
         self.assertNotIn('127.0.0.0', alist)
         alist.add_range('127.0.0.2-127.0.0.255')
-        self.assertListEqual(alist.ranges[IPv4],
-                             [AddressRange.from_string('127.0.0.1-127.0.0.255')])
+        self.assertListEqual(
+            alist.ranges[IPv4],
+            [AddressRange.from_string('127.0.0.1-127.0.0.255')])
         alist.add_ip('127.0.0.0')
         self.assertListEqual(alist.ranges[IPv4],
                              [Subnet.from_string('127.0.0.0/24')])

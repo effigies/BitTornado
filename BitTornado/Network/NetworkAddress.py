@@ -41,10 +41,11 @@ class Address(int):
                 "Do not call {!s}() directly".format(cls.__name__))
 
         if isinstance(val, str):
-            try:
-                val = socket.gethostbyname(val)
-            except socket.gaierror:
-                pass
+            if val.find(':') < 0:
+                try:
+                    val = socket.gethostbyname(val)
+                except socket.gaierror:
+                    pass
 
             try:
                 return cls.from_bytes(socket.inet_pton(cls.family, val), 'big')

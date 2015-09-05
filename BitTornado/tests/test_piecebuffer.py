@@ -65,7 +65,6 @@ class PieceBufferTests(unittest.TestCase):
             for stop in bounds:
                 self.assertEqual(x[start:stop], y[start:stop])
 
-
     def test_pool(self):
         # Test two PieceBuffers are not the same
         a = PieceBuffer()

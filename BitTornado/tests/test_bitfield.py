@@ -1,6 +1,6 @@
 import unittest
 
-from BitTornado.bitfield import Bitfield
+from ..bitfield import Bitfield
 
 
 class BitfieldTests(unittest.TestCase):

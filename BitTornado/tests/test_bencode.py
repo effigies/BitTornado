@@ -1,6 +1,6 @@
 import unittest
 
-from BitTornado.Meta.bencode import bencode, bdecode, Bencached
+from ..Meta.bencode import bencode, bdecode, Bencached
 
 
 class CodecTests(unittest.TestCase):
@@ -34,7 +34,7 @@ class CodecTests(unittest.TestCase):
 
     def test_bdecode(self):
         """Test decoding of valid and erroneous sample strings"""
-        self.assertRaises(ValueError, bdecode, b'0:0:')
+        self.assertWarns(Warning, bdecode, b'0:0:')
         self.assertRaises(ValueError, bdecode, b'ie')
         self.assertRaises(ValueError, bdecode, b'i341foo382e')
         self.assertEqual(bdecode(b'i4e'), 4)
@@ -44,16 +44,16 @@ class CodecTests(unittest.TestCase):
         self.assertRaises(ValueError, bdecode, b'i-0e')
         self.assertRaises(ValueError, bdecode, b'i123')
         self.assertRaises(ValueError, bdecode, b'')
-        self.assertRaises(ValueError, bdecode, b'i6easd')
+        self.assertWarns(Warning, bdecode, b'i6easd')
         self.assertRaises(ValueError, bdecode, b'35208734823ljdahflajhdf')
-        self.assertRaises(ValueError, bdecode, b'2:abfdjslhfld')
+        self.assertWarns(Warning, bdecode, b'2:abfdjslhfld')
         self.assertEqual(bdecode(b'0:'), '')
         self.assertEqual(bdecode(b'3:abc'), 'abc')
         self.assertEqual(bdecode(b'10:1234567890'), '1234567890')
         self.assertRaises(ValueError, bdecode, b'02:xy')
         self.assertRaises(ValueError, bdecode, b'l')
         self.assertEqual(bdecode(b'le'), [])
-        self.assertRaises(ValueError, bdecode, b'leanfdldjfh')
+        self.assertWarns(Warning, bdecode, b'leanfdldjfh')
         self.assertEqual(bdecode(b'l0:0:0:e'), ['', '', ''])
         self.assertRaises(ValueError, bdecode, b'relwjhrlewjh')
         self.assertEqual(bdecode(b'li1ei2ei3ee'), [1, 2, 3])
@@ -61,7 +61,7 @@ class CodecTests(unittest.TestCase):
         self.assertEqual(bdecode(b'll5:Alice3:Bobeli2ei3eee'),
                          [['Alice', 'Bob'], [2, 3]])
         self.assertRaises(ValueError, bdecode, b'd')
-        self.assertRaises(ValueError, bdecode, b'defoobar')
+        self.assertWarns(Warning, bdecode, b'defoobar')
         self.assertEqual(bdecode(b'de'), {})
         self.assertEqual(bdecode(b'd3:agei25e4:eyes4:bluee'),
                          {'age': 25, 'eyes': 'blue'})

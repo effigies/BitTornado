@@ -98,14 +98,13 @@ class BTDecoder(object):
         """
         pos += 1
         newpos = ctext.find(b'e', pos)
-        data = int(ctext[pos:newpos])
 
         # '-0' is invalid and strings beginning with '0' must be == '0'
-        if ctext[pos:pos + 2] == b'-0' or \
-                ctext[pos] == ord('0') and newpos != pos + 1:
+        if any((newpos < 0, ctext[pos:pos + 2] == b'-0',
+                ctext[pos] == ord('0') and newpos != pos + 1)):
             raise ValueError
 
-        return (data, newpos + 1)
+        return (int(ctext[pos:newpos]), newpos + 1)
 
     def decode_string(self, ctext, pos):
         """Decode string in ciphertext at a given position
@@ -120,7 +119,8 @@ class BTDecoder(object):
         length = int(ctext[pos:colon])
 
         # '0:' is the only valid string beginning with '0'
-        if ctext[pos] == ord('0') and colon != pos + 1:
+        if any((colon == -1, ctext[pos] == ord('0') and colon != pos + 1,
+                len(ctext) <= colon + length)):
             raise ValueError
 
         colon += 1

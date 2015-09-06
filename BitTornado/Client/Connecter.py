@@ -24,8 +24,8 @@ CANCEL = b'\x08'
 class Connection(object):
     def __init__(self, connection, connecter, ccount):
         self.connection = connection    # Encrypter.Connection
-        self.connecter = connecter      # Connector
-        self.ccount = ccount            # Connector.ccount (at time of init)
+        self.connecter = connecter      # Connecter
+        self.ccount = ccount            # Connecter.ccount (at time of init)
         self.got_anything = False       # Bool (set once)
         self.next_upload = None         # Connection (linked-list)
         self.outqueue = []              # [bytes]
@@ -120,10 +120,10 @@ class Connection(object):
             if s is None:
                 return 0
             index, begin, piece = s
-            self.partial_message = b''.join((len(piece).to_bytes(4, 'big') + 9,
-                                            PIECE, index.to_bytes(4, 'big'),
-                                            begin.to_bytes(4, 'big'),
-                                            piece.tostring()))
+            self.partial_message = b''.join((
+                (len(piece) + 9).to_bytes(4, 'big'), PIECE,
+                index.to_bytes(4, 'big'), begin.to_bytes(4, 'big'),
+                piece.tostring()))
             if DEBUG1:
                 print((self.ccount, 'sending chunk', index, begin,
                        begin + len(piece)))

@@ -211,14 +211,14 @@ class Connection(object):
         # only header encryption
         if self.cryptmode == 1 and self.Encoder.config['crypto_only']:
             return None
-        padlen = (ord(s[12]) << 8) + ord(s[13])
+        padlen = int.from_bytes(s[12:14], 'big')
         if padlen > 512:
             return None
         return padlen + 2, self.read_crypto_pad3
 
     def read_crypto_pad3(self, s):
         s = s[-2:]
-        ialen = (ord(s[0]) << 8) + ord(s[1])
+        ialen = int.from_bytes(s[:2], 'big')
         if ialen > 65535:
             return None
         if self.cryptmode == 1:
@@ -269,7 +269,7 @@ class Connection(object):
                 return None
         elif self.cryptmode != 2:
             return None                     # unknown encryption
-        padlen = (ord(s[4]) << 8) + ord(s[5])
+        padlen = int.from_bytes(s[4:6], 'big')
         if padlen > 512:
             return None
         if padlen:

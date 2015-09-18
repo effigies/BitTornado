@@ -873,8 +873,7 @@ class StorageWrapper:
             r = []
             while len(pp) > 1:
                 if pp[0][0] + pp[0][1] == pp[1][0]:
-                    pp[0] = list(pp[0])
-                    pp[0][1] += pp[1][1]
+                    pp[0] = (pp[0][0], pp[0][1] + pp[1][1])
                     del pp[1]
                 else:
                     r.extend(pp[0])
@@ -951,7 +950,7 @@ class StorageWrapper:
                     places[index] = index
                     got.add(index)
                 assert len(plist) % 2 == 0
-                plist = [plist[x:x + 2] for x in range(0, len(plist), 2)]
+                plist = [tuple(plist[x:x + 2]) for x in range(0, len(plist), 2)]
                 dirty[index] = plist
                 stat_active.add(index)
                 download_history[index] = {}

@@ -399,6 +399,7 @@ class MetaInfo(TypedDict, BencodedFile):
     typemap = {'info': Info, 'announce': str, 'creation date': int,
                'comment': str, 'announce-list': AnnounceList,
                'httpseeds': HTTPList}
+    ignore_invalid = True
 
     def __init__(self, *args, **kwargs):
         super(MetaInfo, self).__init__(*args, **kwargs)

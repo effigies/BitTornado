@@ -95,7 +95,7 @@ class CursesDisplayer:
                                      self.spewy, self.spewx)
         self.spewpan = curses.panel.new_panel(self.spewwin)
         try:
-            self.scrwin.border(*map(ord, '||--    '))
+            self.scrwin.border(*b'||--    ')
         except Exception:
             pass
         self.labelwin.addstr(0, 0, 'file:')
@@ -135,9 +135,11 @@ class CursesDisplayer:
                 statistics=None, spew=None, **kwargs):
 
         inchar = self.fieldwin.getch()
-        if inchar == 12:                    # ^L
+        if inchar == -1:
+            pass
+        elif inchar == 12:  # ^L
             self._remake_window()
-        elif inchar in (ord('q'), ord('Q')):
+        elif inchar in b'qQ':
             self.doneflag.set()
 
         if activity is not None and not self.done:

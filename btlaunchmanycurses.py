@@ -93,7 +93,7 @@ class CursesDisplayer:
         self.statuswin.scrollok(0)
 
         try:
-            self.scrwin.border(*map(ord, '||--    '))
+            self.scrwin.border(*b'||--    ')
         except Exception:
             pass
         self.headerwin.addnstr(0, 2, '#', self.mainwinw - 25, curses.A_BOLD)
@@ -209,7 +209,7 @@ class CursesDisplayer:
         curses.panel.update_panels()
         curses.doupdate()
 
-        return inchar in (ord('q'), ord('Q'))
+        return inchar != -1 and inchar in b'qQ'
 
     def message(self, s):
         self.messages.append(time.strftime('%x %X - ', time.localtime()) + s)

@@ -5,20 +5,20 @@ DEBUG1 = False
 DEBUG2 = False
 
 
-CHOKE = b'\x00'
-UNCHOKE = b'\x01'
-INTERESTED = b'\x02'
-NOT_INTERESTED = b'\x03'
-# index
-HAVE = b'\x04'
-# index, bitfield
-BITFIELD = b'\x05'
-# index, begin, length
-REQUEST = b'\x06'
-# index, begin, piece
-PIECE = b'\x07'
-# index, begin, piece
-CANCEL = b'\x08'
+# Message IDs
+CHOKE = b'\x00'             # no payload
+UNCHOKE = b'\x01'           # no payload
+INTERESTED = b'\x02'        # no payload
+NOT_INTERESTED = b'\x03'    # no payload
+HAVE = b'\x04'              # index
+BITFIELD = b'\x05'          # index, bitfield
+REQUEST = b'\x06'           # index, begin, length
+PIECE = b'\x07'             # index, begin, piece
+CANCEL = b'\x08'            # index, begin, piece
+EXTENDED = b'\x14'          # msg_id, payload
+
+# Extended Message IDs
+EXT_HANDSHAKE = b'\x00'
 
 
 class Connection(object):

@@ -12,7 +12,13 @@ setup(
     description="John Hoffman's fork of the original bittorrent",
     license="MIT",
 
-    packages=["BitTornado"],
+    packages=["BitTornado",
+              "BitTornado.Application",
+              "BitTornado.Client",
+              "BitTornado.Meta",
+              "BitTornado.Network",
+              "BitTornado.Storage",
+              "BitTornado.Tracker"],
 
     scripts=["btdownloadheadless.py", "bttrack.py", "btmakemetafile.py",
              "btlaunchmany.py", "btcompletedir.py", "btdownloadcurses.py",

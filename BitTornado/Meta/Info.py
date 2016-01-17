@@ -190,7 +190,7 @@ class Info(TypedDict):   # pylint: disable=R0904
             typemap = {'length': int, 'path': Path}
         valtype = File
     typemap = {'name': str, 'piece length': int, 'pieces': bytes,
-               'files': Files, 'length': int}
+               'files': Files, 'length': int, 'private': bool}
 
     def __init__(self, name, size=None,
                  progress=lambda x: None, progress_percent=False, **params):
@@ -217,6 +217,8 @@ class Info(TypedDict):   # pylint: disable=R0904
             name = name.decode()
 
         self['name'] = name
+        if 'private' in params:
+            self['private'] = params['private']
 
         if 'files' in params:
             self['files'] = params['files']

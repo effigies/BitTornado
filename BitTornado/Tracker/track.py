@@ -156,8 +156,8 @@ def statefiletemplate(x):
                 if not isinstance(y, dict):
                     raise ValueError
                 # ... of client ids interested in that torrent
-                for id, info in y.items():
-                    if len(id) != 20:
+                for client_id, info in y.items():
+                    if len(client_id) != 20:
                         raise ValueError
                     # ... each of which is also a dictionary
                     # ... which has an IP, a Port, and a Bytes Left count for

@@ -38,14 +38,14 @@ incompletecounter = IncompleteCounter()
 # header, options, download id, my id, [length, message]
 
 class Connection(object):
-    def __init__(self, Encoder, connection, id,
+    def __init__(self, Encoder, connection, peerid,
                  ext_handshake=False, encrypted=None, options=None):
         self.Encoder = Encoder
         self.connection = connection        # SingleSocket
         self.connecter = Encoder.connecter
-        self.id = id
-        self.locally_initiated = (id is not None)
-        self.readable_id = make_readable(id)
+        self.peerid = peerid
+        self.locally_initiated = (peerid is not None)
+        self.readable_id = make_readable(peerid)
         self.complete = False
         self.keepalive = lambda: None
         self.closed = False
@@ -104,7 +104,7 @@ class Connection(object):
         return self.connection.get_ip(real)
 
     def get_id(self):
-        return self.id
+        return self.peerid
 
     def get_readable_id(self):
         return self.readable_id
@@ -316,11 +316,11 @@ class Connection(object):
         if not self.encrypted and self.Encoder.config['crypto_only']:
             return None     # allows older trackers to ping,
                             # but won't proceed w/ connections
-        if not self.id:
-            self.id = s
+        if not self.peerid:
+            self.peerid = s
             self.readable_id = make_readable(s)
         else:
-            if s != self.id:
+            if s != self.peerid:
                 return None
         self.complete = self.Encoder.got_id(self)
         if not self.complete:
@@ -499,7 +499,7 @@ class Encoder(object):
         self.download_id = download_id
         self.measurefunc = measurefunc
         self.config = config
-        self.connections = {}
+        self.connections = {}  # {SingleSocket : Connection}
         self.banned = set()
         self.external_bans = bans
         self.to_connect = []
@@ -517,10 +517,10 @@ class Encoder(object):
         for c in self.connections.values():
             c.keepalive()
 
-    def start_connections(self, list):
+    def start_connections(self, conn_list):
         if not self.to_connect:
             self.raw_server.add_task(self._start_connection_from_queue)
-        self.to_connect = list
+        self.to_connect = conn_list
 
     def _start_connection_from_queue(self):
         if self.connecter.external_connection_made:
@@ -534,14 +534,14 @@ class Encoder(object):
             delay = 1
         else:
             delay = 0
-            dns, id, encrypted = self.to_connect.pop(0)
-            self.start_connection(dns, id, encrypted)
+            dns, peerid, encrypted = self.to_connect.pop(0)
+            self.start_connection(dns, peerid, encrypted)
         if self.to_connect:
             self.raw_server.add_task(self._start_connection_from_queue, delay)
 
-    def start_connection(self, dns, id, encrypted=None):
+    def start_connection(self, dns, peerid, encrypted=None):
         if self.paused or len(self.connections) >= self.max_connections or \
-                id == self.my_id or not self.check_ip(ip=dns[0]):
+                peerid == self.my_id or not self.check_ip(ip=dns[0]):
             return True
         if self.config['crypto_only']:
             if encrypted is None or encrypted:  # fails on encrypted = 0
@@ -551,24 +551,19 @@ class Encoder(object):
         for v in self.connections.values():
             if v is None:
                 continue
-            if id and v.id == id:
+            if peerid and v.peerid == peerid:
                 return True
             ip = v.get_ip(True)
             if self.config['security'] and ip != 'unknown' and ip == dns[0]:
                 return True
         try:
             c = self.raw_server.start_connection(dns)
-            con = Connection(self, c, id, encrypted=encrypted)
+            con = Connection(self, c, peerid, encrypted=encrypted)
             self.connections[c] = con
             c.set_handler(con)
         except socket.error:
             return False
         return True
-
-    def _start_connection(self, dns, id, encrypted=None):
-        def foo(self=self, dns=dns, id=id, encrypted=encrypted):
-            self.start_connection(dns, id, encrypted)
-        self.schedulefunc(foo, 0)
 
     def check_ip(self, connection=None, ip=None):
         if not ip:
@@ -580,13 +575,13 @@ class Encoder(object):
         return True
 
     def got_id(self, connection):
-        if connection.id == self.my_id:
+        if connection.peerid == self.my_id:
             self.connecter.external_connection_made -= 1
             return False
         ip = connection.get_ip(True)
         for v in self.connections.values():
             if connection is not v:
-                if connection.id == v.id:
+                if connection.peerid == v.peerid:
                     if ip == v.get_ip(True):
                         v.close()
                     else:

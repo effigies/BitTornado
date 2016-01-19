@@ -1,5 +1,5 @@
 from .BTcrypto import Crypto, CRYPTO_OK, padding
-from .Encrypter import protocol_name, option_pattern
+from .Protocol import protocol_name, reserved
 
 CHECK_PEER_ID_ENCRYPTED = True
 
@@ -126,7 +126,7 @@ class NatCheck(object):
             if not self.buffer:  # oops; check for exceptions to this
                 return None
             self._end_crypto()
-        self.write(protocol_name + option_pattern + self.Encoder.download_id)
+        self.write(protocol_name + bytes(reserved) + self.Encoder.download_id)
         return len(protocol_name), self.read_encrypted_header
 
     ### START PROTOCOL OVER ENCRYPTED CONNECTION ###

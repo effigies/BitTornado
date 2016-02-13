@@ -63,6 +63,7 @@ class SplitList(TypedList):
 class TypedDict(dict):
     keytype = valtype = keymap = valmap = valid_keys = typemap = None
     keyconst = valconst = None
+    ignore_invalid = False
 
     def __init__(self, mapping=None, **kwargs):
         if self.typemap is not None and self.valid_keys is None:
@@ -104,6 +105,8 @@ class TypedDict(dict):
             val = self.typemap[key](val)
 
         if self.valid_keys is not None and key not in self.valid_keys:
+            if self.ignore_invalid:
+                return
             raise KeyError('Invalid key: ' + key)
 
         if self.keyconst is not None:

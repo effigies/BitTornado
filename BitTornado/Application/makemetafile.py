@@ -6,7 +6,7 @@ from BitTornado.Meta.BTTree import BTTree
 from BitTornado.Meta.Info import MetaInfo
 
 defaults = [
-    ('announce_list', '',
+    ('announce-list', '',
         'a list of announce URLs - explained below'),
     ('httpseeds', '',
         'a list of http seed URLs - explained below'),
@@ -24,7 +24,7 @@ defaults = [
 ignore = ['core', 'CVS']
 
 announcelist_details = \
-    """announce_list = optional list of redundant/backup tracker URLs, in the
+    """announce-list = optional list of redundant/backup tracker URLs, in the
 format:
     url[,url...][|url[,url...]...]
         where URLs separated by commas are all tried first

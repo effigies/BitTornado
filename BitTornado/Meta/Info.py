@@ -190,7 +190,8 @@ class Info(TypedDict):   # pylint: disable=R0904
             typemap = {'length': int, 'path': Path}
         valtype = File
     typemap = {'name': str, 'piece length': int, 'pieces': bytes,
-               'files': Files, 'length': int}
+               'files': Files, 'length': int, 'private': bool}
+    base_keys = set(('name', 'piece length', 'pieces', 'files', 'length'))
 
     def __init__(self, name, size=None,
                  progress=lambda x: None, progress_percent=False, **params):
@@ -217,6 +218,8 @@ class Info(TypedDict):   # pylint: disable=R0904
             name = name.decode()
 
         self['name'] = name
+        if 'private' in params:
+            self['private'] = params['private']
 
         if 'files' in params:
             self['files'] = params['files']
@@ -294,7 +297,7 @@ class Info(TypedDict):   # pylint: disable=R0904
 
     def keys(self):
         """Return iterator over keys in Info dict"""
-        keys = self.valid_keys.copy()
+        keys = self.base_keys | set(super(Info, self).keys())
         if 'files' in self:
             keys.remove('length')
         else:

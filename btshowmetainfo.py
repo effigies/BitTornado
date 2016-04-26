@@ -52,7 +52,10 @@ for metainfo_name in sys.argv[1:]:
     piece_number, last_piece_length = divmod(file_length, piece_length)
     print('{} {:d} ({:d} * {:d} + {:d})'.format(
           name, file_length, piece_number, piece_length, last_piece_length))
-    print('announce url..:', metainfo['announce'])
+    if 'announce' in metainfo:
+        print('announce url..:', metainfo['announce'])
+    else:
+        print('***WARNING*** - no announce key')
     if 'announce-list' in metainfo:
         announce_list = '|'.join(','.join(tier)
                                  for tier in metainfo['announce-list'])

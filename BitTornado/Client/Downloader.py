@@ -457,8 +457,8 @@ class Downloader:
         self.all_requests = []
         self.endgame_queued_pieces = []
 
-    def add_disconnected_seed(self, id):
-        self.disconnectedseeds[id] = clock()
+    def add_disconnected_seed(self, peerid):
+        self.disconnectedseeds[peerid] = clock()
 
     def num_disconnected_seeds(self):
         # first expire old ones
@@ -479,9 +479,9 @@ class Downloader:
         if self._check_kicks_ok():
             download.guard.download = None
             ip = download.ip
-            id = download.connection.get_readable_id()
-            self.kicked[ip] = id
-            self.perip[ip].peerid = id
+            peerid = download.connection.get_readable_id()
+            self.kicked[ip] = peerid
+            self.perip[ip].peerid = peerid
             self.kickfunc(download.connection)
 
     def try_ban(self, ip):

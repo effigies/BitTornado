@@ -179,6 +179,18 @@ class Connection(object):
             self.connecter.ratelimiter.ping(clock() - self.just_unchoked)
             self.just_unchoked = 0
 
+    def got_extended(self, message):
+        message_id = message[:1]
+        if message_id == EXT_HANDSHAKE:
+            payload = bdecode(message[1:])
+            supported_exts = payload['m']
+            self.supported_exts.update((k, v)
+                                       for k, v in supported_exts.items()
+                                       if k in SUPPORTED_EXTS)
+        else:
+
+
+
 
 class Connecter(object):
     def __init__(self, make_upload, downloader, choker, numpieces, totalup,

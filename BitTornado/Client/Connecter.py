@@ -1,3 +1,5 @@
+from .Extension import PeerExtensions
+from ..Meta.bencode import bdecode
 from ..Types import Bitfield
 from BitTornado.clock import clock
 
@@ -15,6 +17,12 @@ BITFIELD = b'\x05'          # index, bitfield
 REQUEST = b'\x06'           # index, begin, length
 PIECE = b'\x07'             # index, begin, piece
 CANCEL = b'\x08'            # index, begin, piece
+DHT_PORT = b'\x09'          # port (2 bytes)
+FAST_SUGGEST = b'\x0d'      # index
+FAST_HAVE_ALL = b'\x0e'     # no payload
+FAST_HAVE_NONE = b'\x0f'    # no payload
+FAST_REJECT = b'\x10'       # index, begin, length
+ALLOW_FAST = b'\x11'        # index
 EXTENDED = b'\x14'          # msg_id, payload
 
 # Extended Message IDs
@@ -34,6 +42,7 @@ class Connection(object):
         self.upload = None              # Uploader.Upload
         self.send_choke_queued = False  # Bool (togglable)
         self.just_unchoked = None       # None -> 0 <-> clock()
+        self.supported_exts = {}
 
         # Pass-through functions
         self.get_id = connection.get_id
@@ -96,6 +105,9 @@ class Connection(object):
 
     def send_have(self, index):
         self._send_message(HAVE + index.to_bytes(4, 'big'))
+
+    def send_extended(self, ext_id, payload):
+        self._send_message(EXTENDED + ext_id.to_bytes(1, 'big') + payload)
 
     def send_keepalive(self):
         self._send_message(b'')
@@ -311,5 +323,7 @@ class Connecter(object):
             if c.download.got_piece(i, int.from_bytes(message[5:9], 'big'),
                                     message[9:]):
                 self.got_piece(i)
+        elif t == EXTENDED:
+            c.got_extended(message)
         else:
             connection.close()

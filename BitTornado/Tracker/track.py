@@ -129,7 +129,7 @@ class TrackerState(TypedDict, BencodedFile):
             class PeerInfo(TypedDict):
                 typemap = {'ip': str, 'port': int, 'left': int, 'nat': bool,
                            'requirecrypto': bool, 'supportcrypto': bool,
-                           'key': str}
+                           'key': str, 'given ip': str}
             keyconst = lambda self, key: len(key) == 20
             valtype = PeerInfo
         keyconst = lambda self, key: len(key) == 20

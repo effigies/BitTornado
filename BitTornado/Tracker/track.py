@@ -641,8 +641,8 @@ class Tracker(object):
 
     def check_allowed(self, infohash, paramslist):
         if self.aggregator_key is not None and not (
-                'password' in paramslist
-                and paramslist['password'][0] == self.aggregator_key):
+                'password' in paramslist and
+                paramslist['password'][0] == self.aggregator_key):
             return (200, 'Not Authorized', {'Content-Type': 'text/plain',
                                             'Pragma': 'no-cache'},
                     bencode({'failure reason': 'Requested download is not '

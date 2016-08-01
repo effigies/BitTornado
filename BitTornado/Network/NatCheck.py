@@ -77,11 +77,11 @@ class NatCheck(object):
         self.write(self.encrypter.block3a +
                    self.encrypter.block3b +
                    self.encrypter.encrypt(
-                       bytes(8)                       # VC
-                       + cryptmode                    # acceptable crypto modes
-                       + len(padc).to_bytes(2, 'big')
-                       + padc                         # PadC
-                       + bytes(2)))                   # no initial payload data
+                       bytes(8) +                     # VC
+                       cryptmode +                    # acceptable crypto modes
+                       len(padc).to_bytes(2, 'big') +
+                       padc +                         # PadC
+                       bytes(2)))                     # no initial payload data
         self._max_search = 520
         return 1, self.read_crypto_block4a
 

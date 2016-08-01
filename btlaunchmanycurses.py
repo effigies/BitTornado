@@ -3,8 +3,6 @@
 # Written by John Hoffman
 # see LICENSE.txt for license information
 
-DOWNLOAD_SCROLL_RATE = 1
-
 import sys
 import os
 import time
@@ -30,6 +28,8 @@ except ImportError:
     print()
     print('You may still use "btdownloadheadless.py" to download.')
     sys.exit(1)
+
+DOWNLOAD_SCROLL_RATE = 1
 
 Exceptions = []
 

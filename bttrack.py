@@ -3,10 +3,10 @@
 # Written by Bram Cohen
 # see LICENSE.txt for license information
 
-PROFILE = 0
-
 import sys
 from BitTornado.Tracker.track import track
+
+PROFILE = 0
 
 if __name__ == '__main__':
     if PROFILE:

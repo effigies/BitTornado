@@ -3,8 +3,6 @@
 # Written by Henry 'Pi' James
 # see LICENSE.txt for license information
 
-SPEW_SCROLL_RATE = 1
-
 import sys
 import os
 import time
@@ -38,6 +36,8 @@ except ImportError:
     print()
     print('You may still use "btdownloadheadless.py" to download.')
     sys.exit(1)
+
+SPEW_SCROLL_RATE = 1
 
 
 class CursesDisplayer:

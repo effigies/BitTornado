@@ -796,7 +796,8 @@ class Tracker(object):
                         l = self.becache[infohash]
                         y = not peer['left']
                         for x in l:
-                            del x[y][myid]
+                            if myid in x[y]:
+                                del x[y][myid]
                     if natted >= 0:
                         del peer['nat']     # restart NAT testing
                 if natted and natted < self.natcheck:

@@ -314,8 +314,8 @@ class Connection(object):
 
     def read_peer_id(self, s):
         if not self.encrypted and self.Encoder.config['crypto_only']:
-            return None     # allows older trackers to ping,
-                            # but won't proceed w/ connections
+            # allows older trackers to ping, but won't proceed w/ connections
+            return None
         if not self.peerid:
             self.peerid = s
             self.readable_id = make_readable(s)

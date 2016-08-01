@@ -105,13 +105,13 @@ class RawServer(object):
                         if tid in self.tasks_to_kill:
                             pass
                         try:
-#                            print func.func_name
+                            # print(func.func_name)
                             func()
                         except (SystemError, MemoryError) as e:
                             self.failfunc(str(e))
                             return
                         except KeyboardInterrupt:
-#                            self.exception(True)
+                            # self.exception(True)
                             return
                         except Exception:
                             if self.noisy:
@@ -128,14 +128,14 @@ class RawServer(object):
                     if self.doneflag.is_set():
                         return
                 except KeyboardInterrupt:
-#                    self.exception(True)
+                    # self.exception(True)
                     return
                 except Exception:
                     self.exception()
                 if self.exccount > 10:
                     return
         finally:
-#            self.sockethandler.shutdown()
+            # self.sockethandler.shutdown()
             self.finished.set()
 
     def is_finished(self):

@@ -190,8 +190,8 @@ class CursesDisplayer:
         totalup = 0
         totaldn = 0
         for entry in data:
-            #entry = (name, status, progress, peers, seeds, seedsmsg, dist,
-            #         uprate, downrate, upamount, downamount, size, t, msg)
+            # entry = (name, status, progress, peers, seeds, seedsmsg, dist,
+            #          uprate, downrate, upamount, downamount, size, t, msg)
             totalup += entry[7]
             totaldn += entry[8]
 

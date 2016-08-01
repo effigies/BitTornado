@@ -27,7 +27,7 @@ class Storage:
         self.working_ranges = []
         numfiles = 0
         total = 0
-        #so_far = 0
+        # so_far = 0
         self.handles = {}       # {fname: fileh}
         self.whandles = set()   # {fname}
         self.tops = {}          # {fname: length}
@@ -74,7 +74,7 @@ class Storage:
                     self.mtimes[fname] = os.path.getmtime(fname)
                 self.tops[fname] = l
                 self.sizes[fname] = length
-                #so_far += l
+                # so_far += l
 
         self.total_length = total
         self._reset_ranges()

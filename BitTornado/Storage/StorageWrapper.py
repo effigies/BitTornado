@@ -986,7 +986,7 @@ class StorageWrapper:
 
             assert amount_obtained + amount_inactive == self.amount_desired
         except Exception:
-#            print_exc()
+            # print_exc()
             return []   # invalid data, discard everything
 
         self.have = have

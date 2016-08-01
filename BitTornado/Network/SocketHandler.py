@@ -61,7 +61,10 @@ class SingleSocket(object):
         sock.close()
 
     def shutdown(self, val):
-        self.socket.shutdown(val)
+        try:
+            self.socket.shutdown(val)
+        except OSError:
+            pass
 
     def is_flushed(self):
         return not self.buffer

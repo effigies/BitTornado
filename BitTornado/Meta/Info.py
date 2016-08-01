@@ -186,7 +186,9 @@ class Info(TypedDict):   # pylint: disable=R0904
         class File(TypedDict):
             class Path(TypedList):
                 valtype = str
-                valconst = lambda s, x: VALID_NAME.match(x)
+
+                def valconst(self, x):
+                    return VALID_NAME.match(x)
             typemap = {'length': int, 'path': Path}
         valtype = File
     typemap = {'name': str, 'piece length': int, 'pieces': bytes,

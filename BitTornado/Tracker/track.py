@@ -130,10 +130,14 @@ class TrackerState(TypedDict, BencodedFile):
                 typemap = {'ip': str, 'port': int, 'left': int, 'nat': bool,
                            'requirecrypto': bool, 'supportcrypto': bool,
                            'key': str, 'given ip': str}
-            keyconst = lambda self, key: len(key) == 20
             valtype = PeerInfo
-        keyconst = lambda self, key: len(key) == 20
+
+            def keyconst(self, key):
+                return len(key) == 20
         valtype = Peer
+
+        def keyconst(self, key):
+            return len(key) == 20
 
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
                'allowed_dir_files': dict}

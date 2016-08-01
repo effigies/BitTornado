@@ -434,7 +434,7 @@ class StorageWrapper:
             while len(unhaves) < n:
                 # all in first 4 bytes
                 unhave = random.randrange(min(32, len(self.hashes)))
-                if not unhave in unhaves:
+                if unhave not in unhaves:
                     unhaves.append(unhave)
                     newhave[unhave] = False
             self.have_cloaked_data = (bytes(newhave), unhaves)

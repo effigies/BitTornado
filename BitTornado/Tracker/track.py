@@ -194,7 +194,7 @@ def statefiletemplate(x):
                 adlist = set(z[1] for z in x['allowed_dir_files'].values())
                 # and each should have a corresponding key here
                 for y in cinfo:
-                    if not y in adlist:
+                    if y not in adlist:
                         raise ValueError
         elif cname == 'allowed_dir_files':
             # a list of files, their attributes and info hashes

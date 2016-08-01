@@ -1,11 +1,13 @@
-import os
 import random
 import hashlib
 
-URANDOM = getattr(os, 'urandom', None)
-if not URANDOM:
+try:
+    from os import urandom
+except ImportError:
     random.seed()
-    URANDOM = lambda x: bytes(random.randrange(256) for _ in range(x))
+
+    def urandom(x):
+        return bytes(random.randrange(256) for _ in range(x))
 
 try:
     from Crypto.Cipher import ARC4
@@ -24,7 +26,7 @@ DH_BYTES = 96
 
 def padding():
     """Return 16-200 random bytes"""
-    return URANDOM(random.randrange(16, PAD_MAX))
+    return urandom(random.randrange(16, PAD_MAX))
 
 
 #pylint: disable=E1101
@@ -44,7 +46,7 @@ class Crypto(object):
         if not disable_crypto and not CRYPTO_OK:
             raise NotImplementedError("attempt to run encryption w/ none "
                                       "installed")
-        self.privkey = int.from_bytes(URANDOM(KEY_LENGTH // 8), 'big')
+        self.privkey = int.from_bytes(urandom(KEY_LENGTH // 8), 'big')
         self.pubkey = pow(2, self.privkey, DH_PRIME).to_bytes(96, 'big')
         self.keylength = DH_BYTES
         self._VC_pattern = None

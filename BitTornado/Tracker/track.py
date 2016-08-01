@@ -697,13 +697,14 @@ class Tracker(object):
             raise ValueError('invalid event')
         port = params('cryptoport')
         if port is None:
-            port = params('port', '')
+            port = params('port', 'missing port')
         port = int(port)
         if not 0 <= port <= 65535:
             raise ValueError('invalid port')
-        left = int(params('left', ''))
+        left = int(params('left', 'amount left not sent'))
         if left < 0:
             raise ValueError('invalid amount left')
+        seeding = left == 0
         # uploaded = long(params('uploaded',''))
         # downloaded = long(params('downloaded',''))
         supportcrypto = int(bool(params('supportcrypto')))
@@ -729,8 +730,9 @@ class Tracker(object):
         if event == 'stopped':
             if peer and auth:
                 self.delete_peer(infohash, myid)
+            return rsize
 
-        elif not peer:
+        if peer is None:
             ts[myid] = clock()
             peer = {'ip': ip, 'port': port, 'left': left,
                     'supportcrypto': supportcrypto,
@@ -740,7 +742,7 @@ class Tracker(object):
             if gip:
                 peer['given ip'] = gip
             if port:
-                if not self.natcheck or islocal:
+                if self.natcheck == 0 or islocal:
                     peer['nat'] = 0
                     self.natcheckOK(infohash, myid, ip1, port, peer)
                 else:
@@ -748,68 +750,69 @@ class Tracker(object):
                              port, self.rawserver, encrypted=requirecrypto)
             else:
                 peer['nat'] = 2 ** 30
-            if event == 'completed':
-                self.completed[infohash] += 1
-            if not left:
-                self.seedcount[infohash] += 1
+
+            self.completed[infohash] += event == 'completed'
+            self.seedcount[infohash] += seeding
 
             peers[myid] = peer
+            return rsize
 
-        else:
-            if not auth:
-                return rsize    # return w/o changing stats
+        if not auth:
+            return rsize    # return w/o changing stats
 
-            ts[myid] = clock()
-            if not left and peer['left']:
-                self.completed[infohash] += 1
-                self.seedcount[infohash] += 1
-                if not peer.get('nat', -1):
-                    for bc in self.becache[infohash]:
-                        if myid in bc[0]:
-                            bc[1][myid] = bc[0][myid]
-                            del bc[0][myid]
-            elif left and not peer['left']:
-                self.completed[infohash] -= 1
-                self.seedcount[infohash] -= 1
-                if not peer.get('nat', -1):
-                    for bc in self.becache[infohash]:
-                        if myid in bc[1]:
-                            bc[0][myid] = bc[1][myid]
-                            del bc[1][myid]
-            peer['left'] = left
+        ts[myid] = clock()
+        if not left and peer['left']:
+            self.completed[infohash] += 1
+            self.seedcount[infohash] += 1
+            if not peer.get('nat', -1):
+                for bc in self.becache[infohash]:
+                    if myid in bc[0]:
+                        bc[1][myid] = bc[0][myid]
+                        del bc[0][myid]
+        elif left and not peer['left']:
+            self.completed[infohash] -= 1
+            self.seedcount[infohash] -= 1
+            if not peer.get('nat', -1):
+                for bc in self.becache[infohash]:
+                    if myid in bc[1]:
+                        bc[0][myid] = bc[1][myid]
+                        del bc[1][myid]
+        peer['left'] = left
 
-            if port:
-                recheck = False
-                if ip != peer['ip']:
-                    peer['ip'] = ip
-                    recheck = True
-                if gip != peer.get('given ip'):
-                    if gip:
-                        peer['given ip'] = gip
-                    elif 'given ip' in peer:
-                        del peer['given ip']
-                    recheck = True
+        if port == 0:
+            return rsize
 
-                natted = peer.get('nat', -1)
-                if recheck:
-                    if natted == 0:
-                        l = self.becache[infohash]
-                        y = not peer['left']
-                        for x in l:
-                            if myid in x[y]:
-                                del x[y][myid]
-                    if natted >= 0:
-                        del peer['nat']     # restart NAT testing
-                if natted and natted < self.natcheck:
-                    recheck = True
+        recheck = False
+        if ip != peer['ip']:
+            peer['ip'] = ip
+            recheck = True
+        if gip != peer.get('given ip'):
+            if gip:
+                peer['given ip'] = gip
+            elif 'given ip' in peer:
+                del peer['given ip']
+            recheck = True
 
-                if recheck:
-                    if not self.natcheck or islocal:
-                        peer['nat'] = 0
-                        self.natcheckOK(infohash, myid, ip1, port, peer)
-                    else:
-                        NatCheck(self.connectback_result, infohash, myid, ip1,
-                                 port, self.rawserver, encrypted=requirecrypto)
+        natted = peer.get('nat', -1)
+        if recheck:
+            if natted == 0:
+                l = self.becache[infohash]
+                y = not peer['left']
+                for x in l:
+                    if myid in x[y]:
+                        del x[y][myid]
+            if natted >= 0:
+                del peer['nat']     # restart NAT testing
+        if natted and natted < self.natcheck:
+            recheck = True
+
+        if recheck:
+            if not self.natcheck or islocal:
+                peer['nat'] = 0
+                self.natcheckOK(infohash, myid, ip1, port, peer)
+            else:
+                NatCheck(self.connectback_result, infohash, myid, ip1,
+                         port, self.rawserver, encrypted=requirecrypto)
 
         return rsize
 

@@ -547,7 +547,7 @@ class Downloader:
     def requeue_piece_download(self, pieces=[]):
         if self.endgame_queued_pieces:
             for piece in pieces:
-                if not piece in self.endgame_queued_pieces:
+                if piece not in self.endgame_queued_pieces:
                     self.endgame_queued_pieces.append(piece)
             pieces = self.endgame_queued_pieces
         if self.endgamemode:
@@ -573,7 +573,7 @@ class Downloader:
             if d.active_requests:
                 assert d.interested and not d.choked
             for request in d.active_requests:
-                assert not request in self.all_requests
+                assert request not in self.all_requests
                 self.all_requests.append(request)
         for d in self.downloads:
             d.fix_download_endgame()

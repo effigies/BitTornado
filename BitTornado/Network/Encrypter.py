@@ -164,11 +164,11 @@ class Connection(object):
             self.write(self.encrypter.block3a +
                        self.encrypter.block3b +
                        self.encrypter.encrypt(
-                           (b'\x00' * 8)           # VC
-                           + cryptmode             # acceptable crypto modes
-                           + len(padc).to_bytes(2, 'big')
-                           + padc                  # PadC
-                           + b'\x00\x00'))         # no initial payload data
+                           (b'\x00' * 8) +         # VC
+                           cryptmode +             # acceptable crypto modes
+                           len(padc).to_bytes(2, 'big') +
+                           padc +                  # PadC
+                           b'\x00\x00'))           # no initial payload data
             self._max_search = 520
             return 1, self.read_crypto_block4a
         self.write(self.encrypter.padded_pubkey())
@@ -226,10 +226,9 @@ class Connection(object):
         else:
             cryptmode = '\x00\x00\x00\x02'    # full stream encryption
         padd = padding()
-        self.write(('\x00' * 8)            # VC
-                   + cryptmode             # encryption mode
-                   + len(padd).to_bytes(2, 'big')
-                   + padd)                # PadD
+        self.write(('\x00' * 8) +                        # VC
+                   cryptmode +                           # encryption mode
+                   len(padd).to_bytes(2, 'big') + padd)  # PadD
         if ialen:
             return ialen, self.read_crypto_ia
         return self.read_crypto_block3done()
@@ -314,8 +313,8 @@ class Connection(object):
 
     def read_peer_id(self, s):
         if not self.encrypted and self.Encoder.config['crypto_only']:
-            return None     # allows older trackers to ping,
-                            # but won't proceed w/ connections
+            # allows older trackers to ping, but won't proceed w/ connections
+            return None
         if not self.peerid:
             self.peerid = s
             self.readable_id = make_readable(s)

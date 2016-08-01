@@ -434,7 +434,7 @@ class StorageWrapper:
             while len(unhaves) < n:
                 # all in first 4 bytes
                 unhave = random.randrange(min(32, len(self.hashes)))
-                if not unhave in unhaves:
+                if unhave not in unhaves:
                     unhaves.append(unhave)
                     newhave[unhave] = False
             self.have_cloaked_data = (bytes(newhave), unhaves)
@@ -950,7 +950,8 @@ class StorageWrapper:
                     places[index] = index
                     got.add(index)
                 assert len(plist) % 2 == 0
-                plist = [tuple(plist[x:x + 2]) for x in range(0, len(plist), 2)]
+                plist = [tuple(plist[x:x + 2])
+                         for x in range(0, len(plist), 2)]
                 dirty[index] = plist
                 stat_active.add(index)
                 download_history[index] = {}
@@ -986,7 +987,7 @@ class StorageWrapper:
 
             assert amount_obtained + amount_inactive == self.amount_desired
         except Exception:
-#            print_exc()
+            # print_exc()
             return []   # invalid data, discard everything
 
         self.have = have

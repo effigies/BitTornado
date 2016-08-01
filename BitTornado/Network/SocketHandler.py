@@ -67,7 +67,7 @@ class SingleSocket(object):
         return not self.buffer
 
     def write(self, s):
-#        self.check.write(s)
+        # self.check.write(s)
         assert self.socket is not None
         self.buffer.append(s)
         if len(self.buffer) == 1:

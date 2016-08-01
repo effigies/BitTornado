@@ -390,7 +390,7 @@ class HTTPAnnouncer(Announcer):
         # In Python 3.5, we can switch to the urlencode line. In the meantime,
         # keep using RequestURL
         query = str(RequestURL(options))
-        #query = urllib.parse.urlencode(options, quote_via=urllib.parse.quote)
+        # query = urllib.parse.urlencode(options, quote_via=urllib.parse.quote)
         response, raw = self.send_query(query)
 
         if response.status == 200:

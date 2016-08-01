@@ -35,7 +35,7 @@ defaults = [
     ('port', 80, "Port to listen on."),
     ('dfile', None, 'file to store recent downloader info in'),
     ('bind', '', 'comma-separated list of ips/hostnames to bind to locally'),
-    #('ipv6_enabled', autodetect_ipv6(),
+    # ('ipv6_enabled', autodetect_ipv6(),
     ('ipv6_enabled', 0, 'allow the client to connect to peers via IPv6'),
     ('ipv6_binds_v4', autodetect_socket_style(),
      'set if an IPv6 server socket will also field IPv4 connections'),
@@ -130,10 +130,14 @@ class TrackerState(TypedDict, BencodedFile):
                 typemap = {'ip': str, 'port': int, 'left': int, 'nat': bool,
                            'requirecrypto': bool, 'supportcrypto': bool,
                            'key': str, 'given ip': str}
-            keyconst = lambda self, key: len(key) == 20
             valtype = PeerInfo
-        keyconst = lambda self, key: len(key) == 20
+
+            def keyconst(self, key):
+                return len(key) == 20
         valtype = Peer
+
+        def keyconst(self, key):
+            return len(key) == 20
 
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
                'allowed_dir_files': dict}
@@ -194,7 +198,7 @@ def statefiletemplate(x):
                 adlist = set(z[1] for z in x['allowed_dir_files'].values())
                 # and each should have a corresponding key here
                 for y in cinfo:
-                    if not y in adlist:
+                    if y not in adlist:
                         raise ValueError
         elif cname == 'allowed_dir_files':
             # a list of files, their attributes and info hashes
@@ -637,8 +641,8 @@ class Tracker(object):
 
     def check_allowed(self, infohash, paramslist):
         if self.aggregator_key is not None and not (
-                'password' in paramslist
-                and paramslist['password'][0] == self.aggregator_key):
+                'password' in paramslist and
+                paramslist['password'][0] == self.aggregator_key):
             return (200, 'Not Authorized', {'Content-Type': 'text/plain',
                                             'Pragma': 'no-cache'},
                     bencode({'failure reason': 'Requested download is not '
@@ -700,8 +704,8 @@ class Tracker(object):
         left = int(params('left', ''))
         if left < 0:
             raise ValueError('invalid amount left')
-        #uploaded = long(params('uploaded',''))
-        #downloaded = long(params('downloaded',''))
+        # uploaded = long(params('uploaded',''))
+        # downloaded = long(params('downloaded',''))
         supportcrypto = int(bool(params('supportcrypto')))
         requirecrypto = supportcrypto and int(bool(params('requirecrypto')))
 
@@ -986,11 +990,11 @@ class Tracker(object):
 
             # main tracker function
 
-            #filtered = self.Filter.check(real_ip, paramslist, headers)
-            #if filtered:
-            #    return (400, 'Not Authorized', {'Content-Type': 'text/plain',
-            #                                    'Pragma': 'no-cache'},
-            #            bencode({'failure reason': filtered}))
+            # filtered = self.Filter.check(real_ip, paramslist, headers)
+            # if filtered:
+            #     return (400, 'Not Authorized', {'Content-Type': 'text/plain',
+            #                                     'Pragma': 'no-cache'},
+            #             bencode({'failure reason': filtered}))
 
             infohash = params('info_hash')
             if not infohash:

@@ -50,8 +50,8 @@ class FileSelector:
                 self.storage.reset_file_status()
             self.new_priority = new_priority
         except (IOError, OSError) as e:
-            self.failfunc("can't open partial file for "
-                          + self.files[f][0] + ': ' + str(e))
+            self.failfunc("can't open partial file for {:s}: {:s}".format(
+                          self.files[f][0], e))
             return False
         return True
 

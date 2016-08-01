@@ -1,5 +1,4 @@
 import os
-import socket
 import threading
 import random
 from io import StringIO
@@ -148,7 +147,7 @@ class LaunchMany:
                         ipv6_socket_style=config['ipv6_binds_v4'],
                         upnp=upnp_type, randomizer=config['random_port'])
                     break
-                except socket.error as e:
+                except OSError as e:
                     if upnp_type and e == UPnP_ERROR:
                         self.Output.message(
                             'WARNING: COULD NOT FORWARD VIA UPnP')

@@ -26,7 +26,7 @@ class SingleSocket(object):
         self.skipped = 0
         try:
             self.ip = self.socket.getpeername()[0]
-        except socket.error:
+        except OSError:
             if ip is None:
                 self.ip = 'unknown'
             else:
@@ -36,7 +36,7 @@ class SingleSocket(object):
         if real:
             try:
                 self.ip = self.socket.getpeername()[0]
-            except socket.error:
+            except OSError:
                 pass
         return self.ip
 
@@ -88,9 +88,9 @@ class SingleSocket(object):
                         self.buffer[0] = buf[amount:]
                         break
                     del self.buffer[0]
-            except socket.error as e:
+            except OSError as e:
                 try:
-                    dead = e[0] != EWOULDBLOCK
+                    dead = e.errno != EWOULDBLOCK
                 except Exception:
                     dead = True
                 self.skipped += 1
@@ -162,21 +162,21 @@ class SocketHandler(object):
                     self.interfaces.append(server.getsockname()[0])
                 server.listen(64)
                 self.poll.register(server, POLLIN)
-            except socket.error as e:
+            except OSError as e:
                 # servers is a dict of sockets, so there's no danger of
                 # altering self.servers in this loop
                 for server in self.servers.values():
                     try:
                         server.close()
-                    except socket.error:
+                    except OSError:
                         pass
                 if self.ipv6_enable and ipv6_socket_style == 0 and \
                         self.servers:
-                    raise socket.error(
+                    raise OSError(
                         'blocked port (may require ipv6_binds_v4 to be set)')
-                raise socket.error(str(e))
+                raise e
         if not self.servers:
-            raise socket.error('unable to open server port')
+            raise OSError('unable to open server port')
         if upnp:
             if not UPnP_open_port(port):
                 # servers is a dict of sockets, so there's no danger of
@@ -184,11 +184,11 @@ class SocketHandler(object):
                 for server in self.servers.values():
                     try:
                         server.close()
-                    except socket.error:
+                    except OSError:
                         pass
                 self.servers = None
                 self.interfaces = None
-                raise socket.error(UPnP_ERROR)
+                raise OSError(UPnP_ERROR)
             self.port_forwarded = port
         self.port = port
 
@@ -204,9 +204,9 @@ class SocketHandler(object):
                 self.bind(listen_port, bind,
                           ipv6_socket_style=ipv6_socket_style, upnp=upnp)
                 return listen_port
-            except socket.error as e:
+            except OSError as e:
                 pass
-        raise socket.error(str(e))
+        raise OSError(str(e))
 
     def set_handler(self, handler):
         self.handler = handler
@@ -218,10 +218,10 @@ class SocketHandler(object):
         sock.setblocking(0)
         try:
             sock.connect_ex(dns)
-        except socket.error:
+        except OSError:
             raise
         except Exception as e:
-            raise socket.error(str(e))
+            raise OSError(str(e))
         self.poll.register(sock, POLLIN)
         s = SingleSocket(self, sock, handler, dns[0])
         self.single_sockets[sock.fileno()] = s
@@ -238,10 +238,10 @@ class SocketHandler(object):
         try:
             addrinfos = socket.getaddrinfo(dns[0], int(dns[1]),
                                            socktype, socket.SOCK_STREAM)
-        except socket.error as e:
+        except OSError as e:
             raise
         except Exception as e:
-            raise socket.error(str(e))
+            raise OSError(str(e))
         if randomize:
             random.shuffle(addrinfos)
         for addrinfo in addrinfos:
@@ -249,10 +249,10 @@ class SocketHandler(object):
                 s = self.start_connection_raw(addrinfo[4], addrinfo[0],
                                               handler)
                 break
-            except socket.error:
+            except OSError:
                 pass
         else:
-            raise socket.error('unable to connect')
+            raise OSError('unable to connect')
 
         return s
 
@@ -273,7 +273,7 @@ class SocketHandler(object):
                         self.single_sockets[newsock.fileno()] = nss
                         self.poll.register(newsock, POLLIN)
                         self.handler.external_connection_made(nss)
-                    except socket.error:
+                    except OSError:
                         time.sleep(1)
             else:
                 s = self.single_sockets.get(sock)
@@ -291,8 +291,8 @@ class SocketHandler(object):
                             self._close_socket(s)
                         else:
                             s.handler.data_came_in(s, data)
-                    except socket.error as e:
-                        if e[0] != EWOULDBLOCK:
+                    except OSError as e:
+                        if e.errno != EWOULDBLOCK:
                             self._close_socket(s)
                             continue
                 if event & POLLOUT and s.socket and not s.is_flushed():
@@ -335,12 +335,12 @@ class SocketHandler(object):
         for ss in list(self.single_sockets.values()):
             try:
                 ss.close()
-            except (AssertionError, KeyError, ValueError, socket.error):
+            except (AssertionError, KeyError, ValueError, OSError):
                 pass
         for server in self.servers.values():
             try:
                 server.close()
-            except socket.error:
+            except OSError:
                 pass
         if self.port_forwarded is not None:
             UPnP_close_port(self.port_forwarded)

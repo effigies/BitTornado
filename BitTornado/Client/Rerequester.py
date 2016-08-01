@@ -1,5 +1,4 @@
 import threading
-import socket
 import random
 from BitTornado.Meta.Info import check_type
 from io import StringIO
@@ -220,7 +219,7 @@ class Rerequester:
                 response = announcer.announce(self.infohash, self.myid,
                                               **kwargs)
                 check_peers(response)
-            except (IOError, socket.error) as e:
+            except (IOError, OSError) as e:
                 if self.lock.trip(code):
                     self.errorcodes['troublecode'] = 'Problem connecting to ' \
                         'tracker - ' + str(e)

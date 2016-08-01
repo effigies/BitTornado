@@ -950,7 +950,8 @@ class StorageWrapper:
                     places[index] = index
                     got.add(index)
                 assert len(plist) % 2 == 0
-                plist = [tuple(plist[x:x + 2]) for x in range(0, len(plist), 2)]
+                plist = [tuple(plist[x:x + 2])
+                         for x in range(0, len(plist), 2)]
                 dirty[index] = plist
                 stat_active.add(index)
                 download_history[index] = {}

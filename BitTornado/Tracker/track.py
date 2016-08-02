@@ -1178,18 +1178,18 @@ class Tracker(object):
         del dls[peerid]
 
     def expire_downloaders(self):
-        for x in self.times:
-            for myid, t in list(self.times[x].items()):
+        for infohash, peertimes in self.times.items():
+            for peerid, t in list(peertimes.items()):
                 if t < self.prevtime:
-                    self.delete_peer(x, myid)
+                    self.delete_peer(infohash, peerid)
         self.prevtime = clock()
         if not self.keep_dead:
-            for key, value in list(self.downloads.items()):
-                if len(value) == 0 and (self.allowed is None or
-                                        key not in self.allowed):
-                    del self.times[key]
-                    del self.downloads[key]
-                    del self.seedcount[key]
+            for infohash, peers in list(self.downloads.items()):
+                if len(peers) == 0 and (self.allowed is None or
+                                        infohash not in self.allowed):
+                    del self.times[infohash]
+                    del self.downloads[infohash]
+                    del self.seedcount[infohash]
         self.rawserver.add_task(self.expire_downloaders,
                                 self.timeout_downloaders_interval)
 

@@ -428,16 +428,12 @@ class Tracker(object):
         self.Filter = Filter(rawserver.add_task)
 
         aggregator = config['aggregator']
-        if aggregator == '0':
-            self.is_aggregator = False
-            self.aggregator_key = None
-        else:
-            self.is_aggregator = True
-            if aggregator == '1':
-                self.aggregator_key = None
-            else:
+        self.is_aggregator = aggregator != '0'
+        self.aggregator_key = None
+        if self.is_aggregator:
+            self.natcheck = 0
+            if aggregator != '1':
                 self.aggregator_key = aggregator
-            self.natcheck = False
 
         send = config['aggregate_forward']
         if not send:
@@ -796,11 +792,8 @@ class Tracker(object):
         natted = peer.get('nat', -1)
         if recheck:
             if natted == 0:
-                l = self.becache[infohash]
-                y = not peer['left']
-                for x in l:
-                    if myid in x[y]:
-                        del x[y][myid]
+                for x in self.becache[infohash]:
+                    x[seeding].pop(myid, None)
             if natted >= 0:
                 del peer['nat']     # restart NAT testing
         if natted and natted < self.natcheck:
@@ -1175,14 +1168,12 @@ class Tracker(object):
     def delete_peer(self, infohash, peerid):
         dls = self.downloads[infohash]
         peer = dls[peerid]
-        if not peer['left']:
+        seeding = not peer['left']
+        if seeding:
             self.seedcount[infohash] -= 1
         if not peer.get('nat', -1):
-            l = self.becache[infohash]
-            y = not peer['left']
-            for x in l:
-                if peerid in x[y]:
-                    del x[y][peerid]
+            for x in self.becache[infohash]:
+                x[seeding].pop(peerid, None)
         del self.times[infohash][peerid]
         del dls[peerid]
 

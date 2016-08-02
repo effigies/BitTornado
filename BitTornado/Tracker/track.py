@@ -120,23 +120,37 @@ defaults = [
 ]
 
 
-class TrackerState(TypedDict, BencodedFile):
-    class Completed(BytesIndexed):
-        keytype = Infohash
-        valtype = int
+class Counter(BytesIndexed):
+    """Associate a count with an infohash"""
+    keytype = Infohash
+    valtype = UnsignedInt
 
+
+class Downloads(BytesIndexed):
+    """Map from 20-byte infohash to connected Peers"""
     class Peers(BytesIndexed):
-        class Peer(BytesIndexed):
-            class PeerInfo(TypedDict):
-                typemap = {'ip': str, 'port': Port, 'left': UnsignedInt,
-                           'nat': bool, 'requirecrypto': bool,
-                           'supportcrypto': bool, 'key': str, 'given ip': str}
-            keytype = PeerID
-            valtype = PeerInfo
-        keytype = Infohash
+        """Map from 20-byte peer ID to Peer info"""
+        class Peer(TypedDict):
+            typemap = {'ip': str, 'port': Port, 'left': UnsignedInt,
+                       'nat': bool, 'requirecrypto': bool,
+                       'supportcrypto': bool, 'key': str, 'given ip': str}
+        keytype = PeerID
         valtype = Peer
+    keytype = Infohash
+    valtype = Peers
 
-    typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
+
+class Times(BytesIndexed):
+    """Update times for peers leeching/seeding each infohash"""
+    class Pings(BytesIndexed):
+        keytype = PeerID
+        valtype = UnsignedInt
+    keytype = Infohash
+    valtype = Pings
+
+
+class TrackerState(TypedDict, BencodedFile):
+    typemap = {'completed': Counter, 'peers': Downloads, 'allowed': dict,
                'allowed_dir_files': dict, 'allowed_list': HashSet}
 
 
@@ -284,9 +298,9 @@ class Tracker(object):
         self.rawserver = rawserver  # RawServer
         self.cached = {}    # format: infohash: [[time1, l1, s1], ...]
         self.cached_t = {}  # format: infohash: [time, cache]
-        self.times = {}
         self.state = TrackerState()
-        self.seedcount = {}
+        self.times = Times()
+        self.seedcount = Counter()
 
         self.allowed_IPs = None
         self.banned_IPs = None

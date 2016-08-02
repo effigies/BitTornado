@@ -757,22 +757,16 @@ class Tracker(object):
             return rsize    # return w/o changing stats
 
         ts[myid] = clock()
-        if not left and peer['left']:
-            self.completed[infohash] += 1
-            self.seedcount[infohash] += 1
+        if seeding != (not peer['left']):  # Changing seeding state
+            update = 1 if seeding else -1  # +1 if seeding, -1 if unseeding
+            self.completed[infohash] += update
+            self.seedcount[infohash] += update
             if not peer.get('nat', -1):
+                # Swap seeding state in the cache
                 for bc in self.becache[infohash]:
-                    if myid in bc[0]:
-                        bc[1][myid] = bc[0][myid]
-                        del bc[0][myid]
-        elif left and not peer['left']:
-            self.completed[infohash] -= 1
-            self.seedcount[infohash] -= 1
-            if not peer.get('nat', -1):
-                for bc in self.becache[infohash]:
-                    if myid in bc[1]:
-                        bc[0][myid] = bc[1][myid]
-                        del bc[1][myid]
+                    old_cache = bc[not seeding]
+                    if myid in old_cache:
+                        bc[seeding][myid] = old_cache.pop(myid)
         peer['left'] = left
 
         if port == 0:

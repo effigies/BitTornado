@@ -9,7 +9,6 @@ import urllib
 from io import StringIO
 from traceback import print_exc
 from binascii import hexlify
-from collections import defaultdict
 
 from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
@@ -25,7 +24,7 @@ from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
 from ..Types import TypedDict, BytesIndexed, Infohash, PeerID, Port, \
-    UnsignedInt, IPv4
+    UnsignedInt, IPv4, SixBytes
 from BitTornado.clock import clock
 
 from BitTornado import version
@@ -158,6 +157,96 @@ class CompactResponse(TypedDict):
     typemap = {'failure reason': str, 'warning message': str, 'interval': int,
                'min interval': int, 'tracker id': bytes, 'complete': int,
                'incomplete': int, 'crypto_flags': bytes, 'peers': bytes}
+
+
+class CachedResponse(BytesIndexed):
+    keytype = PeerID
+    valtype = bytes
+
+
+class Compact(CachedResponse):
+    valtype = SixBytes
+
+
+class AllPeers(CachedResponse):
+    valtype = (SixBytes, bool)
+
+
+class Cache(object):
+    def __init__(self, cachetype):
+        self.leechers = cachetype()
+        self.seeds = cachetype()
+
+    def swap_peer(self, peerid, toseed):
+        src = self.leechers if toseed else self.seeds
+        dst = self.seeds if toseed else self.leechers
+        if peerid in src:
+            dst[peerid] = src.pop(peerid)
+
+    def __getitem__(self, index):
+        return self.seeds if index else self.leechers
+
+    def __repr__(self):
+        return '<Cache: leech={!r} seeds={!r}>'.format(self.leechers,
+                                                       self.seeds)
+
+
+class DownloadCache(object):
+    def __init__(self, compact_required):
+        self.compact_required = compact_required
+
+        self.noreq_crypto = Cache(Compact)
+        self.support_crypto = Cache(Compact)
+        self.all_peers = Cache(AllPeers)
+        self._caches = (self.noreq_crypto, self.support_crypto, self.all_peers)
+        if not compact_required:
+            self.identified_peers = Cache(CachedResponse)
+            self.unidentified_peers = Cache(CachedResponse)
+            self._caches += (self.identified_peers, self.identified_peers)
+
+    def __repr__(self):
+        return '<DownloadCache: all_peers={!r}>'.format(self.all_peers)
+
+    def swap_peer(self, peerid, toseed):
+        for cache in self._caches:
+            cache.swap_peer(peerid, toseed)
+
+    def remove_peer(self, peerid, seeding):
+        for cache in self._caches:
+            peers = cache.seeds if seeding else cache.leechers
+            peers.pop(peerid, None)
+
+    def add_peer(self, peerid, peer, ip, port):
+        seed = not peer['left']
+        cp = compact_peer_info(ip, port)
+        reqc = bool(peer['requirecrypto'])
+        self.all_peers[seed][peerid] = (cp, reqc)
+        if peer['supportcrypto']:
+            self.support_crypto[seed][peerid] = cp
+        if not reqc:
+            self.noreq_crypto[seed][peerid] = cp
+            if not self.compact_required:
+                self.identified_peers[seed][peerid] = Bencached(
+                    bencode({'ip': ip, 'port': port, 'peer id': peerid}))
+                self.unidentified_peers[seed][peerid] = Bencached(
+                    bencode({'ip': ip, 'port': port}))
+
+    def get_peers(self, return_type):
+        return self._caches[return_type]
+
+
+class BencodedCache(BytesIndexed):
+    keytype = Infohash
+    valtype = DownloadCache
+
+    def __init__(self, compact_required):
+        super(BencodedCache, self).__init__()
+        self.compact_required = bool(compact_required)
+
+    def __getitem__(self, infohash):
+        if infohash not in self:
+            self[infohash] = DownloadCache(self.compact_required)
+        return super(BencodedCache, self).__getitem__(infohash)
 
 
 def statefiletemplate(x):
@@ -328,17 +417,7 @@ class Tracker(object):
         self.downloads = self.state.setdefault('peers', {})
         self.completed = self.state.setdefault('completed', {})
 
-        self.becache = defaultdict(
-            lambda: [({}, {})
-                     for _ in range(3 if config['compact_reqd'] else 5)])
-        ''' format: infohash: [[l0, s0], [l1, s1], ...]
-                l0,s0 = compact, not requirecrypto=1
-                l1,s1 = compact, only supportcrypto=1
-                l2,s2 = [compact, crypto_flag], all peers
-            if --compact_reqd 0:
-                l3,s3 = [ip,port,id]
-                l4,l4 = [ip,port] nopeerid
-        '''
+        self.becache = BencodedCache(config['compact_reqd'])
         for infohash, peers in self.downloads.items():
             self.seedcount[infohash] = 0
             for peerid, peer in list(peers.items()):
@@ -355,7 +434,7 @@ class Tracker(object):
                 if is_valid_ip(gip) and (not self.only_local_override_ip or
                                          ip in local_IPs):
                     ip = gip
-                self.natcheckOK(infohash, peerid, ip, peer['port'], peer)
+                self.becache[infohash].add_peer(peerid, peer, ip, peer['port'])
 
         self.times = {dl: {sub: 0 for sub in subs}
                       for dl, subs in self.downloads.items()}
@@ -755,7 +834,8 @@ class Tracker(object):
             if port:
                 if self.natcheck == 0 or islocal:
                     peer['nat'] = 0
-                    self.natcheckOK(infohash, peerid, real_ip, port, peer)
+                    self.becache[infohash].add_peer(peerid, peer, real_ip,
+                                                    port)
                 else:
                     NatCheck(self.connectback_result, infohash, peerid,
                              real_ip, port, self.rawserver,
@@ -778,11 +858,8 @@ class Tracker(object):
             self.completed[infohash] += update
             self.seedcount[infohash] += update
             if not peer.get('nat', -1):
-                # Swap seeding state in the cache
-                for bc in self.becache[infohash]:
-                    old_cache = bc[not seeding]
-                    if peerid in old_cache:
-                        bc[seeding][peerid] = old_cache.pop(peerid)
+                # Swap leecher/seeder state in the cache
+                self.becache[infohash].swap_peer(peerid, seeding)
         peer['left'] = left
 
         if port == 0:
@@ -802,8 +879,7 @@ class Tracker(object):
         natted = peer.get('nat', -1)
         if recheck:
             if natted == 0:
-                for x in self.becache[infohash]:
-                    x[seeding].pop(peerid, None)
+                self.becache[infohash].remove_peer(peerid, seeding)
             if natted >= 0:
                 del peer['nat']     # restart NAT testing
         if natted and natted < self.natcheck:
@@ -812,7 +888,7 @@ class Tracker(object):
         if recheck:
             if not self.natcheck or islocal:
                 peer['nat'] = 0
-                self.natcheckOK(infohash, peerid, real_ip, port, peer)
+                self.becache[infohash].add_peer(peerid, peer, real_ip, port)
             else:
                 NatCheck(self.connectback_result, infohash, peerid, real_ip,
                          port, self.rawserver, encrypted=requirecrypto)
@@ -844,7 +920,8 @@ class Tracker(object):
                     self.config['min_time_between_cache_refreshes'] < clock():
                 bc = self.becache[infohash]
                 cache = [clock(),
-                         list(bc[0][0].values()) + list(bc[0][1].values())]
+                         list(bc.noreq_crypto.leechers.values()) +
+                         list(bc.noreq_crypto.seeds.values())]
                 self.cached_t[infohash] = cache
                 random.shuffle(cache[1])
                 cache = cache[1]
@@ -859,8 +936,8 @@ class Tracker(object):
             return data
 
         bc = self.becache[infohash]
-        len_l = len(bc[2][0])
-        len_s = len(bc[2][1])
+        len_l = len(bc.all_peers.leechers)
+        len_s = len(bc.all_peers.seeds)
         if not len_l + len_s:   # caches are empty!
             data['peers'] = []
             return data
@@ -884,13 +961,14 @@ class Tracker(object):
                 if key not in peers:
                     cp = compact_peer_info(ip, port)
                     vv[0].append(cp)
-                    vv[2].append((cp, b'\x00'))
+                    vv[2].append((cp, False))
                     if not self.config['compact_reqd']:
                         vv[3].append({'ip': ip, 'port': port, 'peer id': key})
                         vv[4].append({'ip': ip, 'port': port})
             cache = [self.cachetime,
-                     list(bc[return_type][0].values()) + vv[return_type],
-                     list(bc[return_type][1].values())]
+                     list(bc.get_peers(return_type).leechers.values()) +
+                     vv[return_type],
+                     list(bc.get_peers(return_type).seeds.values())]
             random.shuffle(cache[1])
             random.shuffle(cache[2])
             self.cached[infohash][return_type] = cache
@@ -1061,22 +1139,6 @@ class Tracker(object):
                             'Pragma': 'no-cache'},
                 bencode(data))
 
-    def natcheckOK(self, infohash, peerid, ip, port, peer):
-        seed = not peer['left']
-        bc = self.becache[infohash]
-        cp = compact_peer_info(ip, port)
-        reqc = peer['requirecrypto']
-        bc[2][seed][peerid] = (cp, reqc)
-        if peer['supportcrypto']:
-            bc[1][seed][peerid] = cp
-        if not reqc:
-            bc[0][seed][peerid] = cp
-            if not self.config['compact_reqd']:
-                bc[3][seed][peerid] = Bencached(
-                    bencode({'ip': ip, 'port': port, 'peer id': peerid}))
-                bc[4][seed][peerid] = Bencached(
-                    bencode({'ip': ip, 'port': port}))
-
     def natchecklog(self, peerid, ip, port, result):
         year, month, day, hour, minute, second = time.localtime()[:6]
         print('%s - %s [%02d/%3s/%04d:%02d:%02d:%02d] "!natcheck-%s:%i" %i '
@@ -1099,10 +1161,10 @@ class Tracker(object):
         if 'nat' not in record:
             record['nat'] = int(not result)
             if result:
-                self.natcheckOK(downloadid, peerid, ip, port, record)
+                self.becache[downloadid].add_peer(peerid, record, ip, port)
         elif result and record['nat']:
             record['nat'] = 0
-            self.natcheckOK(downloadid, peerid, ip, port, record)
+            self.becache[downloadid].add_peer(peerid, record, ip, port)
         elif not result:
             record['nat'] += 1
 
@@ -1182,8 +1244,7 @@ class Tracker(object):
         if seeding:
             self.seedcount[infohash] -= 1
         if not peer.get('nat', -1):
-            for x in self.becache[infohash]:
-                x[seeding].pop(peerid, None)
+            self.becache[infohash].remove_peer(peerid, seeding)
         del self.times[infohash][peerid]
         del dls[peerid]
 

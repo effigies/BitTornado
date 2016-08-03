@@ -328,23 +328,23 @@ class Tracker(object):
                 l3,s3 = [ip,port,id]
                 l4,l4 = [ip,port] nopeerid
         '''
-        for infohash, ds in self.downloads.items():
+        for infohash, peers in self.downloads.items():
             self.seedcount[infohash] = 0
-            for x, y in list(ds.items()):
-                ip = y['ip']
+            for peerid, peer in list(peers.items()):
+                ip = peer['ip']
                 if self.allowed_IPs and ip not in self.allowed_IPs \
                         or self.banned_IPs and ip in self.banned_IPs:
-                    del ds[x]
+                    del peers[peerid]
                     continue
-                if not y['left']:
+                if not peer['left']:
                     self.seedcount[infohash] += 1
-                if y.get('nat', -1):
+                if peer.get('nat', -1):
                     continue
-                gip = y.get('given_ip')
+                gip = peer.get('given_ip')
                 if is_valid_ip(gip) and (not self.only_local_override_ip or
                                          ip in local_IPs):
                     ip = gip
-                self.natcheckOK(infohash, x, ip, y['port'], y)
+                self.natcheckOK(infohash, peerid, ip, peer['port'], peer)
 
         self.times = {dl: {sub: 0 for sub in subs}
                       for dl, subs in self.downloads.items()}
@@ -1090,9 +1090,9 @@ class Tracker(object):
         elif not result:
             record['nat'] += 1
 
-    def remove_from_state(self, *l):
-        for s in l:
-            self.state.pop(s, None)
+    def remove_from_state(self, *keys):
+        for key in keys:
+            self.state.pop(key, None)
 
     def save_state(self):
         self.rawserver.add_task(self.save_state, self.save_dfile_interval)

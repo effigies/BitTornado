@@ -1,59 +1,88 @@
+import collections
 import urllib
 
 
-class TypedList(list):
+class CopyMixin(object):
+    def copy(self):
+        return self.__class__(self)
+
+
+def normalize(arg, targettype, targetmap):
+    """Coerce arg to targettype, optionally using targetmap to provide
+    a conversion functions for source types."""
+    argtype = type(arg)
+    if targettype is not None and argtype is not targettype:
+        if isinstance(targettype, tuple) and \
+                isinstance(arg, collections.Iterable):
+            return tuple(normalize(subarg, subtype, targetmap)
+                         for subarg, subtype in zip(arg, targettype))
+        elif targetmap is not None and argtype in targetmap:
+            return targetmap[argtype](arg)
+        else:
+            return targettype(arg)
+    return arg
+
+
+class TypedList(CopyMixin, list):
+    """TypedList() -> new empty list
+    TypedList(iterable) -> new list initialized from iterable's items
+
+    TypedList is a list that can constrain the types of its elements
+    through the following class variables (if None, have no effect):
+
+        valtype     type                Type of values
+        valmap      {type: type -> valtype}
+                                        Mapping from source val type to
+                                        function to coerce val to valtype
+
+    The values of elements may be constrained with the valconst class
+    method:
+        valconst    valtype -> bool     Constraint for valid values
+    """
     valtype = valmap = None
+    valconst = staticmethod(lambda arg: True)
     error = True
 
-    def __init__(self, iterable):
-        super(TypedList, self).__init__()
-        self.extend(iterable)
+    def _normalized(method):
+        """Decorator that applies type constraints and transformations
+        to list operations"""
+        def new_method(self, *args):
+            new_args = ()
+            idx_methods = ('__setitem__', 'insert')
+            seq_methods = ('__init__', 'extend', '__add__', '__iadd__')
+            expect_seq = method.__name__ in seq_methods
+            if method.__name__ in idx_methods and args:
+                new_args, args = (args[:1], args[1:])
+                expect_seq = isinstance(new_args[0], slice)
 
-    @staticmethod
-    def valconst(val):
-        return True
-
-    def append(self, val):
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-                if not isinstance(val, self.valtype):
-                    raise TypeError('Values must be coercible to type '
-                                    '{!r}'.format(self.valtype))
-            else:
+            for arg in args:
+                arg = iter(arg) if expect_seq else (arg,)
                 try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+                    arg = list(normalize(sub, self.valtype, self.valmap)
+                               for sub in arg)
+                except (TypeError, ValueError):
+                    raise TypeError("Values must be coercible to type '{}'"
+                                    "".format(self.valtype.__name__))
 
-        if self.valconst(val):
-            super(TypedList, self).append(val)
-        elif self.error:
-            raise ValueError('Value rejected: {}'.format(val))
+                for val in arg:
+                    if not self.valconst(val):
+                        raise ValueError('Value rejected: {}'.format(val))
 
-    def __setitem__(self, key, val):
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-                if not isinstance(val, self.valtype):
-                    raise TypeError('Values must be coercible to type '
-                                    '{!r}'.format(self.valtype))
-            else:
-                try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+                new_args += (arg,) if expect_seq else tuple(arg)
 
-        if self.valconst(val):
-            super(TypedList, self).__setitem__(key, val)
-        elif self.error:
-            raise ValueError('Value rejected: {}'.format(val))
+            return method(self, *new_args)
+        # Cleans up pydoc
+        new_method.__name__ = method.__name__
+        new_method.__doc__ = method.__doc__
+        return new_method
 
-    def extend(self, vals):
-        for val in vals:
-            self.append(val)
+    __init__ = _normalized(list.__init__)
+    __setitem__ = _normalized(list.__setitem__)
+    append = _normalized(list.append)
+    extend = _normalized(list.extend)
+    insert = _normalized(list.insert)
+    __add__ = _normalized(list.__add__)
+    __iadd__ = _normalized(list.__iadd__)
 
 
 class SplitList(TypedList):
@@ -63,49 +92,86 @@ class SplitList(TypedList):
     valconst = bool  # Reject null values
     error = False    # Don't fail on null values
 
+    def __init__(self, *args):
+        super(SplitList, self).__init__()
+        if len(args) > 1:
+            raise TypeError("{}() takes at most 1 argument ({:d} given)"
+                            "".format(self.__class__, len(args)))
+        if args:
+            self.extend(*args)
+
     def extend(self, vals):
         if isinstance(vals, type(self.splitchar)):
             vals = vals.split(self.splitchar)
         super(SplitList, self).extend(vals)
 
 
-class TypedDict(dict):
+class TypedDict(CopyMixin, dict):
+    """
+    TypedDict() -> new empty dictionary
+    TypedDict(mapping) -> new dictionary initialized from a mapping object's
+        (key, value) pairs
+    TypedDict(iterable) -> new dictionary initialized as if via:
+        d = {}
+        for k, v in iterable:
+            d[k] = v
+    TypedDict(**kwargs) -> new dictionary initialized with the name=value
+        pairs in the keyword argument list.
+        For example:  TypedDict(one=1, two=2)
+
+    TypedDict is a dict that can constrain the types of keys and values
+    through the following class variables (if None, have no effect):
+
+        keytype     type                Type of keys
+        valtype     type                Type of values
+        keymap      {type: type -> keytype}
+                                        Mapping from source key type to
+                                        function to coerce key to keytype
+        valmap      {type: type -> valtype}
+                                        Mapping from source val type to
+                                        function to coerce val to valtype
+        typemap     {key: type}         Set value types for each key
+
+    The set of valid keys may be further constrained:
+        valid_keys      [key]           Permit only listed keys
+        ignore_invalid  bool            Drop invalid keys silently
+
+    If typemap is defined and valid_keys is not, valid_keys is set to
+    typemap.keys(). ignore_invalid permits invalid keys to be silently
+    dropped, rather than raising a KeyError.
+
+    The values of keys and values may be constrained with the following
+    class methods:
+        keyconst    keytype -> bool     Constraint for valid keys
+        valconst    valtype -> bool     Constraint for valid values
+
+    A subclass typically only needs to define a couple class variables to
+    be useful.
+    """
     keytype = valtype = keymap = valmap = valid_keys = typemap = None
-    keyconst = valconst = None
+    keyconst = valconst = staticmethod(lambda arg: True)
     ignore_invalid = False
 
-    def __init__(self, mapping=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         if self.typemap is not None and self.valid_keys is None:
             self.valid_keys = set(self.typemap)
 
         super(TypedDict, self).__init__()
-        if mapping is None:
-            mapping = kwargs.items()
-        elif isinstance(mapping, dict):
-            mapping = mapping.items()
-
-        for k, v in mapping:
-            self[k] = v
+        if len(args) > 1:
+            raise TypeError("{}() takes at most 1 argument ({:d} given)"
+                            "".format(self.__class__, len(args)))
+        if args or kwargs:
+            self.update(*args, **kwargs)
 
     def __setitem__(self, key, val):
-        if self.keytype is not None and type(key) is not self.keytype:
-            if self.keymap is not None and type(key) in self.keymap:
-                key = self.keymap[type(key)](key)
-            else:
-                try:
-                    key = self.keytype(key)
-                except TypeError:
-                    raise TypeError('Keys must be of type {!r}'.format(
-                                    self.keytype))
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-            else:
-                try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+        try:
+            key = normalize(key, self.keytype, self.keymap)
+        except TypeError:
+            raise TypeError('Keys must be of type {!r}'.format(self.keytype))
+        try:
+            val = normalize(val, self.valtype, self.valmap)
+        except TypeError:
+            raise TypeError('Values must be of type {!r}'.format(self.keytype))
 
         if self.typemap is not None and key in self.typemap and \
                 type(val) is not self.typemap[key]:
@@ -118,23 +184,28 @@ class TypedDict(dict):
                 return
             raise KeyError('Invalid key: ' + key)
 
-        if self.keyconst is not None:
-            assert self.keyconst(key)
-        if self.valconst is not None:
-            assert self.valconst(val)
+        if not self.keyconst(key):
+            raise KeyError('Invalid key: ' + key)
+        if not self.valconst(val):
+            raise ValueError('Invalid value: ' + val)
         super(TypedDict, self).__setitem__(key, val)
 
-    def update(self, itr=None, **params):
-        """Update TypedDict from an iterable/dict and/or from named parameters
-        """
-        if itr is not None:
-            if hasattr(itr, 'keys'):
-                itr = itr.items()
-            for key, val in itr:
-                self[key] = val
+    def update(self, *args, **kwargs):
+        nargs = len(args)
+        if nargs > 1:
+            raise TypeError("update expected at most 1 arguments, got "
+                            "{:d}".format(nargs))
+        if args:
+            arg = args[0]
+            if isinstance(arg, collections.Mapping):
+                for key in arg:
+                    self[key] = arg[key]
+            elif isinstance(arg, collections.Iterable):
+                for key, val in arg:
+                    self[key] = val
 
-        for key, val in params.items():
-            self[key] = val
+        for key in kwargs:
+            self[key] = kwargs[key]
 
     def setdefault(self, key, default=None):
         if key not in self:

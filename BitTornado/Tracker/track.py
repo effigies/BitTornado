@@ -686,8 +686,8 @@ class Tracker(object):
                 return l[key][0]
             return default
 
-        myid = params('peer_id', '')
-        if len(myid) != 20:
+        peerid = params('peer_id', '')
+        if len(peerid) != 20:
             raise ValueError('id not of length 20')
         if event not in ('started', 'completed', 'stopped', 'snooped', None):
             raise ValueError('invalid event')
@@ -706,30 +706,27 @@ class Tracker(object):
         supportcrypto = int(bool(params('supportcrypto')))
         requirecrypto = supportcrypto and int(bool(params('requirecrypto')))
 
-        peer = peers.get(myid)
+        peer = peers.get(peerid)
         islocal = ip in local_IPs
         mykey = params('key')
         if peer:
             auth = peer.get('key', -1) == mykey or peer.get('ip') == ip
 
         gip = params('ip')
-        if is_valid_ip(gip) and (islocal or not self.only_local_override_ip):
-            ip1 = gip
-        else:
-            ip1 = ip
+        override = is_valid_ip(gip) and (islocal or
+                                         not self.only_local_override_ip)
+        real_ip = gip if override else ip
 
-        if params('numwant') is not None:
-            rsize = min(int(params('numwant')), self.response_size)
-        else:
-            rsize = self.response_size
+        rsize = min(int(params('numwant', self.response_size)),
+                    self.response_size)
 
         if event == 'stopped':
             if peer and auth:
-                self.delete_peer(infohash, myid)
+                self.delete_peer(infohash, peerid)
             return rsize
 
         if peer is None:
-            ts[myid] = clock()
+            ts[peerid] = clock()
             peer = {'ip': ip, 'port': port, 'left': left,
                     'supportcrypto': supportcrypto,
                     'requirecrypto': requirecrypto}
@@ -740,9 +737,9 @@ class Tracker(object):
             if port:
                 if self.natcheck == 0 or islocal:
                     peer['nat'] = 0
-                    self.natcheckOK(infohash, myid, ip1, port, peer)
+                    self.natcheckOK(infohash, peerid, real_ip, port, peer)
                 else:
-                    NatCheck(self.connectback_result, infohash, myid, ip1,
+                    NatCheck(self.connectback_result, infohash, peerid, real_ip,
                              port, self.rawserver, encrypted=requirecrypto)
             else:
                 peer['nat'] = 2 ** 30
@@ -750,13 +747,13 @@ class Tracker(object):
             self.completed[infohash] += event == 'completed'
             self.seedcount[infohash] += seeding
 
-            peers[myid] = peer
+            peers[peerid] = peer
             return rsize
 
         if not auth:
             return rsize    # return w/o changing stats
 
-        ts[myid] = clock()
+        ts[peerid] = clock()
         if seeding != (not peer['left']):  # Changing seeding state
             update = 1 if seeding else -1  # +1 if seeding, -1 if unseeding
             self.completed[infohash] += update
@@ -765,8 +762,8 @@ class Tracker(object):
                 # Swap seeding state in the cache
                 for bc in self.becache[infohash]:
                     old_cache = bc[not seeding]
-                    if myid in old_cache:
-                        bc[seeding][myid] = old_cache.pop(myid)
+                    if peerid in old_cache:
+                        bc[seeding][peerid] = old_cache.pop(peerid)
         peer['left'] = left
 
         if port == 0:
@@ -787,7 +784,7 @@ class Tracker(object):
         if recheck:
             if natted == 0:
                 for x in self.becache[infohash]:
-                    x[seeding].pop(myid, None)
+                    x[seeding].pop(peerid, None)
             if natted >= 0:
                 del peer['nat']     # restart NAT testing
         if natted and natted < self.natcheck:
@@ -796,9 +793,9 @@ class Tracker(object):
         if recheck:
             if not self.natcheck or islocal:
                 peer['nat'] = 0
-                self.natcheckOK(infohash, myid, ip1, port, peer)
+                self.natcheckOK(infohash, peerid, real_ip, port, peer)
             else:
-                NatCheck(self.connectback_result, infohash, myid, ip1,
+                NatCheck(self.connectback_result, infohash, peerid, real_ip,
                          port, self.rawserver, encrypted=requirecrypto)
 
         return rsize
@@ -857,7 +854,7 @@ class Tracker(object):
                  cache[0] + self.config['min_time_between_cache_refreshes'] <
                  self.cachetime):
             cache = None
-        if not cache:
+        if cache is None:
             peers = self.downloads[infohash]
             if self.config['compact_reqd']:
                 vv = ([], [], [])

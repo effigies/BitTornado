@@ -192,6 +192,8 @@ class NatCheck(object):
                     self.answer(False)
                 return
             self.next_len, self.next_func = x
+            if self.next_len < 0:  # already checked buffer
+                return             # wait for additional data
 
     def connection_lost(self, connection):
         if not self.closed:

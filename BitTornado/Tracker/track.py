@@ -566,6 +566,12 @@ class Tracker(object):
                         'downloaded (does not include partial '
                         'transfers)</li>\n</ul>\n')
 
+            s.write('<h2>Peers</h2>')
+            s.write('<textarea cols=128 readonly>{}</textarea>'.format(
+                    self.state['peers']))
+            s.write('<h2>Cache</h2>')
+            s.write('<textarea cols=128 readonly>{}</textarea>'.format(
+                    self.becache))
             s.write('</body>\n</html>\n')
             return (200, 'OK',
                     {'Content-Type': 'text/html; charset=iso-8859-1'},

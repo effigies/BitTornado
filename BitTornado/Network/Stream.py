@@ -231,7 +231,17 @@ if HTTPS:
         """
         scheme = 'https'
 
-        SSLCONTEXT = ssl.create_default_context()
+        if hasattr(ssl, 'create_default_context'):
+            SSLCONTEXT = ssl.create_default_context()
+        else:
+            # Copied from Python 3.5.2 ssl library
+            SSLCONTEXT = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            # Load server certificates
+            SSLCONTEXT.load_default_certs(ssl.Purpose.SERVER_AUTH)
+            SSLCONTEXT.verify_mode = ssl.CERT_REQUIRED
+            SSLCONTEXT.check_hostname = True
+            # Disable compression, if possible
+            SSLCONTEXT.options |= getattr(ssl, "OP_NO_COMPRESSION", 0)
         # Disable insecure protocol versions
         SSLCONTEXT.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
         # Prefer forward-secret, GCM-mode AES, then forward-secret, non-GCM

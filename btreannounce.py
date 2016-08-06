@@ -25,8 +25,8 @@ def main(argv):
                         for l in announcelist_details.split('\n')[:-2])))
 
     try:
-        opts, args = getopt.getopt(argv[1:], "hav",
-                                   ("help", "announce_list", "verbose"))
+        opts, args = getopt.getopt(argv[1:], "ha:v",
+                                   ("help", "announce_list=", "verbose"))
     except getopt.error as msg:
         print(msg)
         return 1
@@ -44,7 +44,7 @@ def main(argv):
             print(helpmsg)
             return 0
         elif opt in ('-a', '--announce_list'):
-            announce_list = [tier.split(',') for tier in arg.split('|')]
+            announce_list = arg
         elif opt in ('-v', '--verbose'):
             verbose = True
 

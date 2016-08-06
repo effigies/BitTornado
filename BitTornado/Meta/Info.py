@@ -393,13 +393,11 @@ class MetaInfo(TypedDict, BencodedFile):
     class AnnounceList(SplitList):
         class AnnounceTier(SplitList):
             splitchar = ','
-            valtype = str
         splitchar = '|'
         valtype = AnnounceTier
 
     class HTTPList(SplitList):
         splitchar = '|'
-        valtype = str
 
     typemap = {'info': Info, 'announce': str, 'creation date': int,
                'comment': str, 'announce-list': AnnounceList,
@@ -409,5 +407,14 @@ class MetaInfo(TypedDict, BencodedFile):
     def __init__(self, *args, **kwargs):
         super(MetaInfo, self).__init__(*args, **kwargs)
 
+        # Courtesy updates, in case we re-save MetaInfo files
         if 'creation date' not in self:
             self['creation date'] = int(time.time())
+
+        # Ignore optional fields when null
+        if self.get('announce-list') == MetaInfo.AnnounceList(''):
+            del self['announce-list']
+        if self.get('httpseeds') == MetaInfo.HTTPList(''):
+            del self['httpseeds']
+        if self.get('comment') == '':
+            del self['comment']

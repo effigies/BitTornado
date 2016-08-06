@@ -393,13 +393,11 @@ class MetaInfo(TypedDict, BencodedFile):
     class AnnounceList(SplitList):
         class AnnounceTier(SplitList):
             splitchar = ','
-            valtype = str
         splitchar = '|'
         valtype = AnnounceTier
 
     class HTTPList(SplitList):
         splitchar = '|'
-        valtype = str
 
     typemap = {'info': Info, 'announce': str, 'creation date': int,
                'comment': str, 'announce-list': AnnounceList,

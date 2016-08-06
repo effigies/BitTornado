@@ -57,7 +57,11 @@ class TypedList(list):
 
 
 class SplitList(TypedList):
-    splitchar = None
+    splitchar = ' '
+
+    valtype = str    # Typically
+    valconst = bool  # Reject null values
+    error = False    # Don't fail on null values
 
     def extend(self, vals):
         if isinstance(vals, type(self.splitchar)):

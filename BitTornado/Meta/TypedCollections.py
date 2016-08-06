@@ -2,11 +2,16 @@ import urllib
 
 
 class TypedList(list):
-    valtype = valmap = valconst = None
+    valtype = valmap = None
+    error = True
 
     def __init__(self, iterable):
         super(TypedList, self).__init__()
         self.extend(iterable)
+
+    @staticmethod
+    def valconst(val):
+        return True
 
     def append(self, val):
         if self.valtype is not None and type(val) is not self.valtype:
@@ -22,10 +27,10 @@ class TypedList(list):
                     raise TypeError('Values must be of type {!r}'.format(
                                     self.valtype))
 
-        if self.valconst is not None:
-            assert self.valconst(val)
-
-        super(TypedList, self).append(val)
+        if self.valconst(val):
+            super(TypedList, self).append(val)
+        elif self.error:
+            raise ValueError('Value rejected: {}'.format(val))
 
     def __setitem__(self, key, val):
         if self.valtype is not None and type(val) is not self.valtype:
@@ -41,10 +46,10 @@ class TypedList(list):
                     raise TypeError('Values must be of type {!r}'.format(
                                     self.valtype))
 
-        if self.valconst is not None:
-            assert self.valconst(val)
-
-        super(TypedList, self).__setitem__(key, val)
+        if self.valconst(val):
+            super(TypedList, self).__setitem__(key, val)
+        elif self.error:
+            raise ValueError('Value rejected: {}'.format(val))
 
     def extend(self, vals):
         for val in vals:

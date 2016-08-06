@@ -411,8 +411,10 @@ class MetaInfo(TypedDict, BencodedFile):
         if 'creation date' not in self:
             self['creation date'] = int(time.time())
 
-        # Ignore null announce-lists and httpseeds lists
+        # Ignore optional fields when null
         if self.get('announce-list') == MetaInfo.AnnounceList(''):
             del self['announce-list']
         if self.get('httpseeds') == MetaInfo.HTTPList(''):
             del self['httpseeds']
+        if self.get('comment') == '':
+            del self['comment']

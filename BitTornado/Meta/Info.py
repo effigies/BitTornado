@@ -409,5 +409,12 @@ class MetaInfo(TypedDict, BencodedFile):
     def __init__(self, *args, **kwargs):
         super(MetaInfo, self).__init__(*args, **kwargs)
 
+        # Courtesy updates, in case we re-save MetaInfo files
         if 'creation date' not in self:
             self['creation date'] = int(time.time())
+
+        # Ignore null announce-lists and httpseeds lists
+        if self.get('announce-list') == MetaInfo.AnnounceList(''):
+            del self['announce-list']
+        if self.get('httpseeds') == MetaInfo.HTTPList(''):
+            del self['httpseeds']

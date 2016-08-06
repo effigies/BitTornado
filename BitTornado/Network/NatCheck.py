@@ -1,4 +1,3 @@
-import socket
 from .BTcrypto import Crypto, CRYPTO_OK, padding
 from .Encrypter import protocol_name, option_pattern
 
@@ -29,9 +28,7 @@ class NatCheck(object):
             else:
                 self.encrypter = None
                 self.write(protocol_name + bytes(8) + downloadid)
-        except socket.error:
-            self.answer(False)
-        except IOError:
+        except (IOError, OSError):
             self.answer(False)
         self.next_len = len(protocol_name)
         self.next_func = self.read_header

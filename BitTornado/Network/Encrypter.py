@@ -1,4 +1,3 @@
-import socket
 import urllib
 from binascii import hexlify
 from .BTcrypto import Crypto, padding
@@ -560,7 +559,7 @@ class Encoder(object):
             con = Connection(self, c, peerid, encrypted=encrypted)
             self.connections[c] = con
             c.set_handler(con)
-        except socket.error:
+        except OSError:
             return False
         return True
 

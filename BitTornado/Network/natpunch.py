@@ -186,7 +186,7 @@ class _UPnP(object):    # master holding class
                         break
                 else:
                     raise ValueError('couldn\'t find intranet IP')
-            except (ValueError, socket.error):
+            except (ValueError, OSError):
                 self.local_ip = None
                 if DEBUG:
                     print('Error finding local IP')

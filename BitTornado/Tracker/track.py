@@ -125,14 +125,23 @@ class Counter(BytesIndexed):
     valtype = UnsignedInt
 
 
+class Peer(TypedDict):
+    typemap = {'ip': str, 'port': Port, 'left': UnsignedInt, 'nat': bool,
+               'requirecrypto': bool, 'supportcrypto': bool,
+               'key': str, 'given ip': str}
+
+    def validate(self):
+        required_keys = ('ip', 'port', 'left', 'requirecrypto',
+                         'supportcrypto')
+        for key in required_keys:
+            if key not in self:
+                raise ValueError("Missing key: {}".format(key))
+
+
 class Downloads(BytesIndexed):
     """Map from 20-byte infohash to connected Peers"""
     class Peers(BytesIndexed):
         """Map from 20-byte peer ID to Peer info"""
-        class Peer(TypedDict):
-            typemap = {'ip': str, 'port': Port, 'left': UnsignedInt,
-                       'nat': bool, 'requirecrypto': bool,
-                       'supportcrypto': bool, 'key': str, 'given ip': str}
         keytype = PeerID
         valtype = Peer
     keytype = Infohash
@@ -151,6 +160,21 @@ class Times(BytesIndexed):
 class TrackerState(TypedDict, BencodedFile):
     typemap = {'completed': Counter, 'peers': Downloads, 'allowed': dict,
                'allowed_dir_files': dict, 'allowed_list': HashSet}
+
+    def validate(self):
+        downloads = self.get('peers', Downloads())
+        for peers in downloads.values():
+            for peer in peers.values():
+                peer.validate()
+
+        allowed = self.get('allowed', {})
+        ad_files = self.get('allowed_dir_files', {})
+        allowed_hashes = set(allowed.keys())
+        ad_hashes = set(ihash for meta, ihash in ad_files.values())
+        if ad_hashes - allowed_hashes:
+            raise ValueError("Allowed infohash mismatch")
+        if len(ad_hashes) < len(ad_files):
+            raise ValueError("Duplicate infohash in allowed directory")
 
 
 class CompactResponse(TypedDict):
@@ -249,73 +273,6 @@ class BencodedCache(BytesIndexed):
         return super(BencodedCache, self).__getitem__(infohash)
 
 
-def statefiletemplate(x):
-    if not isinstance(x, dict):
-        raise ValueError
-    for cname, cinfo in x.items():
-        if cname == 'peers':
-            # The 'peers' key is a dictionary of SHA hashes (torrent ids)
-            for y in cinfo.values():
-                # ... for the active torrents, and each is a dictionary
-                if not isinstance(y, dict):
-                    raise ValueError
-                # ... of client ids interested in that torrent
-                for client_id, info in y.items():
-                    if len(client_id) != 20:
-                        raise ValueError
-                    # ... each of which is also a dictionary
-                    # ... which has an IP, a Port, and a Bytes Left count for
-                    # ... that client for that torrent
-                    if not isinstance(info, dict):
-                        raise ValueError
-                    if not isinstance(info.get('ip', ''), str):
-                        raise ValueError
-                    port = info.get('port')
-                    if not isinstance(port, int) or port < 0:
-                        raise ValueError
-                    left = info.get('left')
-                    if not isinstance(left, int) or left < 0:
-                        raise ValueError
-                    if not isinstance(info.get('supportcrypto'), int):
-                        raise ValueError
-                    if not isinstance(info.get('requirecrypto'), int):
-                        raise ValueError
-        elif cname == 'completed':
-            # The 'completed' key is a dictionary of SHA hashes (torrent ids)
-            # ... for keeping track of the total completions per torrent
-            if not isinstance(cinfo, dict):
-                raise ValueError
-            # ... each torrent has an integer value
-            for y in cinfo.values():
-                # ... for the number of reported completions for that torrent
-                if not isinstance(y, int):
-                    raise ValueError
-        elif cname == 'allowed':
-            # a list of info_hashes and included data
-            if not isinstance(cinfo, dict):
-                raise ValueError
-            if 'allowed_dir_files' in x:
-                adlist = set(z[1] for z in x['allowed_dir_files'].values())
-                # and each should have a corresponding key here
-                for y in cinfo:
-                    if y not in adlist:
-                        raise ValueError
-        elif cname == 'allowed_dir_files':
-            # a list of files, their attributes and info hashes
-            if not isinstance(cinfo, dict):
-                raise ValueError
-            dirkeys = set()
-            # each entry should have a corresponding info_hash
-            for y in cinfo.values():
-                if not y[1]:
-                    continue
-                if y[1] not in x['allowed']:
-                    raise ValueError
-                # and each should have a unique info_hash
-                if y[1] in dirkeys:
-                    raise ValueError
-                dirkeys.add(y[1])
-
 alas = b'your file may exist elsewhere in the universe\nbut alas, not here\n'
 
 local_IPs = AddrList()
@@ -409,7 +366,7 @@ class Tracker(object):
         if os.path.exists(self.dfile):
             try:
                 tempstate = TrackerState.read(self.dfile)
-                statefiletemplate(tempstate)
+                tempstate.validate()
                 self.state = tempstate
             except (IOError, ValueError, TypeError):
                 print('**warning** statefile ' + self.dfile +
@@ -824,9 +781,9 @@ class Tracker(object):
 
         if peer is None:
             ts[peerid] = clock()
-            peer = {'ip': ip, 'port': port, 'left': left,
-                    'supportcrypto': supportcrypto,
-                    'requirecrypto': requirecrypto}
+            peer = Peer(ip=ip, port=port, left=left,
+                        supportcrypto=supportcrypto,
+                        requirecrypto=requirecrypto)
             if mykey:
                 peer['key'] = mykey
             if gip:

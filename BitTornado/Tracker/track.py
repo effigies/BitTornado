@@ -6,6 +6,7 @@ import signal
 import random
 import threading
 import urllib
+from enum import IntEnum
 from io import StringIO
 from traceback import print_exc
 from binascii import hexlify
@@ -219,17 +220,17 @@ class DownloadCache(object):
     def __init__(self, compact_required):
         self.compact_required = compact_required
 
-        self.noreq_crypto = Cache(Compact)
-        self.support_crypto = Cache(Compact)
-        self.all_peers = Cache(AllPeers)
-        self._caches = (self.noreq_crypto, self.support_crypto, self.all_peers)
+        self.plaintext = Cache(Compact)
+        self.encrypting = Cache(Compact)
+        self.any_crypto = Cache(AllPeers)
+        self._caches = (self.plaintext, self.encrypting, self.any_crypto)
         if not compact_required:
             self.identified_peers = Cache(CachedResponse)
             self.unidentified_peers = Cache(CachedResponse)
             self._caches += (self.identified_peers, self.identified_peers)
 
     def __repr__(self):
-        return '<DownloadCache: all_peers={!r}>'.format(self.all_peers)
+        return '<DownloadCache: any_crypto={!r}>'.format(self.any_crypto)
 
     def swap_peer(self, peerid, toseed):
         for cache in self._caches:
@@ -244,11 +245,11 @@ class DownloadCache(object):
         seed = not peer['left']
         cp = compact_peer_info(ip, port)
         reqc = bool(peer['requirecrypto'])
-        self.all_peers[seed][peerid] = (cp, reqc)
+        self.any_crypto[seed][peerid] = (cp, reqc)
         if peer['supportcrypto']:
-            self.support_crypto[seed][peerid] = cp
+            self.encrypting[seed][peerid] = cp
         if not reqc:
-            self.noreq_crypto[seed][peerid] = cp
+            self.plaintext[seed][peerid] = cp
             if not self.compact_required:
                 self.identified_peers[seed][peerid] = Bencached(
                     bencode({'ip': ip, 'port': port, 'peer id': peerid}))
@@ -322,6 +323,15 @@ def compact_peer_info(ip, port):
         return IPv4(ip).to_bytes(4, 'big') + port.to_bytes(2, 'big')
     except ValueError:
         return b''  # not a valid IP, must be a domain name
+
+
+class Return(IntEnum):
+    """Type of representation of peers to return to client"""
+    crypto_none = 0
+    crypto_required = 1
+    crypto_supported = 2
+    with_peerid = 3
+    no_peerid = 4
 
 
 class Tracker(object):
@@ -877,8 +887,8 @@ class Tracker(object):
                     self.config['min_time_between_cache_refreshes'] < clock():
                 bc = self.becache[infohash]
                 cache = [clock(),
-                         list(bc.noreq_crypto.leechers.values()) +
-                         list(bc.noreq_crypto.seeds.values())]
+                         list(bc.plaintext.leechers.values()) +
+                         list(bc.plaintext.seeds.values())]
                 self.cached_t[infohash] = cache
                 random.shuffle(cache[1])
                 cache = cache[1]
@@ -893,8 +903,8 @@ class Tracker(object):
             return data
 
         bc = self.becache[infohash]
-        len_l = len(bc.all_peers.leechers)
-        len_s = len(bc.all_peers.seeds)
+        len_l = len(bc.any_crypto.leechers)
+        len_s = len(bc.any_crypto.seeds)
         if not len_l + len_s:   # caches are empty!
             data['peers'] = []
             return data
@@ -951,12 +961,12 @@ class Tracker(object):
             if rsize:
                 peerdata.extend(cache[1][-rsize:])
                 del cache[1][-rsize:]
-        if return_type == 0:
+        if return_type == Return.crypto_none:
             data['peers'] = b''.join(peerdata)
-        elif return_type == 1:
+        elif return_type == Return.crypto_required:
             data['crypto_flags'] = b'\x01' * len(peerdata)
             data['peers'] = b''.join(peerdata)
-        elif return_type == 2:
+        elif return_type == Return.crypto_supported:
             data['crypto_flags'] = bytes(p[1] for p in peerdata)
             data['peers'] = b''.join(p[0] for p in peerdata)
         else:
@@ -1064,18 +1074,18 @@ class Tracker(object):
 
         if int(params('compact', 0)) and ipv4:
             if int(params('requirecrypto', 0)):
-                return_type = 1
+                return_type = Return.crypto_required
             elif int(params('supportcrypto', 0)):
-                return_type = 2
+                return_type = Return.crypto_supported
             else:
-                return_type = 0
+                return_type = Return.crypto_none
         elif self.config['compact_reqd'] and ipv4:
             return (400, 'Bad Request', {'Content-Type': 'text/plain'},
                     'your client is outdated, please upgrade')
         elif int(params('no_peer_id', 0)):
-            return_type = 4
+            return_type = Return.no_peerid
         else:
-            return_type = 3
+            return_type = Return.with_peerid
 
         data = self.peerlist(infohash, event == 'stopped',
                              params('tracker'), not int(params('left', 1)),

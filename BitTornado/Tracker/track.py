@@ -1112,9 +1112,16 @@ class Tracker(object):
         self.rawserver.add_task(self.parse_allowed, self.parse_dir_interval)
 
         if self.config['allowed_dir']:
-            r = parsedir(self.config['allowed_dir'], self.allowed,
-                         self.allowed_dir_files, self.allowed_dir_blocked,
-                         [".torrent"])
+            try:
+                r = parsedir(self.config['allowed_dir'], self.allowed,
+                             self.allowed_dir_files, self.allowed_dir_blocked,
+                             [".torrent"])
+            except (KeyError, IndexError):
+                print('**warning** Error updating allowed torrents. '
+                      'Reparsing.')
+                r = parsedir(self.config['allowed_dir'], {}, {}, set(),
+                             [".torrent"])
+
             (self.allowed, self.allowed_dir_files, self.allowed_dir_blocked,
                 added) = r[:-1]
 

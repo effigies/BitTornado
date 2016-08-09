@@ -43,8 +43,20 @@ class Downloads(BytesIndexed):
 
 
 class TrackerState(TypedDict, BencodedFile):
-    typemap = {'completed': Counter, 'peers': Downloads, 'allowed': dict,
-               'allowed_dir_files': dict, 'allowed_list': HashSet}
+    class Allowed(TypedDict):
+        class TorrentData(TypedDict):
+            typemap = {'path': str, 'file': str, 'name': str, 'numfiles': int,
+                       'length': int, 'type': str}
+        keytype = Infohash
+        valtype = TorrentData
+
+    class AllowedDirFiles(TypedDict):
+        keytype = str
+        valtype = ((int, int), Infohash)
+
+    typemap = {'completed': Counter, 'peers': Downloads, 'allowed': Allowed,
+               'allowed_dir_files': AllowedDirFiles,
+               'allowed_list': HashSet}
 
     def validate(self):
         downloads = self.get('peers', Downloads())

@@ -140,7 +140,7 @@ class TrackerState(TypedDict, BencodedFile):
             return len(key) == 20
 
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
-               'allowed_dir_files': dict}
+               'allowed_dir_files': dict, 'allowed_list': dict}
 
 
 class CompactResponse(TypedDict):

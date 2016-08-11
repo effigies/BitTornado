@@ -1,3 +1,4 @@
+from ..Types.tests import *
 from .test_bencode import CodecTests
 from .test_bitfield import BitfieldTests
 from .test_networkaddress import AddressTests, AddressRangeTests, \

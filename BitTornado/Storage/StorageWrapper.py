@@ -1,7 +1,7 @@
 import hashlib
 import random
 import bisect
-from BitTornado.bitfield import Bitfield
+from ..Types import Bitfield
 from BitTornado.clock import clock
 
 DEBUG = False

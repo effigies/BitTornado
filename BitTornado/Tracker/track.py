@@ -140,7 +140,7 @@ class TrackerState(TypedDict, BencodedFile):
             return len(key) == 20
 
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
-               'allowed_dir_files': dict}
+               'allowed_dir_files': dict, 'allowed_list': dict}
 
 
 class CompactResponse(TypedDict):
@@ -328,23 +328,23 @@ class Tracker(object):
                 l3,s3 = [ip,port,id]
                 l4,l4 = [ip,port] nopeerid
         '''
-        for infohash, ds in self.downloads.items():
+        for infohash, peers in self.downloads.items():
             self.seedcount[infohash] = 0
-            for x, y in list(ds.items()):
-                ip = y['ip']
+            for peerid, peer in list(peers.items()):
+                ip = peer['ip']
                 if self.allowed_IPs and ip not in self.allowed_IPs \
                         or self.banned_IPs and ip in self.banned_IPs:
-                    del ds[x]
+                    del peers[peerid]
                     continue
-                if not y['left']:
+                if not peer['left']:
                     self.seedcount[infohash] += 1
-                if y.get('nat', -1):
+                if peer.get('nat', -1):
                     continue
-                gip = y.get('given_ip')
+                gip = peer.get('given_ip')
                 if is_valid_ip(gip) and (not self.only_local_override_ip or
                                          ip in local_IPs):
                     ip = gip
-                self.natcheckOK(infohash, x, ip, y['port'], y)
+                self.natcheckOK(infohash, peerid, ip, peer['port'], peer)
 
         self.times = {dl: {sub: 0 for sub in subs}
                       for dl, subs in self.downloads.items()}
@@ -428,16 +428,12 @@ class Tracker(object):
         self.Filter = Filter(rawserver.add_task)
 
         aggregator = config['aggregator']
-        if aggregator == '0':
-            self.is_aggregator = False
-            self.aggregator_key = None
-        else:
-            self.is_aggregator = True
-            if aggregator == '1':
-                self.aggregator_key = None
-            else:
+        self.is_aggregator = aggregator != '0'
+        self.aggregator_key = None
+        if self.is_aggregator:
+            self.natcheck = 0
+            if aggregator != '1':
                 self.aggregator_key = aggregator
-            self.natcheck = False
 
         send = config['aggregate_forward']
         if not send:
@@ -690,48 +686,47 @@ class Tracker(object):
                 return l[key][0]
             return default
 
-        myid = params('peer_id', '')
-        if len(myid) != 20:
+        peerid = params('peer_id', '')
+        if len(peerid) != 20:
             raise ValueError('id not of length 20')
         if event not in ('started', 'completed', 'stopped', 'snooped', None):
             raise ValueError('invalid event')
         port = params('cryptoport')
         if port is None:
-            port = params('port', '')
+            port = params('port', 'missing port')
         port = int(port)
         if not 0 <= port <= 65535:
             raise ValueError('invalid port')
-        left = int(params('left', ''))
+        left = int(params('left', 'amount left not sent'))
         if left < 0:
             raise ValueError('invalid amount left')
+        seeding = left == 0
         # uploaded = long(params('uploaded',''))
         # downloaded = long(params('downloaded',''))
         supportcrypto = int(bool(params('supportcrypto')))
         requirecrypto = supportcrypto and int(bool(params('requirecrypto')))
 
-        peer = peers.get(myid)
+        peer = peers.get(peerid)
         islocal = ip in local_IPs
         mykey = params('key')
         if peer:
             auth = peer.get('key', -1) == mykey or peer.get('ip') == ip
 
         gip = params('ip')
-        if is_valid_ip(gip) and (islocal or not self.only_local_override_ip):
-            ip1 = gip
-        else:
-            ip1 = ip
+        override = is_valid_ip(gip) and (islocal or
+                                         not self.only_local_override_ip)
+        real_ip = gip if override else ip
 
-        if params('numwant') is not None:
-            rsize = min(int(params('numwant')), self.response_size)
-        else:
-            rsize = self.response_size
+        rsize = min(int(params('numwant', self.response_size)),
+                    self.response_size)
 
         if event == 'stopped':
             if peer and auth:
-                self.delete_peer(infohash, myid)
+                self.delete_peer(infohash, peerid)
+            return rsize
 
-        elif not peer:
-            ts[myid] = clock()
+        if peer is None:
+            ts[peerid] = clock()
             peer = {'ip': ip, 'port': port, 'left': left,
                     'supportcrypto': supportcrypto,
                     'requirecrypto': requirecrypto}
@@ -740,76 +735,68 @@ class Tracker(object):
             if gip:
                 peer['given ip'] = gip
             if port:
-                if not self.natcheck or islocal:
+                if self.natcheck == 0 or islocal:
                     peer['nat'] = 0
-                    self.natcheckOK(infohash, myid, ip1, port, peer)
+                    self.natcheckOK(infohash, peerid, real_ip, port, peer)
                 else:
-                    NatCheck(self.connectback_result, infohash, myid, ip1,
+                    NatCheck(self.connectback_result, infohash, peerid, real_ip,
                              port, self.rawserver, encrypted=requirecrypto)
             else:
                 peer['nat'] = 2 ** 30
-            if event == 'completed':
-                self.completed[infohash] += 1
-            if not left:
-                self.seedcount[infohash] += 1
 
-            peers[myid] = peer
+            self.completed[infohash] += event == 'completed'
+            self.seedcount[infohash] += seeding
 
-        else:
-            if not auth:
-                return rsize    # return w/o changing stats
+            peers[peerid] = peer
+            return rsize
 
-            ts[myid] = clock()
-            if not left and peer['left']:
-                self.completed[infohash] += 1
-                self.seedcount[infohash] += 1
-                if not peer.get('nat', -1):
-                    for bc in self.becache[infohash]:
-                        if myid in bc[0]:
-                            bc[1][myid] = bc[0][myid]
-                            del bc[0][myid]
-            elif left and not peer['left']:
-                self.completed[infohash] -= 1
-                self.seedcount[infohash] -= 1
-                if not peer.get('nat', -1):
-                    for bc in self.becache[infohash]:
-                        if myid in bc[1]:
-                            bc[0][myid] = bc[1][myid]
-                            del bc[1][myid]
-            peer['left'] = left
+        if not auth:
+            return rsize    # return w/o changing stats
 
-            if port:
-                recheck = False
-                if ip != peer['ip']:
-                    peer['ip'] = ip
-                    recheck = True
-                if gip != peer.get('given ip'):
-                    if gip:
-                        peer['given ip'] = gip
-                    elif 'given ip' in peer:
-                        del peer['given ip']
-                    recheck = True
+        ts[peerid] = clock()
+        if seeding != (not peer['left']):  # Changing seeding state
+            update = 1 if seeding else -1  # +1 if seeding, -1 if unseeding
+            self.completed[infohash] += update
+            self.seedcount[infohash] += update
+            if not peer.get('nat', -1):
+                # Swap seeding state in the cache
+                for bc in self.becache[infohash]:
+                    old_cache = bc[not seeding]
+                    if peerid in old_cache:
+                        bc[seeding][peerid] = old_cache.pop(peerid)
+        peer['left'] = left
 
-                natted = peer.get('nat', -1)
-                if recheck:
-                    if natted == 0:
-                        l = self.becache[infohash]
-                        y = not peer['left']
-                        for x in l:
-                            if myid in x[y]:
-                                del x[y][myid]
-                    if natted >= 0:
-                        del peer['nat']     # restart NAT testing
-                if natted and natted < self.natcheck:
-                    recheck = True
+        if port == 0:
+            return rsize
 
-                if recheck:
-                    if not self.natcheck or islocal:
-                        peer['nat'] = 0
-                        self.natcheckOK(infohash, myid, ip1, port, peer)
-                    else:
-                        NatCheck(self.connectback_result, infohash, myid, ip1,
-                                 port, self.rawserver, encrypted=requirecrypto)
+        recheck = False
+        if ip != peer['ip']:
+            peer['ip'] = ip
+            recheck = True
+        if gip != peer.get('given ip'):
+            if gip:
+                peer['given ip'] = gip
+            elif 'given ip' in peer:
+                del peer['given ip']
+            recheck = True
+
+        natted = peer.get('nat', -1)
+        if recheck:
+            if natted == 0:
+                for x in self.becache[infohash]:
+                    x[seeding].pop(peerid, None)
+            if natted >= 0:
+                del peer['nat']     # restart NAT testing
+        if natted and natted < self.natcheck:
+            recheck = True
+
+        if recheck:
+            if not self.natcheck or islocal:
+                peer['nat'] = 0
+                self.natcheckOK(infohash, peerid, real_ip, port, peer)
+            else:
+                NatCheck(self.connectback_result, infohash, peerid, real_ip,
+                         port, self.rawserver, encrypted=requirecrypto)
 
         return rsize
 
@@ -867,7 +854,7 @@ class Tracker(object):
                  cache[0] + self.config['min_time_between_cache_refreshes'] <
                  self.cachetime):
             cache = None
-        if not cache:
+        if cache is None:
             peers = self.downloads[infohash]
             if self.config['compact_reqd']:
                 vv = ([], [], [])
@@ -1100,9 +1087,9 @@ class Tracker(object):
         elif not result:
             record['nat'] += 1
 
-    def remove_from_state(self, *l):
-        for s in l:
-            self.state.pop(s, None)
+    def remove_from_state(self, *keys):
+        for key in keys:
+            self.state.pop(key, None)
 
     def save_state(self):
         self.rawserver.add_task(self.save_state, self.save_dfile_interval)
@@ -1172,30 +1159,28 @@ class Tracker(object):
     def delete_peer(self, infohash, peerid):
         dls = self.downloads[infohash]
         peer = dls[peerid]
-        if not peer['left']:
+        seeding = not peer['left']
+        if seeding:
             self.seedcount[infohash] -= 1
         if not peer.get('nat', -1):
-            l = self.becache[infohash]
-            y = not peer['left']
-            for x in l:
-                if peerid in x[y]:
-                    del x[y][peerid]
+            for x in self.becache[infohash]:
+                x[seeding].pop(peerid, None)
         del self.times[infohash][peerid]
         del dls[peerid]
 
     def expire_downloaders(self):
-        for x in self.times:
-            for myid, t in list(self.times[x].items()):
+        for infohash, peertimes in self.times.items():
+            for peerid, t in list(peertimes.items()):
                 if t < self.prevtime:
-                    self.delete_peer(x, myid)
+                    self.delete_peer(infohash, peerid)
         self.prevtime = clock()
         if not self.keep_dead:
-            for key, value in list(self.downloads.items()):
-                if len(value) == 0 and (self.allowed is None or
-                                        key not in self.allowed):
-                    del self.times[key]
-                    del self.downloads[key]
-                    del self.seedcount[key]
+            for infohash, peers in list(self.downloads.items()):
+                if len(peers) == 0 and (self.allowed is None or
+                                        infohash not in self.allowed):
+                    del self.times[infohash]
+                    del self.downloads[infohash]
+                    del self.seedcount[infohash]
         self.rawserver.add_task(self.expire_downloaders,
                                 self.timeout_downloaders_interval)
 

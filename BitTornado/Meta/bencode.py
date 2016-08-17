@@ -4,6 +4,7 @@
 
 import warnings
 import mmap
+import collections
 
 BENCACHED_MARKER = []
 
@@ -25,27 +26,31 @@ class BTEncoder(object):
     """
 
     def __call__(self, data):
-        """Encode a data structure into a string.
-
-        Creates a list in which to collect string segments and returns the
-        joined result.
-
-        See encode_* for details.
-        """
+        """Encode a data structure into a string."""
         ctext = []
         self.encode(data, ctext)
         return b''.join(ctext)
 
     def encode(self, data, ctext):
         """Determine type of data and encode into appropriate string"""
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, int):
+            ctext.append('i{:d}e'.format(data).encode('utf-8'))
+        elif isinstance(data, (str, bytes)):
+            # A string is encoded as nbytes:contents
+            if isinstance(data, str):
+                data = data.encode('utf-8')
+            ctext.extend((str(len(data)).encode('utf-8'), b':', data))
+        elif isinstance(data, Bencached):
+            assert data.marker == BENCACHED_MARKER
+            ctext.append(data.bencoded)
+        elif isinstance(data, collections.Sequence):
             # A list takes the form lXe where X is the concatenation of the
             # encodings of all elements in the list.
             ctext.append(b'l')
             for element in data:
                 self.encode(element, ctext)
             ctext.append(b'e')
-        elif isinstance(data, dict):
+        elif isinstance(data, collections.Mapping):
             # A dictionary is encoded as dXe where X is the concatenation of
             # the encodings of all key,value pairs in the dictionary, sorted by
             # key. Key, value pairs are themselves concatenations of the
@@ -59,16 +64,6 @@ class BTEncoder(object):
                 self.encode(key, ctext)
                 self.encode(data, ctext)
             ctext.append(b'e')
-        elif isinstance(data, (str, bytes)):
-            # A string is encoded as nbytes:contents
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-            ctext.extend((str(len(data)).encode('utf-8'), b':', data))
-        elif isinstance(data, int):
-            ctext.append('i{:d}e'.format(data).encode('utf-8'))
-        elif isinstance(data, Bencached):
-            assert data.marker == BENCACHED_MARKER
-            ctext.append(data.bencoded)
         else:
             raise TypeError('Unknown type for bencode: ' + str(type(data)))
 
@@ -203,5 +198,5 @@ class BencodedFile(object):
                          **kwargs)
 
 #pylint: disable=C0103
-bencode = BTEncoder().__call__
-bdecode = BTDecoder().__call__
+bencode = BTEncoder()
+bdecode = BTDecoder()

@@ -1,6 +1,7 @@
 import unittest
+import random
 
-from ..collections import TypedList, TypedDict
+from ..collections import TypedList, TypedDict, OrderedSet
 
 
 class APITest(object):
@@ -94,3 +95,19 @@ class TypedListAPITest(CopyAPITest, unittest.TestCase):
 class TypedDictAPITest(CopyAPITest, unittest.TestCase):
     baseclass = dict
     thisclass = TypedDict
+
+
+class OrderedSetTest(unittest.TestCase):
+    def test_orderedpop(self):
+        """Test that removing arbitrary values from an ordered set is
+        the same as removing from a sorted list"""
+        for _ in range(10):
+            vals = random.sample(range(100), 10)
+            oset = OrderedSet(vals)
+            sorted_vals = sorted(vals)
+
+            while len(oset) > 0:
+                n = random.randrange(len(oset))
+                oset.pop(n)
+                sorted_vals.pop(n)
+                self.assertEqual(sorted(oset), sorted_vals)

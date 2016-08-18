@@ -233,3 +233,11 @@ class QueryDict(TypedDict):
                 val = str(int(val))
             parts.append('{:s}={:s}'.format(key, urllib.parse.quote(val)))
         return '&'.join(parts)
+
+
+class OrderedSet(set):
+    """A set that permits popping a specific element"""
+    def pop(self, n=0):
+        x = min(self) if n == 0 else max(self) if n == -1 else sorted(self)[n]
+        self.remove(x)
+        return x

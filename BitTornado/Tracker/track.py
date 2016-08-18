@@ -20,13 +20,13 @@ from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Client.Announce import HTTPAnnouncer, Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
-from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
 from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList, \
     IPv4
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
-from ..Types import Infohash, PeerID, Port, UnsignedInt
+from ..Types import TypedDict, BytesIndexed, Infohash, PeerID, Port, \
+    UnsignedInt
 from BitTornado.clock import clock
 
 from BitTornado import version

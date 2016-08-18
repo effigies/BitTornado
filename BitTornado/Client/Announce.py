@@ -9,9 +9,8 @@ import urllib
 import base64
 import threading
 from BitTornado.Meta.bencode import bdecode
-from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
+from ..Types import TypedDict, TypedList, QueryDict, Port, Infohash, PeerID
 from BitTornado.Network.NetworkAddress import IPv4, IPv6
-from ..Types import Port, Infohash, PeerID
 from BitTornado.Network.Stream import SharedStream
 
 

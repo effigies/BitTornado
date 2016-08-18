@@ -14,7 +14,7 @@ from collections import defaultdict
 from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
 from .T2T import T2TList
-from .torrentlistparse import parsetorrentlist
+from .torrentlistparse import HashSet, parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
@@ -137,7 +137,7 @@ class TrackerState(TypedDict, BencodedFile):
         valtype = Peer
 
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
-               'allowed_dir_files': dict, 'allowed_list': dict}
+               'allowed_dir_files': dict, 'allowed_list': HashSet}
 
 
 class CompactResponse(TypedDict):

@@ -1,7 +1,8 @@
 import unittest
 import random
 
-from ..collections import TypedList, TypedDict, OrderedSet
+from ..collections import TypedList, TypedDict, DictSet, OrderedSet
+from ...Meta.bencode import bencode, bdecode
 
 
 class APITest(object):
@@ -95,6 +96,69 @@ class TypedListAPITest(CopyAPITest, unittest.TestCase):
 class TypedDictAPITest(CopyAPITest, unittest.TestCase):
     baseclass = dict
     thisclass = TypedDict
+
+
+class DictSetTest(CopyAPITest, unittest.TestCase):
+    baseclass = set
+    thisclass = DictSet
+    initargs = ("abcdef",)
+    comparator = set("defghi")
+    subset = set("abc")
+    superset = set("abcdefg")
+
+    method_tests = [('add',                     ('g',),         {}),
+                    ('discard',                 ('g',),         {}),
+                    ('difference',              (comparator,),  {}),
+                    ('intersection',            (comparator,),  {}),
+                    ('symmetric_difference',    (comparator,),  {}),
+                    ('issubset',                (comparator,),  {}),
+                    ('issubset',                (subset,),      {}),
+                    ('issubset',                (superset,),    {}),
+                    ('issuperset',              (comparator,),  {}),
+                    ('issuperset',              (subset,),      {}),
+                    ('issuperset',              (superset,),    {}),
+                    ('union',                   (comparator,),  {}),
+                    ]
+
+    copy_tests = [('difference_update',             (comparator,),  {}),
+                  ('symmetric_difference_update',   (comparator,),  {}),
+                  ('intersection_update',           (comparator,),  {}),
+                  ('update',                        (comparator,),  {}),
+                  ]
+
+    def test_bencoding(self):
+        orig = DictSet(('a', 'b', 'c'))
+        self.assertEqual(bencode(orig), b'd1:ai1e1:bi1e1:ci1ee')
+        self.assertEqual(DictSet(bdecode(bencode(orig))), orig)
+
+    def test_comparisons(self):
+        # Equality should imply the following:
+        self.assertTrue(self.this <= self.base)
+        self.assertTrue(self.this >= self.base)
+        self.assertTrue(self.base <= self.this)
+        self.assertTrue(self.base >= self.this)
+
+        tcopy = self.this.copy()
+        x = tcopy.pop()
+
+        self.assertTrue(x not in tcopy)  # value removed
+        self.assertTrue(x in self.this)  # original unaffected
+
+        # Test comparisons in DictSet
+        self.assertEqual(len(tcopy), len(self.base) - 1)
+        self.assertTrue(tcopy < self.this)
+        self.assertTrue(tcopy <= self.this)
+        self.assertTrue(self.this >= tcopy)
+        self.assertTrue(self.this > tcopy)
+
+        bcopy = self.base.copy()
+        bcopy.pop()
+
+        # Check that comparisons with normal sets work as expected
+        self.assertTrue(self.base > tcopy)
+        self.assertTrue(self.base >= tcopy)
+        self.assertTrue(bcopy < self.this)
+        self.assertTrue(bcopy <= self.this)
 
 
 class OrderedSetTest(unittest.TestCase):

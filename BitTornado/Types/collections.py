@@ -241,3 +241,96 @@ class OrderedSet(set):
         x = min(self) if n == 0 else max(self) if n == -1 else sorted(self)[n]
         self.remove(x)
         return x
+
+
+class DictSet(TypedDict, collections.MutableSet):
+    """A set that can be bencoded as a dictionary
+
+    This object can be interacted with either as a set or as a dictionary
+    for which all values are True.
+
+    {a, b, c} <=> {a: True, b: True, c: True}
+    """
+    # Values must be True
+    valtype = bool
+    valconst = bool
+
+    # Ignore dict implementations
+    __ge__ = collections.Set.__ge__
+    __gt__ = collections.Set.__gt__
+    __le__ = collections.Set.__le__
+    __lt__ = collections.Set.__lt__
+    __eq__ = collections.Set.__eq__
+
+    @classmethod
+    def _normalize_seq(cls, seq):
+        """Handle interpretation of sequences and mappings as"""
+        if isinstance(seq, collections.Mapping):
+            return seq
+        if isinstance(seq, collections.Iterable):
+            vals = list(seq)
+            # Empty
+            if not vals:
+                return vals
+            # Sequence of pairs
+            if isinstance(vals[0], collections.Sequence) and \
+                    not isinstance(vals[0], (str, bytes)) and \
+                    len(vals[0]) == 2:
+                return vals
+            # Treat as set elements
+            return ((element, True) for element in vals)
+        raise TypeError("'{}' object is not iterable".format(
+                        type(seq).__name__))
+
+    def __init__(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("{}() expected at most 1 arguments, got {:d}"
+                            "".format(self.__class__.__name__, len(args)))
+        elif args:
+            args = (self._normalize_seq(args[0]),)
+        super(DictSet, self).__init__(*args, **kwargs)
+
+    def update(self, *seq):
+        for subseq in seq:
+            super(DictSet, self).update(self._normalize_seq(subseq))
+    update.__doc__ = set.update.__doc__
+
+    # Full set API follows
+    def add(self, element):
+        self[element] = True
+
+    def discard(self, element):
+        TypedDict.pop(self, element, None)
+
+    def pop(self):
+        try:
+            return self.popitem()[0]
+        except KeyError:
+            raise KeyError('pop from an empty set')
+
+    def difference(self, seq):
+        return self - seq
+
+    def difference_update(self, seq):
+        self -= seq
+
+    def intersection(self, seq):
+        return self & seq
+
+    def intersection_update(self, seq):
+        self &= seq
+
+    def issubset(self, seq):
+        return all(elem in seq for elem in self)
+
+    def issuperset(self, seq):
+        return all(elem in self for elem in seq)
+
+    def symmetric_difference(self, seq):
+        return self ^ seq
+
+    def symmetric_difference_update(self, seq):
+        self ^= seq
+
+    def union(self, seq):
+        return self | seq

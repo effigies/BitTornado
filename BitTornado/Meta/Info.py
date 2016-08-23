@@ -195,10 +195,12 @@ class Info(dict):   # pylint: disable=R0904
 
         encoding = params.get('encoding', sys.getfilesystemencoding())
         if encoding == 'UTF-8':
-            self.encode = lambda x: x.encode('utf-8')
+            self.encode = lambda x: x if isinstance(x, str) else \
+                    x.encode('utf-8')
             self.decode = lambda x: x.decode('utf-8')
         else:
-            self.encode = lambda x: unicode(x, encoding).encode('utf-8')
+            self.encode = lambda x: x if isinstance(x, str) else \
+                unicode(x, encoding).encode('utf-8')
             self.decode = lambda x: x.decode(encoding)
 
         # Use encoding to set name

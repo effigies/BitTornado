@@ -18,6 +18,7 @@ from .torrentlistparse import HashSet, parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
+from BitTornado.Application.Logger import Logging
 from BitTornado.Client.Announce import HTTPAnnouncer, Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
 from BitTornado.Network.BTcrypto import CRYPTO_OK
@@ -117,6 +118,7 @@ defaults = [
      'allows tracker to monitor dedicated seed(s) and flag torrents as '
      'seeded'),
     ('compact_reqd', 1, "only allow peers that accept a compact response"),
+    ('debug', 0, 'print debug messages'),
 ]
 
 
@@ -264,7 +266,7 @@ def compact_peer_info(ip, port):
         return b''  # not a valid IP, must be a domain name
 
 
-class Tracker(object):
+class Tracker(Logging):
     def __init__(self, config, rawserver):
         self.config = config
         self.response_size = config['response_size']            # int (# peers)
@@ -280,6 +282,16 @@ class Tracker(object):
             except IOError:
                 print("**warning** specified favicon file -- %s -- does not "
                       "exist." % favicon)
+
+        if config['logfile']:
+            if config['logfile'] == '-':
+                self.logger.set_ref(sys.stdout)
+            else:
+                self.logger.set_ref(config['logfile'])
+                self.log("### Log started")
+        if config['hupmonitor']:
+            signal.signal(signal.SIGHUP, self.logger.reopen)
+        self.debugging = config['debug']
 
         self.rawserver = rawserver  # RawServer
         self.cached = {}    # format: infohash: [[time1, l1, s1], ...]
@@ -358,29 +370,6 @@ class Tracker(object):
             'timeout_downloaders_interval']
         rawserver.add_task(self.expire_downloaders,
                            self.timeout_downloaders_interval)
-        self.logfile = None
-        self.log = None
-        if config['logfile'] and config['logfile'] != '-':
-            try:
-                self.logfile = config['logfile']
-                self.log = open(self.logfile, 'a')
-                sys.stdout = self.log
-                print("# Log Started: ", isotime())
-            except IOError:
-                print("**warning** could not redirect stdout to log file:",
-                      sys.exc_info()[0])
-
-        if config['hupmonitor']:
-            def huphandler(signum, frame, self=self):
-                try:
-                    self.log.close()
-                    self.log = open(self.logfile, 'a')
-                    sys.stdout = self.log
-                    print("# Log reopened: ", isotime())
-                except IOError:
-                    print("**warning** could not reopen logfile")
-
-            signal.signal(signal.SIGHUP, huphandler)
 
         self.allow_get = config['allow_get']
 
@@ -920,6 +909,7 @@ class Tracker(object):
 
         if self.allowed_IPs and ip not in self.allowed_IPs or \
                 self.banned_IPs and ip in self.banned_IPs:
+            self.debug("{!s} - 400 - IP not authorized".format(ip))
             return (400, 'Not Authorized', {'Content-Type': 'text/plain',
                                             'Pragma': 'no-cache'},
                     bencode({'failure reason':
@@ -958,8 +948,10 @@ class Tracker(object):
                     paramslist.setdefault(key, []).append(val)
 
             if path in ('', 'index.html'):
+                self.debug("{!s} - Getting info page...".format(ip))
                 return self.get_infopage()
             if path == 'file':
+                self.debug("{!s} - Getting file...".format(ip))
                 return self.get_file(params('info_hash'))
             if path == 'favicon.ico' and self.favicon is not None:
                 return (200, 'OK', {'Content-Type': 'image/x-icon'},
@@ -968,10 +960,12 @@ class Tracker(object):
             # automated access from here on
 
             if path in ('scrape', 'scrape.php', 'tracker.php/scrape'):
+                self.debug("{!s} - Scraping...".format(ip))
                 return self.get_scrape(paramslist)
 
             if path not in ('announce', 'announce.php',
                             'tracker.php/announce'):
+                self.debug("{!s} - 404 - Not found: {}".format(ip, path))
                 return (404, 'Not Found', {'Content-Type': 'text/plain',
                                            'Pragma': 'no-cache'}, alas)
 
@@ -989,6 +983,8 @@ class Tracker(object):
 
             notallowed = self.check_allowed(infohash, paramslist)
             if notallowed:
+                self.debug("{!s} - {:d} - Not allowed: {}".format(
+                           ip, notallowed[0], notallowed[3]))
                 return notallowed
 
             event = params('event')
@@ -996,6 +992,7 @@ class Tracker(object):
             rsize = self.add_data(infohash, event, ip, paramslist)
 
         except ValueError as e:
+            self.debug("{!s} - 400 - Bad request: {!s}".format(ip, e)
             return (400, 'Bad Request', {'Content-Type': 'text/plain'},
                     'you sent me garbage - {!s}'.format(e).encode())
 
@@ -1003,6 +1000,7 @@ class Tracker(object):
             self.aggregate_senddata(query)
 
         if self.is_aggregator:      # don't return peer data here
+            self.debug("{!s} - 200 - OK".format(ip))
             return (200, 'OK', {'Content-Type': 'text/plain',
                                 'Pragma': 'no-cache'},
                     bencode({'response': 'OK'}))
@@ -1015,6 +1013,7 @@ class Tracker(object):
             else:
                 return_type = 0
         elif self.config['compact_reqd'] and ipv4:
+            self.debug("{!s} - 400 - Old client".format(ip))
             return (400, 'Bad Request', {'Content-Type': 'text/plain'},
                     'your client is outdated, please upgrade')
         elif int(params('no_peer_id', 0)):
@@ -1037,6 +1036,7 @@ class Tracker(object):
             if int(params('check_seeded', 0)) and self.is_seeded.get(infohash):
                 data['seeded'] = 1
 
+        self.debug("{!s} - 200 - {}".format(ip, bencode(data).decode()))
         return (200, 'OK', {'Content-Type': 'text/plain',
                             'Pragma': 'no-cache'},
                 bencode(data))

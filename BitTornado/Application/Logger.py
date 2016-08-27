@@ -51,6 +51,13 @@ class Logger(object):
         with self.file_lock:
             return self.fobj.write(text)
 
+    def reopen(self, signum, frame):
+        if self.ref is self.fobj:
+            self.write("** Cannot reopen logfile without known path")
+            return
+        self.fobj.close()
+        self.fobj = open(self.ref, 'a')
+
 
 class Logging(object):
     """Logging mixin"""

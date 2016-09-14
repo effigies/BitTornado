@@ -26,6 +26,7 @@ from .Statistics import Statistics
 from BitTornado.Application.ConfigDir import ConfigDir
 from BitTornado.Meta.bencode import bdecode
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
+from BitTornado.Application.Logger import Logging
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 
 defaults = [
@@ -164,6 +165,9 @@ defaults = [
         "minutes between automatic flushes to disk (0 = disabled)"),
     ('dedicated_seed_id', '',
         "code to send to tracker identifying as a dedicated seed"),
+    ('debug', 0, 'print debug messages'),
+    ('logfile', '',
+     'file to write logs (required for debug)'),
 ]
 
 argslistheader = 'Arguments are:\n\n'
@@ -222,7 +226,7 @@ def get_metainfo(fname, url, errorfunc):
     return metainfo
 
 
-class BT1Download:
+class BT1Download(Logging):
     def __init__(self, statusfunc, finfunc, errorfunc, excfunc, doneflag,
                  config, metainfo, infohash, peerid, rawserver, port,
                  appdataobj=None):
@@ -237,6 +241,10 @@ class BT1Download:
         self.myid = peerid          # bytes
         self.rawserver = rawserver
         self.port = port
+
+        if self.config['logfile']:
+            self.logger.set_ref(self.config['logfile'])
+        self.debugging = self.config['debug']
 
         self.pieces = self.metainfo['info'].hasher.pieces   # [bytes[20]]
         self.len_pieces = len(self.pieces)

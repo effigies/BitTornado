@@ -3,7 +3,7 @@ import random
 import http.client
 import urllib
 from .CurrentRateMeasure import Measure
-from BitTornado.bitfield import TrueBitfield
+from ..Types import TrueBitfield
 from BitTornado import product_name, version_short
 
 EXPIRE_TIME = 60 * 60

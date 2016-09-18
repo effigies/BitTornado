@@ -1,7 +1,7 @@
 import hashlib
 import random
 import bisect
-from BitTornado.bitfield import Bitfield
+from ..Types import Bitfield, OrderedSet
 from BitTornado.clock import clock
 
 DEBUG = False
@@ -11,18 +11,6 @@ STATS_INTERVAL = 0.2
 
 def dummy_status(fractionDone=None, activity=None):
     pass
-
-
-class OrderedSet(set):
-    def pop(self, n=0):
-        if n == 0:
-            i = min(self)
-        elif n == -1:
-            i = max(self)
-        else:
-            i = sorted(self)[n]
-        self.remove(i)
-        return i
 
 
 class fakeflag:

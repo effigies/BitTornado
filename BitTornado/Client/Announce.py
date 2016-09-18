@@ -9,15 +9,15 @@ import urllib
 import base64
 import threading
 from BitTornado.Meta.bencode import bdecode
-from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
-from BitTornado.Network.NetworkAddress import IPv4, IPv6
+from ..Types import TypedDict, TypedList, QueryDict, Port, Infohash, PeerID, \
+    IPv4, IPv6
 from BitTornado.Network.Stream import SharedStream
 
 
 class _Peer(TypedDict):
     """IPv4 peer descriptor"""
     iptype = IPv4
-    typemap = {'ip': str, 'port': int, 'peer id': bytes}
+    typemap = {'ip': str, 'port': Port, 'peer id': PeerID}
 
     def __init__(self, arg):
         """Accept bytes or dict representations"""
@@ -59,12 +59,12 @@ class Response(TypedDict):
 
 
 class RequestURL(QueryDict):
-    typemap = {'info_hash': bytes, 'peer_id': bytes, 'port': int,
-               'supportcrypto': bool, 'requirecrypto': bool, 'cryptoport': int,
-               'seed_id': bytes, 'check_seeded': bool, 'uploaded': int,
-               'downloaded': int, 'left': int, 'numwant': int,
+    typemap = {'info_hash': Infohash, 'peer_id': PeerID, 'port': Port,
+               'supportcrypto': bool, 'requirecrypto': bool,
+               'cryptoport': Port, 'seed_id': bytes, 'check_seeded': bool,
+               'uploaded': int, 'downloaded': int, 'left': int, 'numwant': int,
                'no_peer_id': bool, 'compact': bool, 'last': int,
-               'trackerid': bytes, 'event': str, 'tracker': bool,
+               'trackerid': PeerID, 'event': str, 'tracker': bool,
                'key': str}
 
 
@@ -193,7 +193,7 @@ class UDPAnnouncer(Announcer):
 
         Arguments:
             infohash    bytes[20]   SHA1 hash of bencoded Info dictionary
-            peer_id     bytes       unique peer ID
+            peer_id     bytes[20]   unique peer ID
             event       int         Code indicating purpose of request
                                         0 (empty/update statistics)
                                         1 (download started)

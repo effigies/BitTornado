@@ -14,18 +14,18 @@ from collections import defaultdict
 from .Filter import Filter
 from .HTTPHandler import HTTPHandler, months
 from .T2T import T2TList
-from .torrentlistparse import parsetorrentlist
+from .torrentlistparse import HashSet, parsetorrentlist
 from BitTornado.Application.NumberFormats import formatSize
 from BitTornado.Application.parseargs import parseargs, formatDefinitions
 from BitTornado.Application.parsedir import parsedir
 from BitTornado.Client.Announce import HTTPAnnouncer, Response
 from BitTornado.Meta.bencode import bencode, Bencached, BencodedFile
-from BitTornado.Meta.TypedCollections import TypedDict, BytesIndexed
 from BitTornado.Network.BTcrypto import CRYPTO_OK
 from BitTornado.Network.NatCheck import NatCheck, CHECK_PEER_ID_ENCRYPTED
-from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList, \
-    IPv4
+from BitTornado.Network.NetworkAddress import is_valid_ip, to_ipv4, AddrList
 from BitTornado.Network.RawServer import RawServer, autodetect_socket_style
+from ..Types import TypedDict, BytesIndexed, Infohash, PeerID, Port, \
+    UnsignedInt, IPv4
 from BitTornado.clock import clock
 
 from BitTornado import version
@@ -122,25 +122,22 @@ defaults = [
 
 class TrackerState(TypedDict, BencodedFile):
     class Completed(BytesIndexed):
+        keytype = Infohash
         valtype = int
 
     class Peers(BytesIndexed):
         class Peer(BytesIndexed):
             class PeerInfo(TypedDict):
-                typemap = {'ip': str, 'port': int, 'left': int, 'nat': bool,
-                           'requirecrypto': bool, 'supportcrypto': bool,
-                           'key': str, 'given ip': str}
+                typemap = {'ip': str, 'port': Port, 'left': UnsignedInt,
+                           'nat': bool, 'requirecrypto': bool,
+                           'supportcrypto': bool, 'key': str, 'given ip': str}
+            keytype = PeerID
             valtype = PeerInfo
-
-            def keyconst(self, key):
-                return len(key) == 20
+        keytype = Infohash
         valtype = Peer
 
-        def keyconst(self, key):
-            return len(key) == 20
-
     typemap = {'completed': Completed, 'peers': Peers, 'allowed': dict,
-               'allowed_dir_files': dict, 'allowed_list': dict}
+               'allowed_dir_files': dict, 'allowed_list': HashSet}
 
 
 class CompactResponse(TypedDict):
@@ -694,8 +691,9 @@ class Tracker(object):
         port = params('cryptoport')
         if port is None:
             port = params('port', 'missing port')
-        port = int(port)
-        if not 0 <= port <= 65535:
+        try:
+            port = Port(port)
+        except (ValueError, OverflowError):
             raise ValueError('invalid port')
         left = int(params('left', 'amount left not sent'))
         if left < 0:

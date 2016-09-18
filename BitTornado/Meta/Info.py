@@ -8,7 +8,7 @@ import os
 import re
 import time
 import hashlib
-from .TypedCollections import TypedDict, TypedList, SplitList
+from ..Types import TypedDict, TypedList, SplitList
 from .bencode import BencodedFile
 
 

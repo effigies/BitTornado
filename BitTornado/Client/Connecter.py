@@ -1,4 +1,4 @@
-from BitTornado.bitfield import Bitfield
+from ..Types import Bitfield
 from BitTornado.clock import clock
 
 DEBUG1 = False

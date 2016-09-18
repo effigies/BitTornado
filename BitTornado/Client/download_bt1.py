@@ -14,7 +14,7 @@ from .HTTPDownloader import HTTPDownloader
 from .Connecter import Connecter
 from .RateLimiter import RateLimiter
 from BitTornado.Network.Encrypter import Encoder
-from BitTornado.Network.NetworkAddress import IPv4
+from ..Types import IPv4
 from BitTornado.Network.RawServer import autodetect_socket_style
 from BitTornado.Network.Stream import geturl
 from .Rerequester import Rerequester

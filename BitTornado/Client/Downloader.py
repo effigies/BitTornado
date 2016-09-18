@@ -1,6 +1,6 @@
 import random
 from .CurrentRateMeasure import Measure
-from BitTornado.bitfield import Bitfield
+from ..Types import Bitfield
 from BitTornado.clock import clock
 
 EXPIRE_TIME = 60 * 60

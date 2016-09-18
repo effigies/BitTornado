@@ -739,8 +739,9 @@ class Tracker(object):
                     peer['nat'] = 0
                     self.natcheckOK(infohash, peerid, real_ip, port, peer)
                 else:
-                    NatCheck(self.connectback_result, infohash, peerid, real_ip,
-                             port, self.rawserver, encrypted=requirecrypto)
+                    NatCheck(self.connectback_result, infohash, peerid,
+                             real_ip, port, self.rawserver,
+                             encrypted=requirecrypto)
             else:
                 peer['nat'] = 2 ** 30
 

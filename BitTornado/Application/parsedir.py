@@ -170,11 +170,11 @@ def parse_torrent(path, return_metainfo=False):
     single = 'length' in info
 
     torrentinfo = {
-        'path':     path,
-        'file':     fname,
-        'name':     info.get('name', fname),
+        'path': path,
+        'file': fname,
+        'name': info.get('name', fname),
         'numfiles': 1 if single else len(info['files']),
-        'length':   info['length'] if single else sum(
+        'length': info['length'] if single else sum(
             li['length'] for li in info['files'] if 'length' in li)
     }
 

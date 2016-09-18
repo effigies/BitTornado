@@ -188,8 +188,7 @@ class Connection(object):
                                        for k, v in supported_exts.items()
                                        if k in SUPPORTED_EXTS)
         else:
-
-
+            pass
 
 
 class Connecter(object):

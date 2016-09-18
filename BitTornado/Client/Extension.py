@@ -61,6 +61,7 @@ class _SupportedExtensions(object):
 
 EXTENSIONS = _SupportedExtensions()
 
+
 class ExtensionHandler(object):
     name = None
 

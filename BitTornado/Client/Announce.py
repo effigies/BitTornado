@@ -40,7 +40,7 @@ class Response(TypedDict):
 
         def __init__(self, arg):
             if isinstance(arg, bytes):
-                arg = [arg[i:i+6] for i in range(0, len(arg), 6)]
+                arg = [arg[i:i + 6] for i in range(0, len(arg), 6)]
             TypedList.__init__(self, arg)
 
     class Peers6(TypedList):
@@ -48,7 +48,7 @@ class Response(TypedDict):
 
         def __init__(self, arg):
             assert isinstance(arg, bytes)
-            arg = [arg[i:i+18] for i in range(0, len(arg), 18)]
+            arg = [arg[i:i + 18] for i in range(0, len(arg), 18)]
             TypedList.__init__(self, arg)
 
     typemap = {'failure reason': str, 'warning message': str, 'interval': int,

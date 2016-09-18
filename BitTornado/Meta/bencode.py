@@ -166,19 +166,19 @@ class BTDecoder(object):
         return (data, pos + 1)
 
     decode_func = {
-        ord('l'):   decode_list,
-        ord('d'):   decode_dict,
-        ord('i'):   decode_int,
-        ord('0'):   decode_string,
-        ord('1'):   decode_string,
-        ord('2'):   decode_string,
-        ord('3'):   decode_string,
-        ord('4'):   decode_string,
-        ord('5'):   decode_string,
-        ord('6'):   decode_string,
-        ord('7'):   decode_string,
-        ord('8'):   decode_string,
-        ord('9'):   decode_string,
+        ord('l'): decode_list,
+        ord('d'): decode_dict,
+        ord('i'): decode_int,
+        ord('0'): decode_string,
+        ord('1'): decode_string,
+        ord('2'): decode_string,
+        ord('3'): decode_string,
+        ord('4'): decode_string,
+        ord('5'): decode_string,
+        ord('6'): decode_string,
+        ord('7'): decode_string,
+        ord('8'): decode_string,
+        ord('9'): decode_string,
     }
 
 

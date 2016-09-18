@@ -159,7 +159,7 @@ class Storage:
                                       time.localtime(self.mtimes[fname])),
                         time.strftime('%x %X',
                                       time.localtime(os.path.getmtime(fname)))
-                        ))
+                    ))
                 raise IOError('modified during download')
         try:
             return open(fname, mode)

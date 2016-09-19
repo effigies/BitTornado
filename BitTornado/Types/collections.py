@@ -64,11 +64,14 @@ class TypedList(CopyMixin, list):
                     raise TypeError("Values must be coercible to type '{}'"
                                     "".format(self.valtype.__name__))
 
+                accept = []
                 for val in arg:
-                    if not self.valconst(val):
-                        raise ValueError('Value rejected: {}'.format(val))
+                    if self.valconst(val):
+                        accept.append(val)
+                    elif self.error:
+                        raise ValueError('Value rejected: {!r}'.format(val))
 
-                new_args += (arg,) if expect_seq else tuple(arg)
+                new_args += (accept,) if expect_seq else tuple(accept)
 
             return method(self, *new_args)
         # Cleans up pydoc

@@ -2,14 +2,9 @@ import time
 import socket
 import random
 from errno import EWOULDBLOCK
-try:
-    from select import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
-except ImportError:
-    from .selectpoll import poll, POLLIN, POLLOUT, POLLERR, POLLHUP
+from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
 from BitTornado.clock import clock
 from .natpunch import UPnP_open_port, UPnP_close_port
-
-POLLALL = POLLIN | POLLOUT
 
 UPnP_ERROR = "unable to forward port via UPnP"
 
@@ -103,9 +98,10 @@ class SingleSocket(object):
                 self.socket_handler.dead_from_write.append(self)
                 return
         if self.buffer:
-            self.socket_handler.poll.register(self.socket, POLLALL)
+            self.socket_handler.selector.register(self.socket,
+                                                  EVENT_READ | EVENT_WRITE)
         else:
-            self.socket_handler.poll.register(self.socket, POLLIN)
+            self.socket_handler.selector.register(self.socket, EVENT_READ)
 
     def set_handler(self, handler):
         self.handler = handler
@@ -116,7 +112,7 @@ class SocketHandler(object):
         self.timeout = timeout
         self.ipv6_enable = ipv6_enable
         self.readsize = readsize
-        self.poll = poll()
+        self.selector = DefaultSelector()
         self.single_sockets = {}  # {socket: SingleSocket}
         self.dead_from_write = []
         self.max_connects = 1000
@@ -164,7 +160,7 @@ class SocketHandler(object):
                 if bind:
                     self.interfaces.append(server.getsockname()[0])
                 server.listen(64)
-                self.poll.register(server, POLLIN)
+                self.selector.register(server, EVENT_READ)
             except OSError as e:
                 # servers is a dict of sockets, so there's no danger of
                 # altering self.servers in this loop
@@ -225,7 +221,7 @@ class SocketHandler(object):
             raise
         except Exception as e:
             raise OSError(str(e))
-        self.poll.register(sock, POLLIN)
+        self.selector.register(sock, EVENT_READ)
         s = SingleSocket(self, sock, handler, dns[0])
         self.single_sockets[sock.fileno()] = s
         return s
@@ -260,11 +256,12 @@ class SocketHandler(object):
         return s
 
     def handle_events(self, events):
-        for sock, event in events:
+        for selkey, event in events:
+            sock = selkey.fd
             s = self.servers.get(sock)
             if s:
                 if event & (POLLHUP | POLLERR) != 0:
-                    self.poll.unregister(s)
+                    self.selector.unregister(s)
                     s.close()
                     del self.servers[sock]
                     print("lost server socket")
@@ -274,7 +271,7 @@ class SocketHandler(object):
                         newsock.setblocking(0)
                         nss = SingleSocket(self, newsock, self.handler)
                         self.single_sockets[newsock.fileno()] = nss
-                        self.poll.register(newsock, POLLIN)
+                        self.selector.register(newsock, EVENT_READ)
                         self.handler.external_connection_made(nss)
                     except OSError:
                         time.sleep(1)
@@ -286,7 +283,7 @@ class SocketHandler(object):
                 if event & (POLLHUP | POLLERR):
                     self._close_socket(s)
                     continue
-                if event & POLLIN:
+                if event & EVENT_READ:
                     try:
                         s.last_hit = clock()
                         data = s.socket.recv(self.readsize)
@@ -298,7 +295,7 @@ class SocketHandler(object):
                         if e.errno != EWOULDBLOCK:
                             self._close_socket(s)
                             continue
-                if event & POLLOUT and s.socket and not s.is_flushed():
+                if event & EVENT_WRITE and s.socket and not s.is_flushed():
                     s.try_write()
                     if s.is_flushed():
                         s.handler.connection_flushed(s)
@@ -316,7 +313,7 @@ class SocketHandler(object):
         s.handler.connection_lost(s)
 
     def do_poll(self, t):
-        r = self.poll.poll(t * 1000)
+        r = self.selector.select(t)
         if r is None:
             connects = len(self.single_sockets)
             to_close = int(connects * 0.05) + 1   # close 5% of sockets

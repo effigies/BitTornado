@@ -1,8 +1,9 @@
 import unittest
 import random
 
-from ..collections import TypedList, TypedDict, DictSet, OrderedSet
+from ..collections import TypedList, TypedDict, DictSet, OrderedSet, SplitList
 from ...Meta.bencode import bencode, bdecode
+from ...Meta.Info import MetaInfo
 
 
 class APITest(object):
@@ -159,6 +160,21 @@ class DictSetTest(CopyAPITest, unittest.TestCase):
         self.assertTrue(self.base >= tcopy)
         self.assertTrue(bcopy < self.this)
         self.assertTrue(bcopy <= self.this)
+
+
+class SplitListTest(unittest.TestCase):
+    def test_null(self):
+        self.assertEqual(SplitList(), SplitList([]))
+        self.assertEqual(SplitList(), SplitList(''))
+        self.assertEqual(SplitList(), SplitList(['']))
+
+    def test_announcelist(self):
+        cls = MetaInfo.AnnounceList
+        self.assertEqual(cls(), cls(''))
+        self.assertEqual(cls(), cls([]))
+        self.assertEqual(cls('a,b,c'), [['a', 'b', 'c']])
+        self.assertEqual(cls('a|b|c'), [['a'], ['b'], ['c']])
+        self.assertEqual(cls('a,b|c'), [['a', 'b'], ['c']])
 
 
 class OrderedSetTest(unittest.TestCase):

@@ -18,7 +18,8 @@ setup(
               "BitTornado.Meta",
               "BitTornado.Network",
               "BitTornado.Storage",
-              "BitTornado.Tracker"],
+              "BitTornado.Tracker",
+              "BitTornado.Types"],
 
     scripts=["btdownloadheadless.py", "bttrack.py", "btmakemetafile.py",
              "btlaunchmany.py", "btcompletedir.py", "btdownloadcurses.py",

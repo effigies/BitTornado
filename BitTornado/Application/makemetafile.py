@@ -69,7 +69,10 @@ def make_meta_file(loc, url, params=None, flag=None,
     if flag is not None and flag.is_set():
         return
 
-    metainfo = MetaInfo(announce=url, info=info, **params)
+    newparams = { key:val for key, val in params.items() \
+                          if key in MetaInfo.typemap }
+
+    metainfo = MetaInfo(announce=url, info=info, **newparams)
     metainfo.write(params['target'])
 
 

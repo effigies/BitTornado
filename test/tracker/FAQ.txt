@@ -23,8 +23,8 @@ A:  BitTorrent does cryptographic hashing (SHA1) of all data.  When you see "Dow
 Q:  I'm behind a firewall/NAT, can I use BT?
 
 A:  Yes, but you will get better performance if other peers can connect to you.  By
-    default, BitTorrent listens on port 6881, trying incrementially higher ports if
-    it is unable to bind, giving up after 6889 (the port range is configurable.)
+    default, BitTorrent listens on port 10000, trying incrementially higher ports if
+    it is unable to bind, giving up after 60000 (the port range is configurable.)
     It's up to you to figure out how to poke a hole in your firewall/NAT.
 
 

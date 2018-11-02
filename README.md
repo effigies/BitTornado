@@ -15,6 +15,24 @@ work at least as well as they did in version 0.3.18. Since 0.4.0, the library
 components have been substantially reorganized, so expect dependent
 applications to break on upgrade.
 
+Notice of unmaintained status
+=============================
+
+I appreciate that people have made an effort to use and report bugs in this
+package, which I believe is the most approachable implementation of many aspects
+of the protocol and file format. However, the BitTorrent ecosystem has moved on,
+and I don't have time to keep up with it.
+
+At the time of this writing, in November 2018, it's been over two years since I
+was able to do more than briefly respond to an issue or review a small PR. This
+notice is less a decision and more an acknowledgment that I cannot devote any
+effort to maintaining this repository.
+
+There are various known [issues](https://github.com/effigies/BitTornado/issues)
+that are unresolved and will remain so unless somebody takes up maintenance.
+
+Thanks to all who contributed time and effort on this.
+
 Branches/Tags
 =============
 

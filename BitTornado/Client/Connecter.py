@@ -1,3 +1,5 @@
+from .Extension import PeerExtensions
+from ..Meta.bencode import bdecode
 from ..Types import Bitfield
 from BitTornado.clock import clock
 
@@ -5,20 +7,26 @@ DEBUG1 = False
 DEBUG2 = False
 
 
-CHOKE = b'\x00'
-UNCHOKE = b'\x01'
-INTERESTED = b'\x02'
-NOT_INTERESTED = b'\x03'
-# index
-HAVE = b'\x04'
-# index, bitfield
-BITFIELD = b'\x05'
-# index, begin, length
-REQUEST = b'\x06'
-# index, begin, piece
-PIECE = b'\x07'
-# index, begin, piece
-CANCEL = b'\x08'
+# Message IDs
+CHOKE = b'\x00'             # no payload
+UNCHOKE = b'\x01'           # no payload
+INTERESTED = b'\x02'        # no payload
+NOT_INTERESTED = b'\x03'    # no payload
+HAVE = b'\x04'              # index
+BITFIELD = b'\x05'          # index, bitfield
+REQUEST = b'\x06'           # index, begin, length
+PIECE = b'\x07'             # index, begin, piece
+CANCEL = b'\x08'            # index, begin, piece
+DHT_PORT = b'\x09'          # port (2 bytes)
+FAST_SUGGEST = b'\x0d'      # index
+FAST_HAVE_ALL = b'\x0e'     # no payload
+FAST_HAVE_NONE = b'\x0f'    # no payload
+FAST_REJECT = b'\x10'       # index, begin, length
+ALLOW_FAST = b'\x11'        # index
+EXTENDED = b'\x14'          # msg_id, payload
+
+# Extended Message IDs
+EXT_HANDSHAKE = b'\x00'
 
 
 class Connection(object):
@@ -34,6 +42,7 @@ class Connection(object):
         self.upload = None              # Uploader.Upload
         self.send_choke_queued = False  # Bool (togglable)
         self.just_unchoked = None       # None -> 0 <-> clock()
+        self.supported_exts = {}
 
         # Pass-through functions
         self.get_id = connection.get_id
@@ -96,6 +105,9 @@ class Connection(object):
 
     def send_have(self, index):
         self._send_message(HAVE + index.to_bytes(4, 'big'))
+
+    def send_extended(self, ext_id, payload):
+        self._send_message(EXTENDED + ext_id.to_bytes(1, 'big') + payload)
 
     def send_keepalive(self):
         self._send_message(b'')
@@ -166,6 +178,17 @@ class Connection(object):
         if self.just_unchoked:
             self.connecter.ratelimiter.ping(clock() - self.just_unchoked)
             self.just_unchoked = 0
+
+    def got_extended(self, message):
+        message_id = message[:1]
+        if message_id == EXT_HANDSHAKE:
+            payload = bdecode(message[1:])
+            supported_exts = payload['m']
+            self.supported_exts.update((k, v)
+                                       for k, v in supported_exts.items()
+                                       if k in SUPPORTED_EXTS)
+        else:
+            pass
 
 
 class Connecter(object):
@@ -311,5 +334,7 @@ class Connecter(object):
             if c.download.got_piece(i, int.from_bytes(message[5:9], 'big'),
                                     message[9:]):
                 self.got_piece(i)
+        elif t == EXTENDED:
+            c.got_extended(message)
         else:
             connection.close()

@@ -1,13 +1,11 @@
 import urllib
 from binascii import hexlify
 from .BTcrypto import Crypto, padding
+from .Protocol import protocol_name, reserved
 
 DEBUG = False
 
 MAX_INCOMPLETE = 8
-
-protocol_name = b'\x13BitTorrent protocol'
-option_pattern = bytes(8)
 
 
 def make_readable(s):
@@ -63,7 +61,7 @@ class Connection(object):
                 self.write(self.encrypter.padded_pubkey())
             else:
                 self.encrypted = False
-                self.write(protocol_name + option_pattern +
+                self.write(protocol_name + bytes(reserved) +
                            self.Encoder.download_id)
             self.next_len = len(protocol_name)
             self.next_func = self.read_header
@@ -285,7 +283,7 @@ class Connection(object):
             if not self.buffer:  # oops; check for exceptions to this
                 return None
             self._end_crypto()
-        self.write(protocol_name + option_pattern + self.Encoder.download_id)
+        self.write(protocol_name + bytes(reserved) + self.Encoder.download_id)
         return len(protocol_name), self.read_encrypted_header
 
     ### START PROTOCOL OVER ENCRYPTED CONNECTION ###
@@ -306,7 +304,7 @@ class Connection(object):
         if not self.locally_initiated:
             if not self.encrypted:
                 self.Encoder.connecter.external_connection_made += 1
-            self.write(protocol_name + option_pattern +
+            self.write(protocol_name + bytes(reserved) +
                        self.Encoder.download_id + self.Encoder.my_id)
         return 20, self.read_peer_id
 

@@ -1,6 +1,5 @@
 from .BTcrypto import Crypto
-
-from .Encrypter import protocol_name
+from .Protocol import protocol_name
 
 
 class SingleRawServer(object):
@@ -75,7 +74,7 @@ class NewSocketHandler(object):     # hand a new socket off where it belongs
         self.complete = False
         self.read = self._read
         self.write = connection.write
-        self.next_len = 1 + len(protocol_name)
+        self.next_len = len(protocol_name)
         self.next_func = self.read_header
         self.multihandler.rawserver.add_task(self._auto_close, 30)
 

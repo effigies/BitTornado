@@ -5,6 +5,7 @@ import gzip
 from BitTornado.clock import clock
 
 DEBUG = False
+FULL_DEBUG = True
 
 months = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -90,12 +91,20 @@ class HTTPConnection:
             cdata = compressed.getvalue()
             if len(cdata) >= len(data):
                 self.encoding = 'identity'
+                if FULL_DEBUG:
+                    print("Data: {!r}".format(data), file=sys.stderr,
+                          flush=True)
             else:
                 if DEBUG:
                     print("Compressed: {:d}  Uncompressed: {:d}\n".format(
                           len(cdata), len(data)))
+                if FULL_DEBUG:
+                    print("Data: {!r}".format(data), file=sys.stderr,
+                          flush=True)
                 data = cdata
                 headers['Content-Encoding'] = 'gzip'
+        elif FULL_DEBUG:
+            print("Data: {!r}".format(data), file=sys.stderr, flush=True)
 
         # i'm abusing the identd field here, but this should be ok
         if self.encoding == 'identity':

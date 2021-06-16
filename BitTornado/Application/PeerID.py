@@ -31,8 +31,8 @@ class PeerID(object):
         except IOError:
             x = b''
 
-        tic = time.clock()
-        toc1 = countwhile(lambda x: tic == time.clock())
+        tic = time.process_time()
+        toc1 = countwhile(lambda x: tic == time.process_time())
         tic = int(time.time() * 100)
         toc2 = countwhile(lambda x: tic == int(time.time() * 100))
         tic = int(time.time() * 10)

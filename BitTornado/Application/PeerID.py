@@ -1,9 +1,14 @@
 import os
-import time
 import base64
 import hashlib
 import itertools
 import BitTornado
+
+"""Use time clock or perf_counter, depending on python version"""
+try:
+    from time import perf_counter, time
+except ImportError:
+    from time import clock, time as perf_counter, time
 
 mapbase64 = b'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 
@@ -31,15 +36,15 @@ class PeerID(object):
         except IOError:
             x = b''
 
-        tic = time.clock()
-        toc1 = countwhile(lambda x: tic == time.clock())
-        tic = int(time.time() * 100)
-        toc2 = countwhile(lambda x: tic == int(time.time() * 100))
-        tic = int(time.time() * 10)
+        tic = perf_counter()
+        toc1 = countwhile(lambda x: tic == perf_counter())
+        tic = int(time() * 100)
+        toc2 = countwhile(lambda x: tic == int(time() * 100))
+        tic = int(time() * 10)
         toc3 = 0 if toc2 >= 1000 else \
-            countwhile(lambda x: tic == int(time.time() * 10))
+            countwhile(lambda x: tic == int(time() * 10))
 
-        x += '{!r}/{}/{}/{}/{}/{}'.format(time.time(), time.time(), toc1, toc2,
+        x += '{!r}/{}/{}/{}/{}/{}'.format(time(), time(), toc1, toc2,
                                           toc3, os.getpid()).encode()
 
         self.randstr = base64.urlsafe_b64encode(
